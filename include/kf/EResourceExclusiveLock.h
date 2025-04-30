@@ -14,8 +14,6 @@ namespace kf
             m_resource.acquireExclusive();
         }
 
-        EResourceExclusiveLock(EResourceExclusiveLock&& other) = default;
-
         ~EResourceExclusiveLock()
         {
             m_resource.release();
