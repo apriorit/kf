@@ -106,6 +106,7 @@ namespace kf
         typedef GUARD_TYPE(::PFILE_OBJECT, nullptr, &::ObfDereferenceObject)                            FileObject;
         typedef GUARD_TYPE(::PFILE_OBJECT, nullptr, &::ObDereferenceObjectDeferDelete)                  DeferFileObject;
         typedef GUARD_TYPE(::PDEVICE_OBJECT, nullptr, &::ObfDereferenceObject)                          DeviceObject;
+        typedef GUARD_TYPE(::PDEVICE_OBJECT, nullptr, &::ObfDereferenceObject)                          DriverObject;
         typedef GUARD_TYPE(::PEPROCESS, nullptr, &::ObfDereferenceObject)                               EProcess;
         typedef GUARD_TYPE(::PETHREAD, nullptr, &::ObfDereferenceObject)                                EThread;
         typedef GUARD_TYPE(::HANDLE, nullptr, &::ZwClose)                                               Handle;
