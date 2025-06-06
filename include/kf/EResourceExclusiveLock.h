@@ -5,7 +5,7 @@ namespace kf
     //////////////////////////////////////////////////////////////////////////
     // EResourceExclusiveLock
 
-    class EResourceExclusiveLock
+    class [[deprecated("Use std::unique_lock instead")]] EResourceExclusiveLock
     {
     public:
         EResourceExclusiveLock(_In_ EResource& resource) : m_resource(resource)

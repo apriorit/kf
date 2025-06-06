@@ -5,7 +5,7 @@ namespace kf
     //////////////////////////////////////////////////////////////////////////
     // EResourceSharedLock
 
-    class EResourceSharedLock
+    class [[deprecated("Use std::shared_lock instead")]] EResourceSharedLock
     {
     public:
         EResourceSharedLock(_In_ EResource& resource) : m_resource(resource)

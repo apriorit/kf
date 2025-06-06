@@ -33,6 +33,26 @@ namespace kf
             ::FltReleaseResource(*this);
         }
 
+        void lock()
+        {
+            fltAcquireExclusive();
+        }
+
+        void unlock()
+        {
+            fltRelease();
+        }
+
+        void lock_shared()
+        {
+            fltAcquireShared();
+        }
+
+        void unlock_shared()
+        {
+            fltRelease();
+        }
+
     private:
         FltResource(const FltResource&);
         FltResource& operator=(const FltResource&);

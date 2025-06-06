@@ -6,7 +6,7 @@ namespace kf
     //////////////////////////////////////////////////////////////////////////
     // FltResourceExclusiveLock
 
-    class FltResourceExclusiveLock
+    class [[deprecated("Use std::unique_lock instead")]] FltResourceExclusiveLock
     {
     public:
         FltResourceExclusiveLock(_In_ PERESOURCE resource) : m_resource(FltResource::fromEResource(resource))
