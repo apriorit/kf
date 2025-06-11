@@ -23,20 +23,29 @@ namespace kf
 
         constexpr auto end()
         {
-            return Iterator{ AsSentinel{}, std::ranges::end(m_base) };
+            return Iterator{ std::ranges::end(m_base) };
         }
 
     private:
-        struct AsSentinel
+        class Iterator
         {
-            explicit AsSentinel() = default;
-        };
-
-        struct Iterator
-        {
+        private:
             using BaseIterator = std::ranges::iterator_t<Range>;
             std::array<BaseIterator, N> m_current{};
 
+        private:
+            constexpr auto transformToTuple(const decltype(m_current)& arr) const
+            {
+                return arrayToTuple(arr, std::make_index_sequence<N>{});
+            }
+
+            template <std::size_t... I>
+            constexpr auto arrayToTuple(const decltype(m_current)& arr, std::index_sequence<I...>) const
+            {
+                return std::tie((*arr[I])...);
+            }
+
+        public:
             constexpr Iterator(BaseIterator first, std::ranges::sentinel_t<Range> last)
             {
                 m_current.front() = first;
@@ -47,7 +56,7 @@ namespace kf
                 }
             }
 
-            constexpr Iterator(AsSentinel, BaseIterator last)
+            constexpr Iterator(BaseIterator last)
             {
                 if constexpr (!std::ranges::bidirectional_range<Range>)
                 {
@@ -62,17 +71,6 @@ namespace kf
                         m_current[N - 1 - i] = last;
                     }
                 }
-            }
-
-            template <std::size_t... I>
-            constexpr auto arrayToTuple(const decltype(m_current)& arr, std::index_sequence<I...>) const
-            {
-                return std::tie((*arr[I])...);
-            }
-
-            constexpr auto transformToTuple(const decltype(m_current)& arr) const
-            {
-                return arrayToTuple(arr, std::make_index_sequence<N>{});
             }
 
             constexpr auto operator*() const
