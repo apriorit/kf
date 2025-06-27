@@ -22,7 +22,7 @@ namespace kf
     };
 
     template<typename... T>
-    class MonoObservable : IObservable<T...>
+    class MonoObservable : public IObservable<T...>
     {
     public:
         void attach(IObserver<T...>* observer) override
