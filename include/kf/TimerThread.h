@@ -1,5 +1,7 @@
 #pragma once
 #include <kf/stl/memory>
+#include <kf/ScopeExit.h>
+#include <concepts>
 
 namespace kf
 {
@@ -22,7 +24,7 @@ namespace kf
         TimerThread& operator=(TimerThread&&) = delete;
         TimerThread& operator=(const TimerThread&) = delete;
 
-        NTSTATUS start(LARGE_INTEGER period, invocable<> auto&& callback)
+        NTSTATUS start(LARGE_INTEGER period, invocable auto&& callback)
         {
             // Need a negative value for KeWaitForSingleObject
             m_period.QuadPart = -period.QuadPart;
@@ -96,7 +98,7 @@ namespace kf
             return status;
         }
 
-        void threadRoutine(invocable<> auto callback)
+        void threadRoutine(invocable auto callback)
         {
             while (STATUS_TIMEOUT == KeWaitForSingleObject(&m_stopEvent, Executive, KernelMode, false, &m_period))
             {
