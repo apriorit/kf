@@ -32,7 +32,7 @@ namespace kf
         {
         }
 
-        bool init()
+        [[nodiscard]] bool initialize()
         {
             m_state = make_shared<AllocatorState, poolType>();
             return m_state != nullptr;
@@ -61,7 +61,7 @@ namespace kf
             m_state->size = 0;
         }
 
-        bool prepareMemory(std::size_t size)
+        [[nodiscard]] bool prepareMemory(std::size_t size)
         {
             if (!m_state)
             {

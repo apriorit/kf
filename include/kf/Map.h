@@ -25,21 +25,13 @@ namespace kf
         Map(const Map&) = delete;
         Map& operator=(const Map&) = delete;
 
-        Map(Map&& other)
-            : m_internalMap(std::move(other.m_internalMap))
-        {
-        }
+        Map(Map&& other) = default;
+        Map& operator=(Map&& other) = default;
 
-        Map& operator=(Map&& other)
-        {
-            m_internalMap = std::move(other.m_internalMap);
-            return *this;
-        }
-
-        NTSTATUS init()
+        [[nodiscard]] NTSTATUS initialize()
         {
             AllocatorType allocator;
-            if (!allocator.init())
+            if (!allocator.initialize())
             {
                 return STATUS_INSUFFICIENT_RESOURCES;
             }
@@ -61,14 +53,22 @@ namespace kf
 
         std::optional<std::reference_wrapper<ValueType>> operator[](KeyType&& key)
         {
-            m_internalMap->get_allocator().prepareMemory(kNodeSize);
-            return std::ref((*m_internalMap)[key]);
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return std::ref((*m_internalMap)[std::forward<KeyType>(key)]);
         }
 
         template <class... ValuesType>
         std::optional<std::pair<Iterator, bool>> emplace(ValuesType&&... values)
         {
-            m_internalMap->get_allocator().prepareMemory(kNodeSize);
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
             return m_internalMap->emplace(std::forward<ValuesType>(values)...);
         }
 
