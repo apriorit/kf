@@ -4,3 +4,4 @@
 [submodule "test/FindWDK"]
 	path = test/FindWDK
 	url = https://github.com/SergiusTheBest/FindWDK
+	branch = stl
