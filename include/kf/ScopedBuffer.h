@@ -1,4 +1,5 @@
 #pragma once
+#include "stl/new"
 
 namespace kf
 {
@@ -95,13 +96,11 @@ namespace kf
 
         T* get()
         {
-            ASSERT(m_buf);
             return m_buf;
         }
 
         const T* get() const
         {
-            ASSERT(m_buf);
             return m_buf;
         }
 
