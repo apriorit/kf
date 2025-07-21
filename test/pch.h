@@ -20,7 +20,7 @@ namespace std
 {
     [[noreturn]] inline void _Xout_of_range(const char* msg)
     {
-        ASSERTMSG(msg, true);
+        ASSERTMSG(msg, false);
     }
 }
 
