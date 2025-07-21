@@ -54,7 +54,7 @@ namespace kf
             return input.charLength() / kEncodedSizeMultiplier;
         }
 
-        // TODO: join two decode method to the single one after making base class for booth simple strings
+        // TODO: join two decode method to the single one after making base class for both simple strings
         static bool decode(const ASimpleString& input, _Out_ span<std::byte>& output)
         {
             if (output.size() != static_cast<size_t>(decodeLen(input)))
