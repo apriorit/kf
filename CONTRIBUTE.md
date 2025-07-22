@@ -1,5 +1,5 @@
 # Code style
-It includes entities/variables naming, brackets, tabulation, empty lines where they needed. Generally, the rules of code style are:
+It includes entities/variables naming, brackets, tabulation, empty lines where they are needed. Generally, the rules of code style are:
 
 **Tabulation** is made by 4 spaces.
 
