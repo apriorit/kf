@@ -45,3 +45,4 @@ find_package(WDK REQUIRED)
 
 add_subdirectory("include")
 add_subdirectory("test")
+add_subdirectory("kfbenchmark")
