@@ -1,8 +1,6 @@
 #pragma once
 
-/*
-* GetTickCount returns system time in milliseconds
-*/
+#include <sal.h>
 
 namespace kftest
 {
@@ -18,6 +16,9 @@ namespace kftest
         return systemTime.QuadPart / 10;
     }
 
+    /*
+    * GetTickCount returns system time in milliseconds
+    */
     _Must_inspect_result_
     inline LONGLONG GetTickCount()
     {
@@ -43,7 +44,7 @@ namespace kftest
         }
 
         template<typename... Args>
-        void stop(const char* format, Args... args)
+        void stop(_In_z_ const char* format, Args... args)
         {
             LONGLONG elapsed = GetTickCount() - m_start;
             DbgPrint("Stopped: %s, elapsed: %lld ms. ", m_message, elapsed);
