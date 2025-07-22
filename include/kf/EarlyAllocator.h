@@ -24,17 +24,16 @@ namespace kf
 
         template<class Y>
         constexpr EarlyAllocator(const EarlyAllocator<Y>& other) noexcept : m_ptr(reinterpret_cast<T*>(other.m_ptr)), m_size(other.m_size)
-        {
-        }
+        { }
 
-        _CONSTEXPR20_DYNALLOC ~EarlyAllocator() = default;
-        _CONSTEXPR20_DYNALLOC EarlyAllocator& operator=(const EarlyAllocator&) = default;
+        ~EarlyAllocator() = default;
+        EarlyAllocator& operator=(const EarlyAllocator&) = default;
 
         template<POOL_TYPE poolType>
         T* initialize(const size_t count)
         {
-            assert(!m_ptr);
-            assert(!m_size);
+            ASSERT(!m_ptr);
+            ASSERT(!m_size);
 
             m_size = count * sizeof(T);
             m_ptr = static_cast<T*>(operator new(m_size, poolType));
@@ -42,24 +41,20 @@ namespace kf
             return m_ptr;
         }
 
-        _CONSTEXPR20_DYNALLOC void deallocate(const T* ptr, const size_t count)
+        void deallocate(const T* ptr, const size_t count)
         {
-            if (ptr != m_ptr || count * sizeof(T) > m_size)
-            {
-                _Xinvalid_argument("ptr != m_ptr || count * sizeof(T) > m_size");
-            }
+            ASSERTMSG("Wrong pointer", ptr == m_ptr);
+            ASSERTMSG("Wrong count", count * sizeof(T) <= m_size);
 
             operator delete(m_ptr);
             m_ptr = nullptr;
             m_size = 0;
         }
 
-        _NODISCARD _CONSTEXPR20_DYNALLOC T* allocate(const size_t count)
+        _NODISCARD T* allocate(const size_t count)
         {
-            if (!m_ptr || count * sizeof(T) > m_size)
-            {
-                _Xinvalid_argument("!m_ptr || count * sizeof(T) > m_size");
-            }
+            ASSERTMSG("Not initialized", m_ptr);
+            ASSERTMSG("Wrong count", count * sizeof(T) <= m_size);
 
             return m_ptr;
         }
