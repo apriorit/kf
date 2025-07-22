@@ -75,7 +75,7 @@ Before making PR do the warnings check on the projects that are modified: RMB on
 Add SAL annotation to every created function. Also use these recommendations from MS: https://learn.microsoft.com/en-us/cpp/code-quality/best-practices-and-examples-sal?view=msvc-170.
 
 # Checks
-Use ASSERT  macro to check programmer's mistakes.
+Use ASSERT macro to check programmer's mistakes.
 
 Check that IRQL is correct in every function/method that calls system function directly.
 
