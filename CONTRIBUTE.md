@@ -72,7 +72,7 @@ The commits with **commented code are forbidden**: remove or uncomment code befo
 Before making PR do the warnings check on the projects that are modified: RMB on the project → Analyze and Code Cleanup → Run Code Analysis on <project_name>. Then fix all warnings.
 
 # SAL annotations
-Add SAL annotation to every created function. Also use these recomendations from MS: https://learn.microsoft.com/en-us/cpp/code-quality/best-practices-and-examples-sal?view=msvc-170.
+Add SAL annotation to every created function. Also use these recommendations from MS: https://learn.microsoft.com/en-us/cpp/code-quality/best-practices-and-examples-sal?view=msvc-170.
 
 # Checks
 Use ASSERT  macro to check programmer's mistakes.
