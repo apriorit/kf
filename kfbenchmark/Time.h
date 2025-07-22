@@ -1,9 +1,5 @@
 #pragma once
 
-/*
-* GetTickCount returns system time in milliseconds
-*/
-
 namespace kftest
 {
     /*
@@ -18,6 +14,10 @@ namespace kftest
         return systemTime.QuadPart / 10;
     }
 
+
+    /*
+    * GetTickCount returns system time in milliseconds
+    */
     _Must_inspect_result_
     inline LONGLONG GetTickCount()
     {
