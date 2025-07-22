@@ -47,7 +47,7 @@ SCENARIO("Insert and find integers")
             }
         }
 
-        THEN("The value for key greater then max key is not found")
+        THEN("The value for key greater than max key is not found")
         {
             auto value = map.find(kIterations * kKeyMultiplier + 1);
             REQUIRE(value == map.end());
