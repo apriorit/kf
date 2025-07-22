@@ -139,6 +139,16 @@ namespace kf
             return m_internalMap->upper_bound(key);
         }
 
+        [[nodiscard]] Iterator lower_bound(const KeyType& key)
+        {
+            return m_internalMap->lower_bound(key);
+        }
+
+        [[nodiscard]] ConstIterator lower_bound(const KeyType& key) const
+        {
+            return m_internalMap->lower_bound(key);
+        }
+
         bool empty() const noexcept
         {
             return m_internalMap->empty();
