@@ -48,8 +48,6 @@ FetchContent_Declare(
 )
 FetchContent_Populate(findwdk)
 
-message(STATUS "findwdk_SOURCE_DIR = ${findwdk_SOURCE_DIR}")
-
 list(APPEND CMAKE_MODULE_PATH "${findwdk_SOURCE_DIR}/cmake")
 find_package(WDK REQUIRED)
 
