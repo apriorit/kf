@@ -95,7 +95,7 @@ namespace kf
                     return false;
                 }
 
-                output[i/2] = static_cast<std::byte>(res);
+                output[i/kEncodedSizeMultiplier] = static_cast<std::byte>(res);
             }
 
             return true;
