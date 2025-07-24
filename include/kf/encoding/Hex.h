@@ -79,7 +79,7 @@ namespace kf
         static bool decode(const USimpleString& input, _Out_ span<std::byte>& output)
         {
             if (input.charLength() % kEncodedSizeMultiplier != 0 ||
-                output.size() < decodeLen(input))
+                output.size() != decodeLen(input))
             {
                 return false;
             }
