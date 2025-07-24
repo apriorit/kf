@@ -41,6 +41,7 @@ add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3>)
 add_compile_options($<$<C_COMPILER_ID:MSVC>:/W3>)
 
 include(FetchContent)
+# Fetch FindWDK and find WDK package
 FetchContent_Declare(
     findwdk
     GIT_REPOSITORY https://github.com/SergiusTheBest/FindWDK
@@ -48,11 +49,17 @@ FetchContent_Declare(
 )
 FetchContent_Populate(findwdk)
 
-message(STATUS "findwdk_SOURCE_DIR = ${findwdk_SOURCE_DIR}")
-
 list(APPEND CMAKE_MODULE_PATH "${findwdk_SOURCE_DIR}/cmake")
 find_package(WDK REQUIRED)
 
+# Fetch kmtest for testing and benchmarking
+FetchContent_Declare(
+    kmtest
+    GIT_REPOSITORY https://github.com/SergiusTheBest/kmtest.git
+)
+FetchContent_Populate(kmtest)
+
+# Add subprojects
 add_subdirectory("include")
 add_subdirectory("test")
-add_subdirectory("kfbenchmark")
+add_subdirectory("benchmark")
