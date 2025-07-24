@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.5)
+﻿cmake_minimum_required(VERSION 3.11)
 
 project(kf)
 
@@ -40,7 +40,17 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3 /MP -DUNICODE -D_UNICODE -D_WIN32_WINNT=
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3>)
 add_compile_options($<$<C_COMPILER_ID:MSVC>:/W3>)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/test/FindWDK/cmake")
+include(FetchContent)
+FetchContent_Declare(
+    findwdk
+    GIT_REPOSITORY https://github.com/SergiusTheBest/FindWDK
+    GIT_TAG stl
+)
+FetchContent_Populate(findwdk)
+
+message(STATUS "findwdk_SOURCE_DIR = ${findwdk_SOURCE_DIR}")
+
+list(APPEND CMAKE_MODULE_PATH "${findwdk_SOURCE_DIR}/cmake")
 find_package(WDK REQUIRED)
 
 add_subdirectory("include")
