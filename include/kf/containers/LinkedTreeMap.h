@@ -1,7 +1,7 @@
 #pragma once
-#include "GenericTableAvl.h"
 #include <functional>
 #include <utility>
+#include "GenericTableAvl.h"
 #include "DoubleLinkedList.h"
 
 namespace kf

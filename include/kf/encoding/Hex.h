@@ -1,8 +1,8 @@
 #pragma once
 #include <span>
 #include <array>
-#include "ASimpleString.h"
-#include "USimpleString.h"
+#include "kf/string/ASimpleString.h"
+#include "kf/string/USimpleString.h"
 
 namespace kf
 {

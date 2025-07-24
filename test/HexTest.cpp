@@ -1,7 +1,7 @@
 #include "pch.h"
-#include <kf/Hex.h>
-#include <kf/UString.h>
-#include <kf/ScopedBuffer.h>
+#include <kf/encoding/Hex.h>
+#include <kf/string/UString.h>
+#include <kf/guard/ScopedBuffer.h>
 
 // TODO: implement ASCII string and test encode/decode for ASimpleString
 

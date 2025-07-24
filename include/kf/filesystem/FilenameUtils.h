@@ -1,9 +1,10 @@
 #pragma once
-#include "USimpleString.h"
 #include <utility>
+#include "kf/string/USimpleString.h"
 
 namespace kf
 {
+    // TODO: Implement Path type instead of utils
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     // FilenameUtils - inspired by http://commons.apache.org/proper/commons-io/apidocs/org/apache/commons/io/FilenameUtils.html
 
