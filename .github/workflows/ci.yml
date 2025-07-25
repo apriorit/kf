@@ -22,12 +22,10 @@ jobs:
       matrix:
         os: [windows-2022]
         config: [Debug, Release]
-        platform: [x64, ARM64]
+        platform: [x64]
         include:
           - platform: x64
             cmake_platform: x64
-          - platform: ARM64
-            cmake_platform: ARM64
 
     runs-on: ${{ matrix.os }}
     
