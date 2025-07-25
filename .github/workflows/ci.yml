@@ -23,9 +23,6 @@ jobs:
         os: [windows-2022]
         config: [Debug, Release]
         platform: [x64]
-        include:
-          - platform: x64
-            cmake_platform: x64
 
     runs-on: ${{ matrix.os }}
     
@@ -38,7 +35,7 @@ jobs:
 
     - name: Configure CMake
       run: |
-        cmake -B build -A ${{ matrix.cmake_platform }} -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+        cmake -B build -A ${{ matrix.platform }} -DCMAKE_BUILD_TYPE=${{ matrix.config }}
 
     - name: Build
       run: |
