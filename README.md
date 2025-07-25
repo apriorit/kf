@@ -4,6 +4,19 @@ Kernel foundation library for Windows.
 ## Requirements
 - Visual Studio 2019 or newer
 
+## How to build tests
+Use CMake to generate a Visual Studio solution:
+
+```cmd
+cmake -Bbuild .
+```
+
+Then open in Visual Studio `<project root>\build\kf.sln` and build it or run CMake:
+
+```cmd
+cmake --build build
+```
+
 ## Roadmap 
 - [ ] Document
 - [ ] Add tests
