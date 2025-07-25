@@ -1,4 +1,7 @@
 # kf
+
+[![CI](https://github.com/apriorit/kf/actions/workflows/ci.yml/badge.svg)](https://github.com/apriorit/kf/actions/workflows/ci.yml)
+
 Kernel foundation library for Windows.
 
 ## Requirements

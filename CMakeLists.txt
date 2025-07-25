@@ -42,8 +42,11 @@ if(${IS_TOPLEVEL_PROJECT})
     file(GLOB ROOT_MD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.md")
     add_custom_target("docs" SOURCES ${ROOT_MD_FILES})
 
-    # Add tests
-    add_subdirectory("test")
+    # Add tests (can be disabled with -DKF_BUILD_TESTS=OFF)
+    option(KF_BUILD_TESTS "Build kf tests (requires WDK)" ON)
+    if(KF_BUILD_TESTS)
+        add_subdirectory("test")
+    endif()
 endif()
 
 # TODO: add install target
