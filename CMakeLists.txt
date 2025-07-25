@@ -25,6 +25,9 @@ if(${IS_TOPLEVEL_PROJECT})
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
 
+    # Set warning level to /W3 for MSVC
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
+
     # include subproject for kf headers
     add_subdirectory("include")
 
