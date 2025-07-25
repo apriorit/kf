@@ -1,8 +1,8 @@
-﻿cmake_minimum_required(VERSION 3.11)
+﻿cmake_minimum_required(VERSION 3.16)
 
-project(kf)
+project(kf LANGUAGES CXX)
 
-# check if building as a stand-alone project
+# Check if building as a stand-alone project
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set(IS_TOPLEVEL_PROJECT TRUE)
 else()
@@ -19,42 +19,31 @@ target_include_directories(${PROJECT_NAME}
 )
 
 if(${IS_TOPLEVEL_PROJECT})
+    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-    # Set C++ standard
-    set(CMAKE_CXX_STANDARD 20)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_EXTENSIONS OFF)
+    # Add a pseudo-project to make kf headers visible in IDE
+    file(GLOB_RECURSE ${PROJECT_NAME}_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/kf/*")
 
-    # Set warning level to /W3 for MSVC
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
+    # Organize files into filters matching their relative paths
+    foreach(header ${${PROJECT_NAME}_HEADERS})
+        file(RELATIVE_PATH rel_path "${CMAKE_CURRENT_SOURCE_DIR}" "${header}")
 
-    # include subproject for kf headers
-    add_subdirectory("include")
+        get_filename_component(rel_dir "${rel_path}" DIRECTORY)
+        if(rel_dir)
+            string(REPLACE "/" "\\" filter "${rel_dir}")
+            source_group("${filter}" FILES "${header}")
+        endif()
+    endforeach()
 
-    # Fetch dependencies
-    include(FetchContent)
-    FetchContent_Declare(
-        findwdk
-        GIT_REPOSITORY https://github.com/SergiusTheBest/FindWDK
-        GIT_TAG stl
-    )
-    FetchContent_Declare(
-        kmtest
-        GIT_REPOSITORY https://github.com/SergiusTheBest/kmtest.git
-    )
-
-    FetchContent_Populate(findwdk)
-    FetchContent_Populate(kmtest)
-
-    # Add CMake package for WDK projects
-    list(APPEND CMAKE_MODULE_PATH "${findwdk_SOURCE_DIR}/cmake")
-    find_package(WDK REQUIRED)
-
-    # Add other solution projects
-    add_subdirectory("test")
+    add_custom_target(${PROJECT_NAME}-headers SOURCES ${${PROJECT_NAME}_HEADERS})
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 
     # Add all .md files from the root directory to the solution
     file(GLOB ROOT_MD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.md")
     add_custom_target("docs" SOURCES ${ROOT_MD_FILES})
 
+    # Add tests
+    add_subdirectory("test")
 endif()
+
+# TODO: add install target
