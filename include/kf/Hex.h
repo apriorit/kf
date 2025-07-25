@@ -1,4 +1,5 @@
 #pragma once
+#include "ASimpleString.h"
 #include <span>
 #include <array>
 #include "ASimpleString.h"
