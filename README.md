@@ -4,6 +4,14 @@ Kernel foundation library for Windows.
 ## Requirements
 - Visual Studio 2019 or newer
 
+## Build
+To build the project, use CMake with Visual Studio:
+```
+cmake -S . -B build
+```
+- For standalone mode, run CMake in the root directory.
+- For include mode, add the project as a subdirectory in your own CMake project and link to `kf::kf`.
+
 ## Roadmap 
 - [ ] Document
 - [ ] Add tests

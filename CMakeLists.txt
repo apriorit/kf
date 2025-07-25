@@ -50,4 +50,8 @@ if(${IS_TOPLEVEL_PROJECT})
     # Add other solution projects
     add_subdirectory("test")
 
+    # Add all .md files from the root directory to the solution
+    file(GLOB ROOT_MD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.md")
+    add_custom_target("docs" SOURCES ${ROOT_MD_FILES})
+
 endif()
