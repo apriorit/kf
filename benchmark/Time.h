@@ -1,5 +1,4 @@
 #pragma once
-
 #include <sal.h>
 
 namespace kftest
@@ -29,31 +28,27 @@ namespace kftest
     class Timer
     {
     public:
-        explicit Timer(const char* message)
-            : m_message(message)
-            , m_start(GetTickCount())
+        explicit Timer(const char* stage)
         {
-            DbgPrint("Started: %s\n", m_message);
+            reset(stage);
+        }
+
+        void reset(const char* stage)
+        {
+            m_stageName = stage;
+            m_start = GetTickCount();
+            DbgPrint("Started %s\n", m_stageName);
         }
 
         LONGLONG stop()
         {
             LONGLONG elapsed = GetTickCount() - m_start;
-            DbgPrint("Stopped: %s, elapsed: %lld ms\n", m_message, elapsed);
+            DbgPrint("Stopped %s, elapsed: %lld ms\n", m_stageName, elapsed);
             return elapsed;
         }
 
-        template<typename... Args>
-        void stop(_In_z_ const char* format, Args... args)
-        {
-            LONGLONG elapsed = GetTickCount() - m_start;
-            DbgPrint("Stopped: %s, elapsed: %lld ms. ", m_message, elapsed);
-            DbgPrint(format, args...);
-            DbgPrint("\n");
-        }
-
     private:
-        const char* m_message = nullptr;
+        const char* m_stageName = nullptr;
         LONGLONG m_start = 0;
     };
 }

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include <kf/Map.h>
 
-SCENARIO("Insert and find integers")
+SCENARIO("Map test: insert and find integers")
 {
     kf::Map<int, int, NonPagedPoolNx> map;
     REQUIRE_NT_SUCCESS(map.initialize());
