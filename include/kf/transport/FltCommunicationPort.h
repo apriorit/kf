@@ -1,7 +1,7 @@
 #pragma once
-#include "ObjectAttributes.h"
-#include "ScopeExit.h"
-#include "VariableSizeStruct.h"
+#include "kf/guard/ObjectAttributes.h"
+#include "kf/guard/ScopeExit.h"
+#include "kf/guard/VariableSizeStruct.h"
 
 namespace kf
 {

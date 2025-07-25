@@ -1,7 +1,5 @@
 #pragma once
-#include "USimpleString.h"
-#include <span>
-#include "SpanUtils.h"
+#include "kf/containers/SpanUtils.h"
 
 namespace kf
 {

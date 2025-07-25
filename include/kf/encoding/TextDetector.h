@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <intrin.h>
 #include "EncodingDetector.h"
-#include "SpanUtils.h"
+#include "kf/containers/SpanUtils.h"
 
 namespace kf
 {

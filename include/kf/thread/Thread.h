@@ -1,6 +1,6 @@
 #pragma once
-#include "ObjectAttributes.h"
-#include "Guard.h"
+#include "kf/guard/ObjectAttributes.h"
+#include "kf/guard/Guard.h"
 
 namespace kf
 {
