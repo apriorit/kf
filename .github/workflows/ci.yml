@@ -3,8 +3,17 @@ name: CI
 on:
   push:
     branches: [ main, master ]
+    paths-ignore:
+      - '.editorconfig'
+      - '.gitignore'
+      - '*.md'
   pull_request:
     branches: [ main, master ]
+    paths-ignore:
+      - '.editorconfig'
+      - '.gitignore'
+      - '*.md'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -31,63 +40,8 @@ jobs:
 
     - name: Configure CMake
       run: |
-        cmake -B build -A ${{ matrix.cmake_platform }} -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DKF_BUILD_TESTS=OFF
+        cmake -B build -A ${{ matrix.cmake_platform }} -DCMAKE_BUILD_TYPE=${{ matrix.config }}
 
     - name: Build
-      run: |
-        cmake --build build --config ${{ matrix.config }} --parallel
-
-  build-with-tests:
-    strategy:
-      fail-fast: false  # Allow tests to fail while WDK setup is experimental
-      matrix:
-        config: [Debug, Release]
-
-    runs-on: windows-2022
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
-
-    - name: Install Windows Driver Kit
-      continue-on-error: true
-      shell: powershell
-      run: |
-        # Try multiple approaches to install WDK
-        Write-Host "Attempting to install WDK..."
-        
-        # First try winget
-        try {
-          Write-Host "Trying winget..."
-          winget install --id Microsoft.WindowsWDK --silent --accept-package-agreements --accept-source-agreements
-          Write-Host "WDK installed via winget"
-          exit 0
-        } catch {
-          Write-Warning "winget failed: $_"
-        }
-        
-        # Try chocolatey
-        try {
-          Write-Host "Trying chocolatey..."
-          choco install windows-driver-kit -y --timeout 600
-          Write-Host "WDK installed via chocolatey"
-          exit 0
-        } catch {
-          Write-Warning "chocolatey failed: $_"
-        }
-        
-        Write-Warning "All WDK installation methods failed"
-        exit 1
-
-    - name: Configure CMake with Tests
-      continue-on-error: true
-      run: |
-        cmake -B build -A x64 -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DKF_BUILD_TESTS=ON
-
-    - name: Build with Tests
-      continue-on-error: true
       run: |
         cmake --build build --config ${{ matrix.config }} --parallel
