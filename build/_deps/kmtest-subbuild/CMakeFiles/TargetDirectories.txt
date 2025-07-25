@@ -1,3 +1,0 @@
-/home/runner/work/kf/kf/build/_deps/kmtest-subbuild/CMakeFiles/kmtest-populate.dir
-/home/runner/work/kf/kf/build/_deps/kmtest-subbuild/CMakeFiles/edit_cache.dir
-/home/runner/work/kf/kf/build/_deps/kmtest-subbuild/CMakeFiles/rebuild_cache.dir
