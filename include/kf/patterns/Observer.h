@@ -34,6 +34,7 @@ namespace kf
         void detach(IObserver<T...>* observer) override
         {
             assert(!m_observer || m_observer == observer);
+            static_cast<void>(observer);
             m_observer = nullptr;
         }
 
