@@ -32,6 +32,8 @@ namespace kf
         template<POOL_TYPE poolType>
         T* initialize(const size_t count)
         {
+            UNREFERENCED_PARAMETER(count);
+
             ASSERT(!m_ptr);
             ASSERT(!m_size);
 
@@ -43,6 +45,9 @@ namespace kf
 
         void deallocate(const T* ptr, const size_t count)
         {
+            UNREFERENCED_PARAMETER(ptr);
+            UNREFERENCED_PARAMETER(count);
+
             ASSERTMSG("Wrong pointer", ptr == m_ptr);
             ASSERTMSG("Wrong count", count * sizeof(T) <= m_size);
 
@@ -53,6 +58,8 @@ namespace kf
 
         _NODISCARD T* allocate(const size_t count)
         {
+            UNREFERENCED_PARAMETER(count);
+
             ASSERTMSG("Not initialized", m_ptr);
             ASSERTMSG("Wrong count", count * sizeof(T) <= m_size);
 
