@@ -6,7 +6,7 @@ using namespace kftest;
 
 namespace
 {
-    void PrintProgress(int current, int total)
+    void PrintProgress(size_t current, size_t total)
     {
         if (current % 100000 == 0)
         {
@@ -17,13 +17,13 @@ namespace
 
 SCENARIO("Map benchmark: populate and find")
 {
-    kf::Map<int, int, NonPagedPoolNx> map;
+    kf::Map<size_t, size_t, NonPagedPoolNx> map;
     REQUIRE_NT_SUCCESS(map.initialize());
 
-    static const int kMaxKey = 10000000;
+    static const size_t kMaxKey = 10000000;
 
     Timer timer("populating");
-    for (int i = 0; i < kMaxKey; ++i)
+    for (size_t i = 0; i < kMaxKey; ++i)
     {
         PrintProgress(i, kMaxKey);
 

@@ -1,9 +1,48 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 
-project (kf-benchmark)
+project(kf-benchmark LANGUAGES CXX)
 
-file(GLOB KF_BENCHMARK_SOURCES "*.h" "*.cpp")
-wdk_add_driver(kf-benchmark WINVER NTDDI_WIN10 STL ${KF_BENCHMARK_SOURCES})
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-target_include_directories(kf-benchmark PRIVATE "${CMAKE_SOURCE_DIR}/include")
-target_include_directories(kf-benchmark PRIVATE "${kmtest_SOURCE_DIR}/include")
+# Set warning level to /W4 for MSVC
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX")
+
+# TODO: fix warnings in code and remove this define
+add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
+
+# Fetch dependencies
+include(FetchContent)
+
+# TODO: add stable reference in future
+FetchContent_Declare(
+    findwdk
+    GIT_REPOSITORY https://github.com/SergiusTheBest/FindWDK
+    GIT_TAG stl
+)
+
+# TODO: add stable reference in future
+FetchContent_Declare(
+    kmtest
+    GIT_REPOSITORY https://github.com/SergiusTheBest/kmtest.git
+)
+
+FetchContent_MakeAvailable(findwdk kmtest)
+
+# Add CMake package for WDK projects
+list(APPEND CMAKE_MODULE_PATH "${findwdk_SOURCE_DIR}/cmake")
+find_package(WDK REQUIRED)
+
+wdk_add_driver(kf-benchmark WINVER NTDDI_WIN10 STL
+    pch.h
+    pch.cpp
+    MapBenchmark.cpp
+)
+
+target_link_libraries(kf-benchmark kf::kf kmtest::kmtest)
+
+# Activate precompiled headers, unfortunately `target_precompile_headers` doesn't work with `wdk_add_driver`
+set_target_properties(kf-benchmark PROPERTIES COMPILE_FLAGS "/Yupch.h")
+set_source_files_properties(pch.cpp PROPERTIES COMPILE_FLAGS "/Ycpch.h")
