@@ -1,5 +1,4 @@
 #pragma once
-
 #include "stl/new"
 
 namespace kf
