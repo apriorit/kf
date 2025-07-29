@@ -589,10 +589,10 @@ SCENARIO("vector swap operation")
     {
         kf::vector<int, PagedPool> v1;
         kf::vector<int, PagedPool> v2;
-        
+
         REQUIRE_NT_SUCCESS(v1.push_back(1));
         REQUIRE_NT_SUCCESS(v1.push_back(2));
-        
+
         REQUIRE_NT_SUCCESS(v2.push_back(10));
         REQUIRE_NT_SUCCESS(v2.push_back(20));
         REQUIRE_NT_SUCCESS(v2.push_back(30));
@@ -619,7 +619,7 @@ SCENARIO("vector swap operation")
     {
         kf::vector<int, PagedPool> v1;
         kf::vector<int, PagedPool> v2;
-        
+
         REQUIRE_NT_SUCCESS(v2.push_back(100));
         REQUIRE_NT_SUCCESS(v2.push_back(200));
 
