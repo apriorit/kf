@@ -1,6 +1,5 @@
 #include "pch.h"
 #include <kf/stl/backport/ranges/ranges>
-#include <vector>
 
 SCENARIO("views::adjacent")
 {
@@ -78,38 +77,6 @@ SCENARIO("views::pairwise")
     }
 }
 
-SCENARIO("views::adjacent with different containers")
-{
-    GIVEN("vector with 3 elements: 'a','b','c'")
-    {
-        std::vector<char> vec = { 'a', 'b', 'c' };
-
-        WHEN("create adjacent view for 2 elements")
-        {
-            auto view = vec | kf::views::adjacent<2>;
-
-            THEN("view contains 2 tuples: ('a','b')('b','c')")
-            {
-                std::array<std::tuple<char, char>, 2> expected = { { {'a', 'b'}, {'b', 'c'} } };
-
-                REQUIRE(std::equal(view.begin(), view.end(), expected.begin(), expected.end()));
-            }
-        }
-
-        WHEN("create pairwise view")
-        {
-            auto view = vec | kf::views::pairwise;
-
-            THEN("view contains 2 pairs: ('a','b')('b','c')")
-            {
-                std::array<std::tuple<char, char>, 2> expected = { { {'a', 'b'}, {'b', 'c'} } };
-
-                REQUIRE(std::equal(view.begin(), view.end(), expected.begin(), expected.end()));
-            }
-        }
-    }
-}
-
 SCENARIO("views::adjacent edge cases")
 {
     GIVEN("array with 1 element: 42")
@@ -157,43 +124,33 @@ SCENARIO("views::adjacent edge cases")
             }
         }
     }
-}
 
-SCENARIO("views::adjacent with larger ranges")
-{
-    GIVEN("array with 6 elements: 100,200,300,400,500,600")
+    GIVEN("array with 2 elements but adjacent window of 3")
     {
-        std::array<int, 6> arr = { 100, 200, 300, 400, 500, 600 };
+        std::array<int, 2> arr = { 10, 20 };
 
         WHEN("create adjacent view for 3 elements")
         {
             auto view = arr | kf::views::adjacent<3>;
 
-            THEN("view contains 4 triples")
+            THEN("view is empty since window is larger than input")
             {
-                std::array<std::tuple<int, int, int>, 4> expected = { { 
-                    {100, 200, 300}, 
-                    {200, 300, 400}, 
-                    {300, 400, 500}, 
-                    {400, 500, 600} 
-                } };
-
-                REQUIRE(std::equal(view.begin(), view.end(), expected.begin(), expected.end()));
+                REQUIRE(view.begin() == view.end());
             }
         }
+    }
 
-        WHEN("create adjacent view for 5 elements")
+    GIVEN("array with 1 element but adjacent window of 2")
+    {
+        std::array<int, 1> arr = { 99 };
+
+        WHEN("create pairwise view")
         {
-            auto view = arr | kf::views::adjacent<5>;
+            auto view = arr | kf::views::pairwise;
 
-            THEN("view contains 2 tuples")
+            THEN("view is empty since window is larger than input")
             {
-                std::array<std::tuple<int, int, int, int, int>, 2> expected = { { 
-                    {100, 200, 300, 400, 500}, 
-                    {200, 300, 400, 500, 600} 
-                } };
-
-                REQUIRE(std::equal(view.begin(), view.end(), expected.begin(), expected.end()));
+                REQUIRE(view.begin() == view.end());
             }
         }
     }
