@@ -4,54 +4,37 @@
 #pragma warning(disable : 4595) // non-member operator new or delete functions may not be declared inline
 #pragma warning(disable : 4996) // TODO: ExAllocatePoolWithTag is deprecated, use ExAllocatePool2
 
-inline void* __cdecl operator new(size_t size, POOL_TYPE poolType, UINT32 poolTag) noexcept
+inline void* __cdecl operator new(size_t size, POOL_TYPE poolType) noexcept
 {
     if (size > 0)
     {
 #pragma warning(suppress: 28160) // Must succeed pool allocations are forbidden. Allocation failures cause a system crash.
-        return ::ExAllocatePoolWithTag(poolType, size, poolTag);
+        return ::ExAllocatePoolWithTag(poolType, size == 0 ? 1 : size, 'n++C');
     }
     return nullptr;
 }
 
-inline void* __cdecl operator new(size_t size, POOL_TYPE poolType) noexcept
-{
-    return operator new(size, poolType, 'n++C');
-}
-
-inline void __cdecl operator delete(void* ptr, POOL_TYPE poolType) noexcept
-{
-    if (ptr)
-    {
-        ::ExFreePoolWithTag(ptr, poolType);
-    }
-}
-
 inline void __cdecl operator delete(void* ptr) noexcept
 {
-    operator delete(ptr, 'n++C');
+    ::ExFreePoolWithTag(ptr, 'n++C');
 }
 
 inline void __cdecl operator delete[](void* ptr) noexcept
 {
-    if (ptr)
-    {
-        ::ExFreePoolWithTag(ptr, 'n++C');
-    }
+    ::ExFreePoolWithTag(ptr, 'n++C');
 }
 
 // size-aware deallocation
-inline void __cdecl operator delete(void* ptr, size_t, UINT32 poolTag) noexcept
+inline void __cdecl operator delete(void* ptr, size_t) noexcept
 {
-    if (ptr)
-    {
-        ::ExFreePoolWithTag(ptr, poolTag);
-    }
+    operator delete(ptr);
 }
 
-inline void __cdecl operator delete(void* ptr, size_t size) noexcept
+// To avoid warning C4291: 'void *operator new(size_t,POOL_TYPE) noexcept':
+// no matching operator delete found; memory will not be freed if initialization throws an exception
+inline void operator delete(void* ptr, POOL_TYPE) noexcept
 {
-    operator delete(ptr, size, 'n++C');
+    operator delete(ptr);
 }
 
 #pragma warning(pop)
