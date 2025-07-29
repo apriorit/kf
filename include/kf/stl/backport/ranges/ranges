@@ -1,2 +1,2 @@
 #pragma once
-#include "detail\adjacent_view.h"
+#include "detail/adjacent_view.h"
