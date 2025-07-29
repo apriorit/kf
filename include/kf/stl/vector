@@ -1,30 +1,32 @@
+#pragma once
+#include <vector>
+#include <optional>
+#include <kf/Allocator.h>
+
+#if _KERNEL_MODE && _ITERATOR_DEBUG_LEVEL > 0
+//#error "_ITERATOR_DEBUG_LEVEL must not be greater than 0"
+#endif
+
 // Requires the module that uses kf::vector to define the following methods:
 //   _CrtDbgReport
 //   _Xinvalid_argument
 //   _Xlength_error
 //   _Xout_of_range
 
-#pragma once
-
-#include "Allocator.h"
-#include <vector>
-#include <optional>
-
-#if _KERNEL_MODE && _ITERATOR_DEBUG_LEVEL > 0
-#error "_ITERATOR_DEBUG_LEVEL must not be greater than 0"
-#endif
-
 namespace kf
 {
     //////////////////////////////////////////////////////////////////////////
-    // vector
+    // vector - Wraps std::vector and allows using it in exception-free environments.
+    //
+    // Note: some methods return NTSTATUS or std::optional to indicate an error
+    // thus they differ from std::vector!
 
     template<class T, POOL_TYPE PoolType, class Allocator = Allocator<T, PoolType>>
     class vector
     {
     public:
-        using size_type = Allocator::size_type;
         using vector_type = std::vector<T, Allocator>;
+        using size_type = vector_type::size_type;
         using iterator = vector_type::iterator;
         using const_iterator = vector_type::const_iterator;
         using reverse_iterator = vector_type::reverse_iterator;
@@ -41,7 +43,7 @@ namespace kf
         constexpr vector(vector&& other) noexcept = default;
         constexpr vector& operator=(vector&& other) noexcept = default;
 
-        constexpr NTSTATUS assign(size_type count, const T& value) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr [[nodiscard]] NTSTATUS assign(size_type count, const T& value) noexcept
         {
             auto status = reallocateGrowth(count);
             if (!NT_SUCCESS(status))
@@ -195,7 +197,7 @@ namespace kf
             return m_vector.max_size();
         }
 
-        constexpr NTSTATUS reserve(size_type newCapacity) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr NTSTATUS reserve(size_type newCapacity) noexcept
         {
             if (newCapacity <= m_vector.capacity())
             {
@@ -210,7 +212,7 @@ namespace kf
             return m_vector.capacity();
         }
 
-        constexpr NTSTATUS shrink_to_fit() noexcept(std::is_nothrow_move_assignable_v<T>)
+        constexpr NTSTATUS shrink_to_fit() noexcept
         {
             if (m_vector.size() == m_vector.capacity())
             {
@@ -237,7 +239,7 @@ namespace kf
             m_vector.clear();
         }
 
-        constexpr std::optional<iterator> insert(const_iterator pos, const T& value) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr std::optional<iterator> insert(const_iterator pos, const T& value) noexcept
         {
             auto status = reallocateGrowth(m_vector.size() + 1);
             if (!NT_SUCCESS(status))
@@ -248,7 +250,7 @@ namespace kf
             return m_vector.insert(pos, value);
         }
 
-        constexpr std::optional<iterator> insert(const_iterator pos, T&& value) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr std::optional<iterator> insert(const_iterator pos, T&& value) noexcept
         {
             auto status = reallocateGrowth(m_vector.size() + 1);
             if (!NT_SUCCESS(status))
@@ -259,7 +261,7 @@ namespace kf
             return m_vector.insert(pos, std::move(value));
         }
 
-        constexpr std::optional<iterator> insert(const_iterator pos, size_type count, const T& value) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr std::optional<iterator> insert(const_iterator pos, size_type count, const T& value) noexcept
         {
             auto status = reallocateGrowth(m_vector.size() + count);
             if (!NT_SUCCESS(status))
@@ -271,7 +273,7 @@ namespace kf
         }
 
         template<class... Args>
-        constexpr std::optional<iterator> emplace(const_iterator pos, Args&&... args) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr std::optional<iterator> emplace(const_iterator pos, Args&&... args) noexcept
         {
             auto status = reallocateGrowth(m_vector.size() + 1);
             if (!NT_SUCCESS(status))
@@ -282,17 +284,17 @@ namespace kf
             return m_vector.emplace(pos, std::forward<Args>(args)...);
         }
 
-        constexpr iterator erase(const_iterator pos) noexcept(std::is_nothrow_move_assignable_v<T>)
+        constexpr iterator erase(const_iterator pos) noexcept
         {
             return m_vector.erase(pos);
         }
 
-        constexpr iterator erase(const_iterator first, const_iterator last) noexcept(std::is_nothrow_move_assignable_v<T>)
+        constexpr iterator erase(const_iterator first, const_iterator last) noexcept
         {
             return m_vector.erase(first, last);
         }
 
-        constexpr NTSTATUS push_back(const T& value) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr [[nodiscard]] NTSTATUS push_back(const T& value) noexcept
         {
             auto status = reallocateGrowth(m_vector.size() + 1);
             if (!NT_SUCCESS(status))
@@ -305,7 +307,7 @@ namespace kf
             return STATUS_SUCCESS;
         }
 
-        constexpr NTSTATUS push_back(T&& value) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr [[nodiscard]] NTSTATUS push_back(T&& value) noexcept
         {
             auto status = reallocateGrowth(m_vector.size() + 1);
             if (!NT_SUCCESS(status))
@@ -319,7 +321,7 @@ namespace kf
         }
 
         template<class... Args>
-        constexpr std::optional<std::reference_wrapper<T>> emplace_back(Args&&... args) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr std::optional<std::reference_wrapper<T>> emplace_back(Args&&... args) noexcept
         {
             auto status = reallocateGrowth(m_vector.size() + 1);
             if (!NT_SUCCESS(status))
@@ -335,7 +337,7 @@ namespace kf
             m_vector.pop_back();
         }
 
-        constexpr NTSTATUS resize(size_type count) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr [[nodiscard]] NTSTATUS resize(size_type count) noexcept
         {
             auto status = reallocateGrowth(count);
             if (!NT_SUCCESS(status))
@@ -348,7 +350,7 @@ namespace kf
             return STATUS_SUCCESS;
         }
 
-        constexpr NTSTATUS resize(size_type count, const T& value) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr [[nodiscard]] NTSTATUS resize(size_type count, const T& value) noexcept
         {
             auto status = reallocateGrowth(count);
             if (!NT_SUCCESS(status))
@@ -361,13 +363,13 @@ namespace kf
             return STATUS_SUCCESS;
         }
 
-        constexpr void swap(vector& other) noexcept(std::is_nothrow_swappable_v<std::vector<T, Allocator>>)
+        constexpr void swap(vector& other) noexcept
         {
             m_vector.swap(other.m_vector);
         }
 
     private:
-        constexpr NTSTATUS reallocateGrowth(size_type newSize) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr NTSTATUS reallocateGrowth(size_type newSize) noexcept
         {
             if (newSize <= m_vector.capacity())
             {
@@ -377,12 +379,12 @@ namespace kf
             return moveInternal(calculateGrowth(newSize));
         }
 
-        constexpr NTSTATUS reallocateExactly(size_type newSize) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr NTSTATUS reallocateExactly(size_type newSize) noexcept
         {
             return moveInternal(newSize);
         }
 
-        constexpr NTSTATUS moveInternal(size_type newCapacity) noexcept(std::is_nothrow_move_constructible_v<T>)
+        constexpr NTSTATUS moveInternal(size_type newCapacity) noexcept
         {
             std::vector<T, Allocator> newVector;
             newVector.reserve(newCapacity);
