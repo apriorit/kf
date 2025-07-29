@@ -150,3 +150,588 @@ SCENARIO("vector at and [] access")
         }
     }
 }
+
+SCENARIO("vector move constructor and move assignment")
+{
+    GIVEN("vector with 3 elements")
+    {
+        kf::vector<int, PagedPool> v1;
+        REQUIRE_NT_SUCCESS(v1.push_back(10));
+        REQUIRE_NT_SUCCESS(v1.push_back(20));
+        REQUIRE_NT_SUCCESS(v1.push_back(30));
+
+        WHEN("move construct new vector")
+        {
+            kf::vector<int, PagedPool> v2(std::move(v1));
+
+            THEN("new vector contains the elements")
+            {
+                REQUIRE(v2.size() == 3);
+                REQUIRE(v2[0] == 10);
+                REQUIRE(v2[1] == 20);
+                REQUIRE(v2[2] == 30);
+            }
+        }
+
+        WHEN("move assign to new vector")
+        {
+            kf::vector<int, PagedPool> v2;
+            v2 = std::move(v1);
+
+            THEN("new vector contains the elements")
+            {
+                REQUIRE(v2.size() == 3);
+                REQUIRE(v2[0] == 10);
+                REQUIRE(v2[1] == 20);
+                REQUIRE(v2[2] == 30);
+            }
+        }
+    }
+}
+
+SCENARIO("vector front, back and data access")
+{
+    GIVEN("empty vector")
+    {
+        kf::vector<int, PagedPool> v;
+
+        WHEN("push_back single element")
+        {
+            REQUIRE_NT_SUCCESS(v.push_back(42));
+
+            THEN("front and back return the same element")
+            {
+                REQUIRE(v.front() == 42);
+                REQUIRE(v.back() == 42);
+                REQUIRE(v.data() != nullptr);
+                REQUIRE(*v.data() == 42);
+            }
+        }
+    }
+
+    GIVEN("vector with multiple elements")
+    {
+        kf::vector<int, PagedPool> v;
+        REQUIRE_NT_SUCCESS(v.push_back(1));
+        REQUIRE_NT_SUCCESS(v.push_back(2));
+        REQUIRE_NT_SUCCESS(v.push_back(3));
+
+        WHEN("do nothing")
+        {
+            THEN("front returns first element, back returns last element")
+            {
+                REQUIRE(v.front() == 1);
+                REQUIRE(v.back() == 3);
+                REQUIRE(v.data() != nullptr);
+                REQUIRE(v.data()[0] == 1);
+                REQUIRE(v.data()[1] == 2);
+                REQUIRE(v.data()[2] == 3);
+            }
+        }
+
+        WHEN("modify front and back")
+        {
+            v.front() = 10;
+            v.back() = 30;
+
+            THEN("elements are modified")
+            {
+                REQUIRE(v[0] == 10);
+                REQUIRE(v[2] == 30);
+                REQUIRE(v[1] == 2); // middle element unchanged
+            }
+        }
+    }
+}
+
+SCENARIO("vector capacity operations")
+{
+    GIVEN("empty vector")
+    {
+        kf::vector<int, PagedPool> v;
+
+        WHEN("do nothing")
+        {
+            THEN("empty returns true, max_size > 0")
+            {
+                REQUIRE(v.empty() == true);
+                REQUIRE(v.max_size() > 0);
+            }
+        }
+
+        WHEN("reserve 100 elements")
+        {
+            REQUIRE_NT_SUCCESS(v.reserve(100));
+
+            THEN("capacity is at least 100, size is still 0")
+            {
+                REQUIRE(v.capacity() >= 100);
+                REQUIRE(v.size() == 0);
+                REQUIRE(v.empty() == true);
+            }
+        }
+
+        WHEN("push_back element after reserve")
+        {
+            REQUIRE_NT_SUCCESS(v.reserve(100));
+            REQUIRE_NT_SUCCESS(v.push_back(123));
+
+            THEN("empty returns false")
+            {
+                REQUIRE(v.empty() == false);
+                REQUIRE(v.size() == 1);
+                REQUIRE(v[0] == 123);
+            }
+        }
+    }
+
+    GIVEN("vector with elements")
+    {
+        kf::vector<int, PagedPool> v;
+        REQUIRE_NT_SUCCESS(v.push_back(1));
+        REQUIRE_NT_SUCCESS(v.push_back(2));
+
+        WHEN("reserve smaller capacity")
+        {
+            auto original_capacity = v.capacity();
+            REQUIRE_NT_SUCCESS(v.reserve(1));
+
+            THEN("capacity is not reduced")
+            {
+                REQUIRE(v.capacity() == original_capacity);
+                REQUIRE(v.size() == 2);
+            }
+        }
+    }
+}
+
+SCENARIO("vector get_allocator")
+{
+    GIVEN("vector")
+    {
+        kf::vector<int, PagedPool> v;
+
+        WHEN("get allocator")
+        {
+            auto alloc = v.get_allocator();
+
+            THEN("allocator is returned successfully")
+            {
+                // Just verify we can call the method
+                // The allocator type is kf::Allocator<int, PagedPool>
+                static_assert(std::is_same_v<decltype(alloc), kf::Allocator<int, PagedPool>>);
+            }
+        }
+    }
+}
+
+SCENARIO("vector insert operations")
+{
+    GIVEN("empty vector")
+    {
+        kf::vector<int, PagedPool> v;
+
+        WHEN("insert single element at begin")
+        {
+            auto iter = v.insert(v.begin(), 100);
+
+            THEN("element is inserted successfully")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 1);
+                REQUIRE(v[0] == 100);
+            }
+        }
+
+        WHEN("insert move element at begin")
+        {
+            int value = 200;
+            auto iter = v.insert(v.begin(), std::move(value));
+
+            THEN("element is inserted successfully")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 1);
+                REQUIRE(v[0] == 200);
+            }
+        }
+
+        WHEN("insert multiple copies")
+        {
+            auto iter = v.insert(v.begin(), 3, 50);
+
+            THEN("elements are inserted successfully")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 3);
+                REQUIRE(v[0] == 50);
+                REQUIRE(v[1] == 50);
+                REQUIRE(v[2] == 50);
+            }
+        }
+    }
+
+    GIVEN("vector with elements")
+    {
+        kf::vector<int, PagedPool> v;
+        REQUIRE_NT_SUCCESS(v.push_back(1));
+        REQUIRE_NT_SUCCESS(v.push_back(3));
+
+        WHEN("insert in middle")
+        {
+            auto iter = v.insert(v.begin() + 1, 2);
+
+            THEN("element is inserted in correct position")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 3);
+                REQUIRE(v[0] == 1);
+                REQUIRE(v[1] == 2);
+                REQUIRE(v[2] == 3);
+            }
+        }
+    }
+}
+
+SCENARIO("vector emplace operations")
+{
+    GIVEN("empty vector")
+    {
+        kf::vector<int, PagedPool> v;
+
+        WHEN("emplace single element")
+        {
+            auto iter = v.emplace(v.begin(), 100);
+
+            THEN("element is emplaced successfully")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 1);
+                REQUIRE(v[0] == 100);
+            }
+        }
+
+        WHEN("emplace_back element")
+        {
+            auto ref = v.emplace_back(200);
+
+            THEN("element is emplaced successfully")
+            {
+                REQUIRE(ref.has_value());
+                REQUIRE(v.size() == 1);
+                REQUIRE(v[0] == 200);
+                REQUIRE(ref->get() == 200);
+            }
+        }
+    }
+
+    GIVEN("vector with elements")
+    {
+        kf::vector<int, PagedPool> v;
+        REQUIRE_NT_SUCCESS(v.push_back(1));
+        REQUIRE_NT_SUCCESS(v.push_back(3));
+
+        WHEN("emplace in middle")
+        {
+            auto iter = v.emplace(v.begin() + 1, 2);
+
+            THEN("element is emplaced in correct position")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 3);
+                REQUIRE(v[0] == 1);
+                REQUIRE(v[1] == 2);
+                REQUIRE(v[2] == 3);
+            }
+        }
+
+        WHEN("emplace_back multiple elements")
+        {
+            auto ref1 = v.emplace_back(4);
+            auto ref2 = v.emplace_back(5);
+
+            THEN("elements are emplaced successfully")
+            {
+                REQUIRE(ref1.has_value());
+                REQUIRE(ref2.has_value());
+                REQUIRE(v.size() == 4);
+                REQUIRE(v[2] == 4);
+                REQUIRE(v[3] == 5);
+            }
+        }
+    }
+}
+
+SCENARIO("vector erase operations")
+{
+    GIVEN("vector with single element")
+    {
+        kf::vector<int, PagedPool> v;
+        REQUIRE_NT_SUCCESS(v.push_back(100));
+
+        WHEN("erase single element")
+        {
+            auto iter = v.erase(v.begin());
+
+            THEN("vector becomes empty")
+            {
+                REQUIRE(iter == v.end());
+                REQUIRE(v.size() == 0);
+                REQUIRE(v.empty() == true);
+            }
+        }
+    }
+
+    GIVEN("vector with multiple elements")
+    {
+        kf::vector<int, PagedPool> v;
+        REQUIRE_NT_SUCCESS(v.push_back(1));
+        REQUIRE_NT_SUCCESS(v.push_back(2));
+        REQUIRE_NT_SUCCESS(v.push_back(3));
+        REQUIRE_NT_SUCCESS(v.push_back(4));
+
+        WHEN("erase first element")
+        {
+            auto iter = v.erase(v.begin());
+
+            THEN("first element is removed")
+            {
+                REQUIRE(iter == v.begin());
+                REQUIRE(v.size() == 3);
+                REQUIRE(v[0] == 2);
+                REQUIRE(v[1] == 3);
+                REQUIRE(v[2] == 4);
+            }
+        }
+
+        WHEN("erase middle element")
+        {
+            auto iter = v.erase(v.begin() + 1);
+
+            THEN("middle element is removed")
+            {
+                REQUIRE(v.size() == 3);
+                REQUIRE(v[0] == 1);
+                REQUIRE(v[1] == 3);
+                REQUIRE(v[2] == 4);
+            }
+        }
+
+        WHEN("erase range of elements")
+        {
+            auto iter = v.erase(v.begin() + 1, v.begin() + 3);
+
+            THEN("range is removed")
+            {
+                REQUIRE(v.size() == 2);
+                REQUIRE(v[0] == 1);
+                REQUIRE(v[1] == 4);
+            }
+        }
+    }
+}
+
+SCENARIO("vector pop_back operation")
+{
+    GIVEN("vector with single element")
+    {
+        kf::vector<int, PagedPool> v;
+        REQUIRE_NT_SUCCESS(v.push_back(100));
+
+        WHEN("pop_back")
+        {
+            v.pop_back();
+
+            THEN("vector becomes empty")
+            {
+                REQUIRE(v.size() == 0);
+                REQUIRE(v.empty() == true);
+            }
+        }
+    }
+
+    GIVEN("vector with multiple elements")
+    {
+        kf::vector<int, PagedPool> v;
+        REQUIRE_NT_SUCCESS(v.push_back(1));
+        REQUIRE_NT_SUCCESS(v.push_back(2));
+        REQUIRE_NT_SUCCESS(v.push_back(3));
+
+        WHEN("pop_back")
+        {
+            v.pop_back();
+
+            THEN("last element is removed")
+            {
+                REQUIRE(v.size() == 2);
+                REQUIRE(v[0] == 1);
+                REQUIRE(v[1] == 2);
+            }
+        }
+
+        WHEN("pop_back multiple times")
+        {
+            v.pop_back();
+            v.pop_back();
+
+            THEN("multiple elements are removed")
+            {
+                REQUIRE(v.size() == 1);
+                REQUIRE(v[0] == 1);
+            }
+        }
+    }
+}
+
+SCENARIO("vector swap operation")
+{
+    GIVEN("two vectors with different contents")
+    {
+        kf::vector<int, PagedPool> v1;
+        kf::vector<int, PagedPool> v2;
+
+        REQUIRE_NT_SUCCESS(v1.push_back(1));
+        REQUIRE_NT_SUCCESS(v1.push_back(2));
+
+        REQUIRE_NT_SUCCESS(v2.push_back(10));
+        REQUIRE_NT_SUCCESS(v2.push_back(20));
+        REQUIRE_NT_SUCCESS(v2.push_back(30));
+
+        WHEN("swap vectors")
+        {
+            v1.swap(v2);
+
+            THEN("contents are swapped")
+            {
+                REQUIRE(v1.size() == 3);
+                REQUIRE(v1[0] == 10);
+                REQUIRE(v1[1] == 20);
+                REQUIRE(v1[2] == 30);
+
+                REQUIRE(v2.size() == 2);
+                REQUIRE(v2[0] == 1);
+                REQUIRE(v2[1] == 2);
+            }
+        }
+    }
+
+    GIVEN("one empty vector and one with elements")
+    {
+        kf::vector<int, PagedPool> v1;
+        kf::vector<int, PagedPool> v2;
+
+        REQUIRE_NT_SUCCESS(v2.push_back(100));
+        REQUIRE_NT_SUCCESS(v2.push_back(200));
+
+        WHEN("swap vectors")
+        {
+            v1.swap(v2);
+
+            THEN("empty vector gets elements, other becomes empty")
+            {
+                REQUIRE(v1.size() == 2);
+                REQUIRE(v1[0] == 100);
+                REQUIRE(v1[1] == 200);
+
+                REQUIRE(v2.size() == 0);
+                REQUIRE(v2.empty() == true);
+            }
+        }
+    }
+}
+
+SCENARIO("vector comprehensive iterator testing")
+{
+    GIVEN("vector with multiple elements")
+    {
+        kf::vector<int, PagedPool> v;
+        REQUIRE_NT_SUCCESS(v.push_back(10));
+        REQUIRE_NT_SUCCESS(v.push_back(20));
+        REQUIRE_NT_SUCCESS(v.push_back(30));
+        REQUIRE_NT_SUCCESS(v.push_back(40));
+
+        WHEN("iterate forward with begin/end")
+        {
+            int sum = 0;
+            for (auto it = v.begin(); it != v.end(); ++it)
+            {
+                sum += *it;
+            }
+
+            THEN("sum is correct")
+            {
+                REQUIRE(sum == 100);
+            }
+        }
+
+        WHEN("iterate forward with cbegin/cend")
+        {
+            int sum = 0;
+            for (auto it = v.cbegin(); it != v.cend(); ++it)
+            {
+                sum += *it;
+            }
+
+            THEN("sum is correct")
+            {
+                REQUIRE(sum == 100);
+            }
+        }
+
+        WHEN("iterate backward with rbegin/rend")
+        {
+            int first_value = *v.rbegin();
+
+            THEN("first value from reverse iterator is last element")
+            {
+                REQUIRE(first_value == 40);
+            }
+        }
+
+        WHEN("iterate backward with crbegin/crend")
+        {
+            int sum = 0;
+            for (auto it = v.crbegin(); it != v.crend(); ++it)
+            {
+                sum += *it;
+            }
+
+            THEN("sum is correct")
+            {
+                REQUIRE(sum == 100);
+            }
+        }
+
+        WHEN("modify through non-const iterators")
+        {
+            for (auto it = v.begin(); it != v.end(); ++it)
+            {
+                *it += 1;
+            }
+
+            THEN("all elements are incremented")
+            {
+                REQUIRE(v[0] == 11);
+                REQUIRE(v[1] == 21);
+                REQUIRE(v[2] == 31);
+                REQUIRE(v[3] == 41);
+            }
+        }
+
+        WHEN("use range-based for loop")
+        {
+            int count = 0;
+            for (const auto& element : v)
+            {
+                count++;
+                REQUIRE(element >= 10);
+                REQUIRE(element <= 40);
+            }
+
+            THEN("all elements are visited")
+            {
+                REQUIRE(count == 4);
+            }
+        }
+    }
+}
