@@ -2,22 +2,28 @@
 
 #pragma warning(push)
 #pragma warning(disable : 4595) // non-member operator new or delete functions may not be declared inline
-#pragma warning(disable : 4996) // TODO: ExAllocatePoolWithTag is deprecated, use ExAllocatePool2
 
 inline void* __cdecl operator new(size_t size, POOL_TYPE poolType) noexcept
 {
 #pragma warning(suppress: 28160) // Must succeed pool allocations are forbidden. Allocation failures cause a system crash.
-    return ::ExAllocatePoolWithTag(poolType, size == 0 ? 1 : size, 'n++C');
+#pragma warning(suppress: 4996) // ExAllocatePoolWithTag is deprecated, use ExAllocatePool2
+    return ::ExAllocatePoolWithTag(poolType, size ? size : 1, 'n++C');
 }
 
 inline void __cdecl operator delete(void* ptr) noexcept
 {
-    ::ExFreePoolWithTag(ptr, 'n++C');
+    if (ptr)
+    {
+        ::ExFreePoolWithTag(ptr, 'n++C');
+    }
 }
 
 inline void __cdecl operator delete[](void* ptr) noexcept
 {
-    ::ExFreePoolWithTag(ptr, 'n++C');
+    if (ptr)
+    {
+        ::ExFreePoolWithTag(ptr, 'n++C');
+    }
 }
 
 // size-aware deallocation
