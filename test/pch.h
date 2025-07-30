@@ -26,9 +26,9 @@ namespace std
         KeBugCheckEx(kBugcheckCode, 3, reinterpret_cast<ULONG_PTR>(msg), 0, 0);
     }
 
-    [[noreturn]] inline void __CLRCALL_PURE_OR_CDECL _Raise_handler_impl(const stdext::exception& ex)
+    [[noreturn]] inline void __CLRCALL_PURE_OR_CDECL _Raise_handler_impl(const stdext::exception&)
     {
-        KeBugCheckEx(kBugcheckCode, 4, reinterpret_cast<ULONG_PTR>(ex.what()), 0, 0);
+        KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
     }
 
 #pragma warning(disable: 4273) // 'std::_Raise_handler': inconsistent dll linkage.
