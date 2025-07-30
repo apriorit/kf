@@ -1,55 +1,52 @@
-﻿cmake_minimum_required(VERSION 3.11)
+﻿cmake_minimum_required(VERSION 3.16)
 
-project(kf)
+project(kf LANGUAGES CXX)
 
-enable_testing()
-
-# Default to debug build type
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
+# Check if building as a stand-alone project
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    set(IS_TOPLEVEL_PROJECT TRUE)
+else()
+    set(IS_TOPLEVEL_PROJECT FALSE)
 endif()
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install")
-set(CMAKE_PREBUILT_PATH "${CMAKE_SOURCE_DIR}/prebuilt")
+add_library(${PROJECT_NAME} INTERFACE)
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_INSTALL_PREFIX})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Debug library postfix.")
-
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /WX /EHsc")
-set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /MT /WX /EHsc")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MT /WX /EHsc")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd /EHsc")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /MP /EHsc -DUNICODE -D_UNICODE -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=NTDDI_WIN8")
-
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT /WX")
-set(CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL} /MT /WX")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} /MT /WX")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3 /MP -DUNICODE -D_UNICODE -D_WIN32_WINNT=NTDDI_WIN8")
-
-add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3>)
-add_compile_options($<$<C_COMPILER_ID:MSVC>:/W3>)
-
-include(FetchContent)
-FetchContent_Declare(
-    findwdk
-    GIT_REPOSITORY https://github.com/SergiusTheBest/FindWDK
-    GIT_TAG stl
+target_include_directories(${PROJECT_NAME}
+    INTERFACE
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
-FetchContent_Populate(findwdk)
 
-list(APPEND CMAKE_MODULE_PATH "${findwdk_SOURCE_DIR}/cmake")
-find_package(WDK REQUIRED)
+if(${IS_TOPLEVEL_PROJECT})
+    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-add_subdirectory("include")
-add_subdirectory("test")
+    # Add a pseudo-project to make kf headers visible in IDE
+    file(GLOB_RECURSE ${PROJECT_NAME}_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/kf/*")
+
+    # Organize files into filters matching their relative paths
+    foreach(header ${${PROJECT_NAME}_HEADERS})
+        file(RELATIVE_PATH rel_path "${CMAKE_CURRENT_SOURCE_DIR}" "${header}")
+
+        get_filename_component(rel_dir "${rel_path}" DIRECTORY)
+        if(rel_dir)
+            string(REPLACE "/" "\\" filter "${rel_dir}")
+            source_group("${filter}" FILES "${header}")
+        endif()
+    endforeach()
+
+    add_custom_target(${PROJECT_NAME}-headers SOURCES ${${PROJECT_NAME}_HEADERS})
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+
+    # Add all .md files from the root directory to the solution
+    file(GLOB ROOT_MD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.md")
+    add_custom_target("docs" SOURCES ${ROOT_MD_FILES})
+
+    # Add tests (can be disabled with -DKF_BUILD_TESTS=OFF)
+    option(KF_BUILD_TESTS "Build kf tests (requires WDK)" ON)
+    if(KF_BUILD_TESTS)
+        add_subdirectory("test")
+    endif()
+endif()
+
+# TODO: add install target

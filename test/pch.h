@@ -1,27 +1,43 @@
 #pragma once
 #include <ntifs.h>
+#include <algorithm>
 #include <array>
+#include <kmtest/kmtest.h>
 
-// These symbols are used by some STL headers and defined here to make linking possible
-inline int _CrtDbgReport(
-    _In_       int         _ReportType,
-    _In_opt_z_ char const* _FileName,
-    _In_       int         _LineNumber,
-    _In_opt_z_ char const* _ModuleName,
-    _In_opt_z_ char const* _Format,
-    ...
-)
+// TODO: move this default implementation to kf
+
+///////////////////////////////////////////////////////////
+// Implement CRT error reporting and STL checks
+
+extern "C" inline int _CrtDbgReport(
+    _In_       int         /*_ReportType*/,
+    _In_opt_z_ char const* /*_FileName*/,
+    _In_       int         /*_Linenumber*/,
+    _In_opt_z_ char const* /*_ModuleName*/,
+    _In_opt_z_ char const* /*_Format*/,
+    ...)
 {
-    // TODO: implement proper debug report handling
-    return 0;
+#pragma warning(suppress: 28159) // Consider using 'error logging or driver shutdown' instead of 'KeBugCheckEx'
+    KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
 }
 
 namespace std
 {
-    [[noreturn]] inline void _Xout_of_range(const char* msg)
+    [[noreturn]] inline void __cdecl _Xinvalid_argument(_In_z_ const char* /*What*/)
     {
-        ASSERTMSG(msg, false);
+#pragma warning(suppress: 28159) // Consider using 'error logging or driver shutdown' instead of 'KeBugCheckEx'
+        KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
+    }
+
+    [[noreturn]] inline void __cdecl _Xlength_error(_In_z_ const char* /*What*/)
+    {
+#pragma warning(suppress: 28159) // Consider using 'error logging or driver shutdown' instead of 'KeBugCheckEx'
+        KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
+    }
+
+    [[noreturn]] inline void __cdecl _Xout_of_range(_In_z_ const char* /*What*/)
+    {
+#pragma warning(suppress: 28159) // Consider using 'error logging or driver shutdown' instead of 'KeBugCheckEx'
+        KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
     }
 }
-
-#include "kmtest/kmtest.h"
