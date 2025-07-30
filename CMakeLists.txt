@@ -81,11 +81,6 @@ if(${IS_TOPLEVEL_PROJECT})
         add_subdirectory("test")
     endif()
 
-    option(KF_BUILD_BENCHMARKS "Build kf tests (requires WDK)" ON)
-    if(KF_BUILD_BENCHMARKS)
-        add_subdirectory("benchmark")
-    endif()
-
 endif()
 
 # TODO: add install target
