@@ -27,8 +27,8 @@ namespace kf
         {
         }
 
-        ~EarlyAllocator() = default;
-        EarlyAllocator& operator=(const EarlyAllocator&) = default;
+        ~EarlyAllocator() noexcept = default;
+        EarlyAllocator& operator=(const EarlyAllocator&) noexcept = default;
 
         template<POOL_TYPE poolType>
         T* initialize(const size_t count) noexcept
