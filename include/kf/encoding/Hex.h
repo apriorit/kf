@@ -1,8 +1,8 @@
 #pragma once
+#include "USimpleString.h"
+#include "ASimpleString.h"
 #include <span>
 #include <array>
-#include "kf/string/ASimpleString.h"
-#include "kf/string/USimpleString.h"
 
 namespace kf
 {
@@ -11,11 +11,9 @@ namespace kf
     class Hex
     {
     public:
-        static constexpr int kEncodedSizeMultiplier = 2;
-
         static int encodeLen(span<const std::byte> input)
         {
-            return static_cast<int>(input.size() * kEncodedSizeMultiplier);
+            return static_cast<int>(input.size() * 2);
         }
 
         static bool encode(span<const std::byte> input, _Out_ USimpleString& output)
@@ -41,20 +39,14 @@ namespace kf
 
         static int decodeLen(span<const char> input)
         {
-            return static_cast<int>(input.size() / kEncodedSizeMultiplier);
+            return static_cast<int>(input.size() / 2);
         }
 
         static int decodeLen(const ASimpleString& input)
         {
-            return input.charLength() / kEncodedSizeMultiplier;
+            return input.charLength() / 2;
         }
 
-        static int decodeLen(const USimpleString& input)
-        {
-            return input.charLength() / kEncodedSizeMultiplier;
-        }
-
-        // TODO: join two decode methods to a single one after making a base class for both simple strings
         static bool decode(const ASimpleString& input, _Out_ span<std::byte>& output)
         {
             if (output.size() != static_cast<size_t>(decodeLen(input)))
@@ -62,40 +54,15 @@ namespace kf
                 return false;
             }
 
-            for (int i = 0; i < input.charLength() / kEncodedSizeMultiplier; ++i)
+            for (int i = 0; i < input.charLength() / 2; ++i)
             {
-                int res = fromHex({ input.charAt(i * kEncodedSizeMultiplier), input.charAt(i * kEncodedSizeMultiplier + 1) });
+                int res = fromHex({ input.charAt(i * 2), input.charAt(i * 2 + 1) });
                 if (res < 0)
                 {
                     return false;
                 }
 
                 output[i] = static_cast<std::byte>(res);
-            }
-
-            return true;
-        }
-
-        static bool decode(const USimpleString& input, _Out_ span<std::byte>& output)
-        {
-            if (input.charLength() % kEncodedSizeMultiplier != 0 ||
-                output.size() != decodeLen(input))
-            {
-                return false;
-            }
-
-            char chars[2] = {};
-            for (int i = 0; i < input.charLength(); i += kEncodedSizeMultiplier)
-            {
-                chars[0] = static_cast<char>(input.charAt(i));
-                chars[1] = static_cast<char>(input.charAt(i + 1));
-                int res = fromHex({ chars[0], chars[1] });
-                if (res < 0)
-                {
-                    return false;
-                }
-
-                output[i/kEncodedSizeMultiplier] = static_cast<std::byte>(res);
             }
 
             return true;
