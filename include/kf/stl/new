@@ -6,12 +6,8 @@
 
 inline void* __cdecl operator new(size_t size, POOL_TYPE poolType) noexcept
 {
-    if (size > 0)
-    {
 #pragma warning(suppress: 28160) // Must succeed pool allocations are forbidden. Allocation failures cause a system crash.
-        return ::ExAllocatePoolWithTag(poolType, size == 0 ? 1 : size, 'n++C');
-    }
-    return nullptr;
+    return ::ExAllocatePoolWithTag(poolType, size == 0 ? 1 : size, 'n++C');
 }
 
 inline void __cdecl operator delete(void* ptr) noexcept
