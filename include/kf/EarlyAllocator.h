@@ -46,9 +46,9 @@ namespace kf
 
         void deallocate(const T* ptr, const size_t count) noexcept
         {
-            if (ptr || count * sizeof(T) > m_size)
+            if (ptr != m_ptr || count * sizeof(T) > m_size)
             {
-                _Xinvalid_argument("ptr || count * sizeof(T) > m_size");
+                _Xinvalid_argument("ptr != m_ptr  || count * sizeof(T) > m_size");
             }
 
             operator delete(m_ptr);
