@@ -16,10 +16,6 @@ namespace std
 {
     static const ULONG kBugcheckCode = 0xDEAD0001; // Arbitrary bugcheck code for debugging purposes
 
-    [[noreturn]] inline void __CLRCALL_PURE_OR_CDECL _Xbad_alloc(_In_z_ const char* msg)
-    {
-        KeBugCheckEx(kBugcheckCode, 1, reinterpret_cast<ULONG_PTR>(msg), 0, 0);
-    }
     [[noreturn]] inline void __CLRCALL_PURE_OR_CDECL _Xinvalid_argument(_In_z_ const char* msg)
     {
         KeBugCheckEx(kBugcheckCode, 2, reinterpret_cast<ULONG_PTR>(msg), 0, 0);
