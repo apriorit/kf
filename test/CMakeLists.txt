@@ -38,6 +38,7 @@ find_package(WDK REQUIRED)
 wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     pch.h
     pch.cpp
+    BuildHelpers.h
     HexTest.cpp
     MapTest.cpp
 )
