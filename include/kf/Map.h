@@ -82,12 +82,10 @@ namespace kf
             return m_internalMap->find(key);
         }
 
-#if _HAS_CXX20
         [[nodiscard]] bool contains(const KeyType& key) const
         {
             return m_internalMap->contains(key);
         }
-#endif
 
         void clear() noexcept
         {

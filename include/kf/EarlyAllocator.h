@@ -35,7 +35,7 @@ namespace kf
         {
             if (m_ptr || m_size)
             {
-                _Xinvalid_argument("m_ptr != nullptr || m_size != nullptr");
+                _Xinvalid_argument("m_ptr || m_size");
             }
 
             m_size = count * sizeof(T);
@@ -48,7 +48,7 @@ namespace kf
         {
             if (ptr || count * sizeof(T) > m_size)
             {
-                _Xinvalid_argument("ptr != m_ptr || count * sizeof(T) > m_size");
+                _Xinvalid_argument("ptr || count * sizeof(T) > m_size");
             }
 
             operator delete(m_ptr);
@@ -60,7 +60,7 @@ namespace kf
         {
             if (!m_ptr || count * sizeof(T) > m_size)
             {
-                _Xinvalid_argument("m_ptr == nullptr || count * sizeof(T) > m_size");
+                _Xinvalid_argument("!m_ptr || count * sizeof(T) > m_size");
             }
 
             return m_ptr;
