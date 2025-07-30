@@ -24,7 +24,8 @@ namespace kf
 
         template<class Y>
         constexpr EarlyAllocator(const EarlyAllocator<Y>& other) noexcept : m_ptr(reinterpret_cast<T*>(other.m_ptr)), m_size(other.m_size)
-        { }
+        {
+        }
 
         ~EarlyAllocator() = default;
         EarlyAllocator& operator=(const EarlyAllocator&) = default;
@@ -32,12 +33,10 @@ namespace kf
         template<POOL_TYPE poolType>
         T* initialize(const size_t count) noexcept
         {
-            if (m_ptr != nullptr || m_size != 0)
+            if (m_ptr || m_size)
             {
                 _Xinvalid_argument("m_ptr != nullptr || m_size != nullptr");
             }
-
-            UNREFERENCED_PARAMETER(count);
 
             m_size = count * sizeof(T);
             m_ptr = static_cast<T*>(operator new(m_size, poolType));
@@ -47,13 +46,10 @@ namespace kf
 
         void deallocate(const T* ptr, const size_t count) noexcept
         {
-            if (ptr != m_ptr || count * sizeof(T) > m_size)
+            if (ptr || count * sizeof(T) > m_size)
             {
                 _Xinvalid_argument("ptr != m_ptr || count * sizeof(T) > m_size");
             }
-
-            UNREFERENCED_PARAMETER(ptr);
-            UNREFERENCED_PARAMETER(count);
 
             operator delete(m_ptr);
             m_ptr = nullptr;
@@ -62,12 +58,10 @@ namespace kf
 
         _NODISCARD T* allocate(const size_t count) noexcept
         {
-            if (m_ptr == nullptr || count * sizeof(T) > m_size)
+            if (!m_ptr || count * sizeof(T) > m_size)
             {
                 _Xinvalid_argument("m_ptr == nullptr || count * sizeof(T) > m_size");
             }
-
-            UNREFERENCED_PARAMETER(count);
 
             return m_ptr;
         }
