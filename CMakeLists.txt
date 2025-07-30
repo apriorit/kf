@@ -47,7 +47,6 @@ if(${IS_TOPLEVEL_PROJECT})
     if(KF_BUILD_TESTS)
         add_subdirectory("test")
     endif()
-
 endif()
 
 # TODO: add install target

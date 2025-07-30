@@ -30,12 +30,14 @@ namespace kf
         EarlyAllocator& operator=(const EarlyAllocator&) = default;
 
         template<POOL_TYPE poolType>
-        T* initialize(const size_t count)
+        T* initialize(const size_t count) noexcept
         {
-            UNREFERENCED_PARAMETER(count);
+            if (m_ptr != nullptr || m_size != 0)
+            {
+                _Xinvalid_argument("m_ptr != nullptr || m_size != nullptr");
+            }
 
-            ASSERT(!m_ptr);
-            ASSERT(!m_size);
+            UNREFERENCED_PARAMETER(count);
 
             m_size = count * sizeof(T);
             m_ptr = static_cast<T*>(operator new(m_size, poolType));
@@ -43,25 +45,29 @@ namespace kf
             return m_ptr;
         }
 
-        void deallocate(const T* ptr, const size_t count)
+        void deallocate(const T* ptr, const size_t count) noexcept
         {
+            if (ptr != m_ptr || count * sizeof(T) > m_size)
+            {
+                _Xinvalid_argument("ptr != m_ptr || count * sizeof(T) > m_size");
+            }
+
             UNREFERENCED_PARAMETER(ptr);
             UNREFERENCED_PARAMETER(count);
-
-            ASSERTMSG("Wrong pointer", ptr == m_ptr);
-            ASSERTMSG("Wrong count", count * sizeof(T) <= m_size);
 
             operator delete(m_ptr);
             m_ptr = nullptr;
             m_size = 0;
         }
 
-        _NODISCARD T* allocate(const size_t count)
+        _NODISCARD T* allocate(const size_t count) noexcept
         {
-            UNREFERENCED_PARAMETER(count);
+            if (m_ptr == nullptr || count * sizeof(T) > m_size)
+            {
+                _Xinvalid_argument("m_ptr == nullptr || count * sizeof(T) > m_size");
+            }
 
-            ASSERTMSG("Not initialized", m_ptr);
-            ASSERTMSG("Wrong count", count * sizeof(T) <= m_size);
+            UNREFERENCED_PARAMETER(count);
 
             return m_ptr;
         }
