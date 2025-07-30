@@ -42,39 +42,6 @@ if(${IS_TOPLEVEL_PROJECT})
     file(GLOB ROOT_MD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.md")
     add_custom_target("docs" SOURCES ${ROOT_MD_FILES})
 
-    # Set C++ standard
-    set(CMAKE_CXX_STANDARD 20)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_EXTENSIONS OFF)
-
-    # Set warning level to /W4 for MSVC
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX")
-
-    # TODO: fix warnings in code and remove this define
-    add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
-
-    # Fetch dependencies
-    include(FetchContent)
-
-    # TODO: add stable reference in future
-    FetchContent_Declare(
-        findwdk
-        GIT_REPOSITORY https://github.com/SergiusTheBest/FindWDK
-        GIT_TAG stl
-    )
-
-    # TODO: add stable reference in future
-    FetchContent_Declare(
-        kmtest
-        GIT_REPOSITORY https://github.com/SergiusTheBest/kmtest.git
-    )
-
-    FetchContent_MakeAvailable(findwdk kmtest)
-
-    # Add CMake package for WDK projects
-    list(APPEND CMAKE_MODULE_PATH "${findwdk_SOURCE_DIR}/cmake")
-    find_package(WDK REQUIRED)
-
     # Add tests (can be disabled with -DKF_BUILD_TESTS=OFF)
     option(KF_BUILD_TESTS "Build kf tests (requires WDK)" ON)
     if(KF_BUILD_TESTS)
