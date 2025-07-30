@@ -39,6 +39,8 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     pch.h
     pch.cpp
     AdjacentView.cpp
+    Bitmap.cpp
+    BitmapRangeIterator.cpp
     HexTest.cpp
     Vector.cpp
 )

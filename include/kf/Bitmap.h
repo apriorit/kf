@@ -1,129 +1,122 @@
 #pragma once
-#include "BitmapIterator.h"
+#include <kf/stl/new>
+#include <kf/BitmapRangeIterator.h>
 
 namespace kf
 {
+    //////////////////////////////////////////////////////////////////////////
+    // Bitmap - effectively works with set of bits
+
     template<POOL_TYPE poolType>
     class Bitmap
     {
     public:
-        Bitmap()
+        Bitmap() noexcept = default;
+
+        ~Bitmap() noexcept
         {
+            deinitialize();
         }
 
-        ~Bitmap()
-        {
-            free();
-        }
-
+        // Non-copyable
         Bitmap(const Bitmap&) = delete;
         Bitmap& operator=(const Bitmap&) = delete;
 
-        // IRQL <= APC_LEVEL for PagedPool and on Windows 7 and earlier
-        NTSTATUS init(ULONG size)
+        // Movable
+        Bitmap(Bitmap&& other) noexcept : m_header(other.m_header)
         {
-            if (this->size())
+            other.m_header = {};
+        }
+
+        Bitmap& operator=(Bitmap&& other) noexcept
+        {
+            if (&other != this)
             {
-                free();
+                m_header = other.m_header;
+                other.m_header = {};
             }
 
-            // Buffer must be an integer multiple of sizeof(ULONG) bytes
-            const ULONG bufferSize = size % sizeof(ULONG) ? (size / sizeof(ULONG) + 1) * sizeof(ULONG) : size;
-            auto buffer = ::ExAllocatePoolWithTag(poolType, bufferSize, PoolTag);
+            return *this;
+        }
+
+        // IRQL <= APC_LEVEL for PagedPool and on Windows 7 and earlier
+        [[nodiscard]] NTSTATUS initialize(ULONG size) noexcept
+        {
+            deinitialize();
+
+            // Convert bits to bytes and align up to sizeof(ULONG) bytes
+            const ULONG bufferSize = ALIGN_UP_BY(size, sizeof(ULONG) * CHAR_BIT) / CHAR_BIT;
+
+            auto buffer = operator new(bufferSize, poolType);
             if (!buffer)
             {
                 return STATUS_INSUFFICIENT_RESOURCES;
             }
+
             RtlZeroMemory(buffer, bufferSize);
+            RtlInitializeBitMap(&m_header, static_cast<PULONG>(buffer), size);
 
-            m_header = reinterpret_cast<PRTL_BITMAP>(::ExAllocatePoolWithTag(poolType, sizeof(RTL_BITMAP), PoolTag));
-            if (!m_header)
-            {
-                ::ExFreePoolWithTag(buffer, PoolTag);
-                return STATUS_INSUFFICIENT_RESOURCES;
-            }
-            RtlZeroMemory(m_header, sizeof(RTL_BITMAP));
-
-            m_buffer = buffer;
-            m_size = size;
-
-            RtlInitializeBitMap(m_header, static_cast<PULONG>(m_buffer), m_size);
             return STATUS_SUCCESS;
         }
 
         ULONG size() const
         {
-            return m_size;
+            return m_header.SizeOfBitMap;
         }
 
-        void setBits(ULONG startingIndex, ULONG numberToSet)
+        void setBits(ULONG startingIndex, ULONG numberToSet) noexcept
         {
-            RtlSetBits(m_header, startingIndex, numberToSet);
+            RtlSetBits(&m_header, startingIndex, numberToSet);
         }
 
-        void clearBits(ULONG startingIndex, ULONG numberToSet)
+        void clearBits(ULONG startingIndex, ULONG numberToSet) noexcept
         {
-            RtlClearBits(m_header, startingIndex, numberToSet);
+            RtlClearBits(&m_header, startingIndex, numberToSet);
         }
 
-        void setAll()
+        void setAll() noexcept
         {
-            RtlSetAllBits(m_header);
+            RtlSetAllBits(&m_header);
         }
 
-        void clearAll()
+        void clearAll() noexcept
         {
-            RtlClearAllBits(m_header);
+            RtlClearAllBits(&m_header);
         }
 
-        bool areBitsSet(ULONG startingIndex, ULONG size)
+        bool areBitsSet(ULONG startingIndex, ULONG size) noexcept
         {
-            return RtlAreBitsSet(m_header, startingIndex, size);
+            return RtlAreBitsSet(&m_header, startingIndex, size);
         }
 
-        bool areBitsClear(ULONG startingIndex, ULONG size)
+        bool areBitsClear(ULONG startingIndex, ULONG size) noexcept
         {
-            return RtlAreBitsClear(m_header, startingIndex, size);
+            return RtlAreBitsClear(&m_header, startingIndex, size);
         }
 
-        ULONG numberOfSetBits()
+        ULONG numberOfSetBits() noexcept
         {
-            return RtlNumberOfSetBits(m_header);
+            return RtlNumberOfSetBits(&m_header);
         }
 
-        ULONG numberOfClearBits()
+        ULONG numberOfClearBits() noexcept
         {
-            return RtlNumberOfClearBits(m_header);
+            return RtlNumberOfClearBits(&m_header);
         }
 
-        BitmapRangeIterator rangeIterator(ULONG startingIndex = 0)
+        BitmapRangeIterator rangeIterator(ULONG startingIndex = 0) noexcept
         {
-            return BitmapRangeIterator(m_header, startingIndex);
+            return BitmapRangeIterator(&m_header, startingIndex);
         }
 
     private:
-        void free()
+        void deinitialize() noexcept
         {
-            if (m_buffer)
-            {
-                ::ExFreePoolWithTag(m_buffer, PoolTag);
-                m_buffer = nullptr;
-                m_size = 0;
-            }
-
-            if (m_header)
-            {
-                ExFreePoolWithTag(m_header, PoolTag);
-                m_header = nullptr;
-            }
+            operator delete(m_header.Buffer);
+            m_header = {};
         }
 
     private:
-        enum { PoolTag = '++MB' };
-
-    private:
-        void* m_buffer = nullptr;
-        ULONG m_size = 0;
-        PRTL_BITMAP m_header = nullptr;
+        RTL_BITMAP m_header = {};
     };
 }
