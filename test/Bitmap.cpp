@@ -369,3 +369,90 @@ SCENARIO("Bitmap rangeIterator")
         }
     }
 }
+
+SCENARIO("Bitmap large scale operations")
+{
+    GIVEN("bitmap with 4 million bits")
+    {
+        constexpr ULONG LARGE_SIZE = 4000000;
+        kf::Bitmap<PagedPool> bitmap;
+        REQUIRE_NT_SUCCESS(bitmap.initialize(LARGE_SIZE));
+
+        WHEN("check initial state")
+        {
+            THEN("bitmap size is correct and all bits are clear")
+            {
+                REQUIRE(bitmap.size() == LARGE_SIZE);
+                REQUIRE(bitmap.numberOfClearBits() == LARGE_SIZE);
+                REQUIRE(bitmap.numberOfSetBits() == 0);
+            }
+        }
+
+        WHEN("set all bits")
+        {
+            bitmap.setAll();
+
+            THEN("all bits are set correctly")
+            {
+                REQUIRE(bitmap.numberOfSetBits() == LARGE_SIZE);
+                REQUIRE(bitmap.numberOfClearBits() == 0);
+                REQUIRE(bitmap.areBitsSet(0, LARGE_SIZE));
+            }
+        }
+
+        WHEN("clear all bits after setting them")
+        {
+            bitmap.setAll();
+            bitmap.clearAll();
+
+            THEN("all bits are clear")
+            {
+                REQUIRE(bitmap.numberOfSetBits() == 0);
+                REQUIRE(bitmap.numberOfClearBits() == LARGE_SIZE);
+                REQUIRE(bitmap.areBitsClear(0, LARGE_SIZE));
+            }
+        }
+
+        WHEN("set and clear large ranges")
+        {
+            constexpr ULONG RANGE_SIZE = 100000;
+            bitmap.setBits(0, RANGE_SIZE);                              // Set first 100k bits
+            bitmap.setBits(LARGE_SIZE - RANGE_SIZE, RANGE_SIZE);        // Set last 100k bits
+            bitmap.setBits(LARGE_SIZE / 2, RANGE_SIZE);                 // Set 100k bits in middle
+
+            THEN("large ranges are set correctly")
+            {
+                REQUIRE(bitmap.areBitsSet(0, RANGE_SIZE));
+                REQUIRE(bitmap.areBitsSet(LARGE_SIZE - RANGE_SIZE, RANGE_SIZE));
+                REQUIRE(bitmap.areBitsSet(LARGE_SIZE / 2, RANGE_SIZE));
+                REQUIRE(bitmap.numberOfSetBits() == 3 * RANGE_SIZE);
+                REQUIRE(bitmap.numberOfClearBits() == LARGE_SIZE - 3 * RANGE_SIZE);
+            }
+
+            bitmap.clearBits(LARGE_SIZE / 2, RANGE_SIZE);  // Clear middle range
+
+            THEN("cleared range is correct")
+            {
+                REQUIRE(bitmap.areBitsSet(0, RANGE_SIZE));
+                REQUIRE(bitmap.areBitsSet(LARGE_SIZE - RANGE_SIZE, RANGE_SIZE));
+                REQUIRE(bitmap.areBitsClear(LARGE_SIZE / 2, RANGE_SIZE));
+                REQUIRE(bitmap.numberOfSetBits() == 2 * RANGE_SIZE);
+                REQUIRE(bitmap.numberOfClearBits() == LARGE_SIZE - 2 * RANGE_SIZE);
+            }
+        }
+
+        WHEN("test boundary operations")
+        {
+            bitmap.setBits(0, 1);                    // First bit
+            bitmap.setBits(LARGE_SIZE - 1, 1);       // Last bit
+
+            THEN("boundary bits are set correctly")
+            {
+                REQUIRE(bitmap.areBitsSet(0, 1));
+                REQUIRE(bitmap.areBitsSet(LARGE_SIZE - 1, 1));
+                REQUIRE(bitmap.numberOfSetBits() == 2);
+                REQUIRE(bitmap.numberOfClearBits() == LARGE_SIZE - 2);
+            }
+        }
+    }
+}
