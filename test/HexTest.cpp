@@ -1,5 +1,5 @@
 #include "pch.h"
-#include <kf/Hex.h>
+#include <kf/encoding/Hex.h>
 
 SCENARIO("TODO: implement")
 {

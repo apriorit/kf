@@ -1,6 +1,6 @@
 #pragma once
-#include "USimpleString.h"
-#include "ASimpleString.h"
+#include "kf/string/USimpleString.h"
+#include "kf/string/ASimpleString.h"
 #include <span>
 #include <array>
 
