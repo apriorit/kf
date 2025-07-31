@@ -13,13 +13,13 @@ namespace kf
         static USimpleString getPathNoEndSeparator(const USimpleString& filename)
         {
             int idx = filename.lastIndexOf(L'\\');
-            return filename.substring(0, idx);
+            return idx >= 0 ? filename.substring(0, idx) : filename;
         }
 
         static USimpleString getPathWithEndSeparator(const USimpleString& filename)
         {
             int idx = filename.lastIndexOf(L'\\');
-            return filename.substring(0, idx + 1);
+            return idx >= 0 ? filename.substring(0, idx + 1) : USimpleString(L"\\");
         }
 
         static USimpleString getFileNameNoStream(const USimpleString& filename)
@@ -47,7 +47,7 @@ namespace kf
         static USimpleString getName(const USimpleString& filename)
         {
             int idx = filename.lastIndexOf(L'\\');
-            return filename.substring(idx > 0 ? idx + 1 : 0);
+            return filename.substring(idx >= 0 ? idx + 1 : 0);
         }
 
         static USimpleString getServerAndShareName(const USimpleString& filename)

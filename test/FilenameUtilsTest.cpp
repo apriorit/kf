@@ -45,9 +45,9 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
             USimpleString noSlashes(L"filename.txt");
             auto result = FilenameUtils::getPathNoEndSeparator(noSlashes);
 
-            THEN("result is empty")
+            THEN("result is the same as input")
             {
-                REQUIRE(result.isEmpty());
+                REQUIRE(result.equals(USimpleString(L"filename.txt")));
             }
         }
 
