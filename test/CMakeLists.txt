@@ -43,6 +43,7 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     BitmapRangeIterator.cpp
     FilenameUtilsTest.cpp
     HexTest.cpp
+    MapTest.cpp
     Vector.cpp
 )
 

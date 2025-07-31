@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <type_traits>
+#include <kf/stl/new>
 #include <kf/EarlyAllocator.h>
 
 template<typename T, POOL_TYPE PoolType, typename... TArgs>

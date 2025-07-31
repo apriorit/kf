@@ -1,0 +1,173 @@
+#pragma once
+#include <kf/MapAllocator.h>
+#include <map>
+#include <optional>
+
+#if _ITERATOR_DEBUG_LEVEL > 0
+#error "_ITERATOR_DEBUG_LEVEL must not be greater than 0"
+#endif
+
+namespace kf
+{
+    //////////////////////////////////////////////////////////////////////////
+    // map - wraps std::map and allows using it in exception-free environments.
+    //
+    // Note: some methods return NTSTATUS or std::optional to indicate an error
+    // thus they differ from std::map!
+
+    template<typename KeyType, typename ValueType, POOL_TYPE poolType, typename LessComparer = std::less<KeyType>>
+    class map
+    {
+    public:
+        using allocator_type = MapAllocator<std::pair<const KeyType, ValueType>, poolType>;
+        using map_type = std::map<KeyType, ValueType, LessComparer, allocator_type>;
+        using key_type = map_type::key_type;
+        using mapped_type = map_type::mapped_type;
+        using value_type = map_type::value_type;
+        using size_type = map_type::size_type;
+        using iterator = map_type::iterator;
+        using const_iterator = map_type::const_iterator;
+
+    public:
+        map() = default;
+
+        map(const map&) = delete;
+        map& operator=(const map&) = delete;
+
+        map(map&& other) = default;
+        map& operator=(map&& other) = default;
+
+        [[nodiscard]] NTSTATUS initialize()
+        {
+            allocator_type allocator;
+            if (!allocator.initialize())
+            {
+                return STATUS_INSUFFICIENT_RESOURCES;
+            }
+
+            // Prepare memory for head node
+            if (!allocator.prepareMemory(kNodeSize))
+            {
+                return STATUS_INSUFFICIENT_RESOURCES;
+            }
+
+            m_internalMap = make_unique<map_type, poolType>(allocator);
+            if (!m_internalMap)
+            {
+                return STATUS_INSUFFICIENT_RESOURCES;
+            }
+
+            return STATUS_SUCCESS;
+        }
+
+        std::optional<std::reference_wrapper<ValueType>> operator[](KeyType&& key)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return std::ref((*m_internalMap)[std::forward<KeyType>(key)]);
+        }
+
+        template <class... Args>
+        std::optional<std::pair<iterator, bool>> emplace(Args&&... values)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->emplace(std::forward<Args>(values)...);
+        }
+
+        [[nodiscard]] iterator find(const KeyType& key)
+        {
+            return m_internalMap->find(key);
+        }
+
+        [[nodiscard]] const_iterator find(const KeyType& key) const
+        {
+            return m_internalMap->find(key);
+        }
+
+        [[nodiscard]] bool contains(const KeyType& key) const
+        {
+            return m_internalMap->contains(key);
+        }
+
+        void clear() noexcept
+        {
+            m_internalMap->clear();
+        }
+
+        iterator erase(const_iterator where) noexcept
+        {
+            return m_internalMap->erase(where);
+        }
+
+        iterator erase(const_iterator first, const_iterator last) noexcept
+        {
+            return m_internalMap->erase(first, last);
+        }
+
+        size_type erase(const KeyType& key) noexcept
+        {
+            return m_internalMap->erase(key);
+        }
+
+        [[nodiscard]] iterator begin() noexcept
+        {
+            return m_internalMap->begin();
+        }
+
+        [[nodiscard]] const_iterator begin() const noexcept
+        {
+            return m_internalMap->begin();
+        }
+
+        [[nodiscard]] iterator end() noexcept
+        {
+            return m_internalMap->end();
+        }
+
+        [[nodiscard]] const_iterator end() const noexcept
+        {
+            return m_internalMap->end();
+        }
+
+        [[nodiscard]] iterator upper_bound(const KeyType& key)
+        {
+            return m_internalMap->upper_bound(key);
+        }
+
+        [[nodiscard]] const_iterator upper_bound(const KeyType& key) const
+        {
+            return m_internalMap->upper_bound(key);
+        }
+
+        [[nodiscard]] iterator lower_bound(const KeyType& key)
+        {
+            return m_internalMap->lower_bound(key);
+        }
+
+        [[nodiscard]] const_iterator lower_bound(const KeyType& key) const
+        {
+            return m_internalMap->lower_bound(key);
+        }
+
+        bool empty() const noexcept
+        {
+            return m_internalMap->empty();
+        }
+
+        size_type size() const noexcept
+        {
+            return m_internalMap->size();
+        }
+
+    private:
+        static constexpr size_t kNodeSize = sizeof(map_type::_Alnode_traits::value_type);
+        std::unique_ptr<map_type> m_internalMap;
+    };
+}
