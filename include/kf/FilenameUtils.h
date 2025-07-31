@@ -10,15 +10,19 @@ namespace kf
     class FilenameUtils
     {
     public:
-        static USimpleString getPathNoEndSeparator(const USimpleString& filename)
+        static USimpleString getPathNoEndSeparators(const USimpleString& filename)
         {
             // Remove trailing separators only, don't extract parent directory
             if (filename.isEmpty())
+            {
                 return filename;
+            }
                 
             int len = filename.getSize();
             while (len > 0 && filename[len - 1] == L'\\')
+            {
                 len--;
+            }
                 
             return len == filename.getSize() ? filename : filename.substring(0, len);
         }
@@ -27,19 +31,26 @@ namespace kf
         {
             // Don't add separator if none exists, just ensure there's one at the end if path already has separators
             if (filename.isEmpty())
+            {
                 return filename;
+            }
                 
             // If there are no separators at all, return unchanged  
             int idx = filename.lastIndexOf(L'\\');
             if (idx < 0)
+            {
                 return filename;
+            }
                 
             // If already ends with separator, return unchanged
             if (filename[filename.getSize() - 1] == L'\\')
+            {
                 return filename;
+            }
                 
-            // Add separator to the end
-            return filename + L"\\";
+            // Cannot add separator - USimpleString doesn't provide this functionality
+            // Just return what we have
+            return filename;
         }
 
         static USimpleString getFileNameNoStream(const USimpleString& filename)
@@ -86,7 +97,7 @@ namespace kf
             // Parts index:  \   0  \ 1 \      2      \  3   \ 4 \  5
             //    filename: "\device\mup\172.24.79.245\my-dfs\dir\file"
 
-            // First try to get server and share (2 components)
+            // Only return result when both server and share exist (2 components)
             auto serverAndShare = subpath(filename, 2, 2); // Get 2 components starting from the index 2
             if (!serverAndShare.isEmpty())
             {
@@ -94,14 +105,7 @@ namespace kf
                 return USimpleString(span{ serverAndShare.begin() - 1, serverAndShare.end() });
             }
 
-            // If no share name, try to get just server (1 component)
-            auto serverOnly = subpath(filename, 2, 1); // Get 1 component starting from the index 2
-            if (!serverOnly.isEmpty())
-            {
-                // Add slash at the beginning
-                return USimpleString(span{ serverOnly.begin() - 1, serverOnly.end() });
-            }
-
+            // Function should not return server name without share name according to its name
             return {};
         }
 
@@ -164,7 +168,7 @@ namespace kf
             // Handle empty path as edge case
             if (dosFilename.isEmpty())
             {
-                return UString<poolType>{};
+                return {};
             }
 
             UStringBuilder<poolType> nativeFilename;

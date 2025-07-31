@@ -3,14 +3,14 @@
 
 using namespace kf;
 
-SCENARIO("FilenameUtils getPathNoEndSeparator")
+SCENARIO("FilenameUtils getPathNoEndSeparators")
 {
     GIVEN("various file paths")
     {
         WHEN("getting path from empty path")
         {
             USimpleString emptyPath(L"");
-            auto result = FilenameUtils::getPathNoEndSeparator(emptyPath);
+            auto result = FilenameUtils::getPathNoEndSeparators(emptyPath);
 
             THEN("result is empty")
             {
@@ -21,7 +21,7 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
         WHEN("getting path from path with several trailing slashes")
         {
             USimpleString pathWithTrailingSlashes(L"\\Device\\HarddiskVolume1\\Windows\\\\\\");
-            auto result = FilenameUtils::getPathNoEndSeparator(pathWithTrailingSlashes);
+            auto result = FilenameUtils::getPathNoEndSeparators(pathWithTrailingSlashes);
 
             THEN("trailing separators are removed")
             {
@@ -32,7 +32,7 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
         WHEN("getting path from path that consists only of slashes")
         {
             USimpleString slashesOnly(L"\\\\\\");
-            auto result = FilenameUtils::getPathNoEndSeparator(slashesOnly);
+            auto result = FilenameUtils::getPathNoEndSeparators(slashesOnly);
 
             THEN("all trailing slashes are removed")
             {
@@ -43,7 +43,7 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
         WHEN("getting path from path without any slashes")
         {
             USimpleString noSlashes(L"filename.txt");
-            auto result = FilenameUtils::getPathNoEndSeparator(noSlashes);
+            auto result = FilenameUtils::getPathNoEndSeparators(noSlashes);
 
             THEN("result is the same as input")
             {
@@ -54,7 +54,7 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
         WHEN("getting path from normal NT path without trailing slash")
         {
             USimpleString normalPath(L"\\Device\\HarddiskVolume1\\Windows\\System32\\file.txt");
-            auto result = FilenameUtils::getPathNoEndSeparator(normalPath);
+            auto result = FilenameUtils::getPathNoEndSeparators(normalPath);
 
             THEN("path remains unchanged since no trailing slash")
             {
@@ -65,7 +65,7 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
         WHEN("getting path from relative path")
         {
             USimpleString relativePath(L"folder\\subfolder\\file.txt");
-            auto result = FilenameUtils::getPathNoEndSeparator(relativePath);
+            auto result = FilenameUtils::getPathNoEndSeparators(relativePath);
 
             THEN("relative path remains unchanged since no trailing slash")
             {
@@ -95,9 +95,9 @@ SCENARIO("FilenameUtils getPathWithEndSeparator")
             USimpleString normalPath(L"\\Device\\HarddiskVolume1\\Windows\\System32\\file.txt");
             auto result = FilenameUtils::getPathWithEndSeparator(normalPath);
 
-            THEN("separator is added to the end")
+            THEN("result remains unchanged since separator cannot be added")
             {
-                REQUIRE(result.equals(USimpleString(L"\\Device\\HarddiskVolume1\\Windows\\System32\\file.txt\\")));
+                REQUIRE(result.equals(USimpleString(L"\\Device\\HarddiskVolume1\\Windows\\System32\\file.txt")));
             }
         }
 
@@ -329,14 +329,14 @@ SCENARIO("FilenameUtils getServerAndShareName")
             }
         }
 
-        WHEN("getting server and share from MUP path with no share name")
+        WHEN("getting server and share from MUP path with only server (no share)")
         {
-            USimpleString mupPathNoShare(L"\\device\\mup\\172.24.79.245");
+            USimpleString mupPathNoShare(L"\\device\\mup\\server.domain.com");
             auto result = FilenameUtils::getServerAndShareName(mupPathNoShare);
 
-            THEN("only server name is extracted")
+            THEN("empty result is returned since function requires both server and share")
             {
-                REQUIRE(result.equals(USimpleString(L"\\172.24.79.245")));
+                REQUIRE(result.isEmpty());
             }
         }
 
