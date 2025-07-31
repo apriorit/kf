@@ -1,5 +1,4 @@
 #pragma once
-
 #include "EResource.h"
 #include "Semaphore.h"
 

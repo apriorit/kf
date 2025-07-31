@@ -3,6 +3,8 @@
 
 namespace kf
 {
+    // TODO: move to DoubleLinkedList
+
     class DoubleLinkedListDestroyer
     {
     public:

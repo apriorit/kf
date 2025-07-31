@@ -1,4 +1,5 @@
 #pragma once
+#include "DoubleLinkedListEntry.h"
 
 namespace kf
 {
