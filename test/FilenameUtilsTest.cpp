@@ -462,10 +462,10 @@ SCENARIO("FilenameUtils subpath")
             }
         }
 
-        WHEN("extracting subpath where both parameters are incorrect")
+        WHEN("extracting subpath where first parameter is negative and second is too big")
         {
             USimpleString path(L"\\aa\\bb");
-            auto result = FilenameUtils::subpath(path, -1, -1);
+            auto result = FilenameUtils::subpath(path, -1, 10);
 
             THEN("empty result is returned")
             {
