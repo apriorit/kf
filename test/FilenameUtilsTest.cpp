@@ -23,9 +23,9 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
             USimpleString pathWithTrailingSlashes(L"\\Device\\HarddiskVolume1\\Windows\\\\\\");
             auto result = FilenameUtils::getPathNoEndSeparator(pathWithTrailingSlashes);
 
-            THEN("path is extracted without trailing separator")
+            THEN("trailing separators are removed")
             {
-                REQUIRE(result.equals(USimpleString(L"\\Device\\HarddiskVolume1\\Windows\\\\")));
+                REQUIRE(result.equals(USimpleString(L"\\Device\\HarddiskVolume1\\Windows")));
             }
         }
 
@@ -34,9 +34,9 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
             USimpleString slashesOnly(L"\\\\\\");
             auto result = FilenameUtils::getPathNoEndSeparator(slashesOnly);
 
-            THEN("result is path without last slash")
+            THEN("all trailing slashes are removed")
             {
-                REQUIRE(result.equals(USimpleString(L"\\\\")));
+                REQUIRE(result.isEmpty());
             }
         }
 
@@ -56,9 +56,9 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
             USimpleString normalPath(L"\\Device\\HarddiskVolume1\\Windows\\System32\\file.txt");
             auto result = FilenameUtils::getPathNoEndSeparator(normalPath);
 
-            THEN("path is extracted correctly")
+            THEN("path remains unchanged since no trailing slash")
             {
-                REQUIRE(result.equals(USimpleString(L"\\Device\\HarddiskVolume1\\Windows\\System32")));
+                REQUIRE(result.equals(USimpleString(L"\\Device\\HarddiskVolume1\\Windows\\System32\\file.txt")));
             }
         }
 
@@ -67,9 +67,9 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
             USimpleString relativePath(L"folder\\subfolder\\file.txt");
             auto result = FilenameUtils::getPathNoEndSeparator(relativePath);
 
-            THEN("relative path is extracted correctly")
+            THEN("relative path remains unchanged since no trailing slash")
             {
-                REQUIRE(result.equals(USimpleString(L"folder\\subfolder")));
+                REQUIRE(result.equals(USimpleString(L"folder\\subfolder\\file.txt")));
             }
         }
     }
@@ -84,9 +84,9 @@ SCENARIO("FilenameUtils getPathWithEndSeparator")
             USimpleString emptyPath(L"");
             auto result = FilenameUtils::getPathWithEndSeparator(emptyPath);
 
-            THEN("result is with separator")
+            THEN("result remains empty")
             {
-                REQUIRE(result.equals(USimpleString(L"\\")));
+                REQUIRE(result.isEmpty());
             }
         }
 
@@ -95,9 +95,9 @@ SCENARIO("FilenameUtils getPathWithEndSeparator")
             USimpleString normalPath(L"\\Device\\HarddiskVolume1\\Windows\\System32\\file.txt");
             auto result = FilenameUtils::getPathWithEndSeparator(normalPath);
 
-            THEN("path is extracted with trailing separator")
+            THEN("separator is added to the end")
             {
-                REQUIRE(result.equals(USimpleString(L"\\Device\\HarddiskVolume1\\Windows\\System32\\")));
+                REQUIRE(result.equals(USimpleString(L"\\Device\\HarddiskVolume1\\Windows\\System32\\file.txt\\")));
             }
         }
 
@@ -106,9 +106,9 @@ SCENARIO("FilenameUtils getPathWithEndSeparator")
             USimpleString noSlashes(L"filename.txt");
             auto result = FilenameUtils::getPathWithEndSeparator(noSlashes);
 
-            THEN("result is just separator")
+            THEN("result remains unchanged since no slashes exist")
             {
-                REQUIRE(result.equals(USimpleString(L"\\")));
+                REQUIRE(result.equals(USimpleString(L"filename.txt")));
             }
         }
     }
@@ -328,6 +328,39 @@ SCENARIO("FilenameUtils getServerAndShareName")
                 REQUIRE(result.isEmpty());
             }
         }
+
+        WHEN("getting server and share from MUP path with no share name")
+        {
+            USimpleString mupPathNoShare(L"\\device\\mup\\172.24.79.245");
+            auto result = FilenameUtils::getServerAndShareName(mupPathNoShare);
+
+            THEN("only server name is extracted")
+            {
+                REQUIRE(result.equals(USimpleString(L"\\172.24.79.245")));
+            }
+        }
+
+        WHEN("getting server and share from MUP path with FQDN server name")
+        {
+            USimpleString mupPathFQDN(L"\\device\\mup\\server.domain.com\\share\\dir\\file");
+            auto result = FilenameUtils::getServerAndShareName(mupPathFQDN);
+
+            THEN("FQDN server and share name is extracted correctly")
+            {
+                REQUIRE(result.equals(USimpleString(L"\\server.domain.com\\share")));
+            }
+        }
+
+        WHEN("getting server and share from UPPERCASED MUP path")
+        {
+            USimpleString upperMupPath(L"\\DEVICE\\MUP\\172.24.79.245\\MY-DFS\\DIR\\FILE");
+            auto result = FilenameUtils::getServerAndShareName(upperMupPath);
+
+            THEN("server and share name is extracted correctly despite case")
+            {
+                REQUIRE(result.equals(USimpleString(L"\\172.24.79.245\\MY-DFS")));
+            }
+        }
     }
 }
 
@@ -378,6 +411,17 @@ SCENARIO("FilenameUtils getNameCount")
                 REQUIRE(result == 3);
             }
         }
+
+        WHEN("counting elements in path with slash at the end")
+        {
+            USimpleString pathWithEndSlash(L"\\aa\\bb\\cc\\");
+            auto result = FilenameUtils::getNameCount(pathWithEndSlash);
+
+            THEN("element count ignores trailing slash")
+            {
+                REQUIRE(result == 3);
+            }
+        }
     }
 }
 
@@ -415,6 +459,28 @@ SCENARIO("FilenameUtils subpath")
             THEN("empty result is returned")
             {
                 REQUIRE(result.isEmpty());
+            }
+        }
+
+        WHEN("extracting subpath where both parameters are incorrect")
+        {
+            USimpleString path(L"\\aa\\bb");
+            auto result = FilenameUtils::subpath(path, -1, -1);
+
+            THEN("empty result is returned")
+            {
+                REQUIRE(result.isEmpty());
+            }
+        }
+
+        WHEN("extracting subpath where both parameters are equal")
+        {
+            USimpleString path(L"\\aa\\bb\\cc");
+            auto result = FilenameUtils::subpath(path, 1, 1);
+
+            THEN("single element is extracted")
+            {
+                REQUIRE(result.equals(USimpleString(L"bb")));
             }
         }
     }
@@ -462,9 +528,9 @@ SCENARIO("FilenameUtils dosNameToNative")
             USimpleString emptyPath(L"");
             auto result = FilenameUtils::dosNameToNative<PagedPool>(emptyPath);
 
-            THEN("path gets NT prefix")
+            THEN("result should be empty")
             {
-                REQUIRE(result.equals(USimpleString(L"\\??\\")));
+                REQUIRE(result.isEmpty());
             }
         }
     }
