@@ -97,6 +97,14 @@ SCENARIO("Map test: insert and find integers")
             REQUIRE(map.size() == 0);
         }
 
+        THEN("operator[] works with const key")
+        {
+            const int constKey = 2;
+            auto result = map[constKey];
+            REQUIRE(result.has_value());
+            REQUIRE(result->get() == 2 * kIterations);
+        }
+
         THEN("upper_bound works properly")
         {
             // upper_bound finds next for existing element

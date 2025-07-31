@@ -70,6 +70,16 @@ namespace kf
             return STATUS_SUCCESS;
         }
 
+        std::optional<std::reference_wrapper<ValueType>> operator[](const KeyType& key)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return std::ref((*m_internalMap)[key]);
+        }
+
         std::optional<std::reference_wrapper<ValueType>> operator[](KeyType&& key)
         {
             if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
