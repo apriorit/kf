@@ -147,3 +147,229 @@ SCENARIO("Map test: insert and find integers")
         }
     }
 }
+
+SCENARIO("Map test: at() method")
+{
+    kf::map<int, int, NonPagedPoolNx> map;
+    REQUIRE_NT_SUCCESS(map.initialize());
+
+    WHEN("Map is populated")
+    {
+        auto result = map.emplace(1, 10);
+        REQUIRE(result.has_value());
+        REQUIRE(result->second);
+
+        result = map.emplace(2, 20);
+        REQUIRE(result.has_value());
+        REQUIRE(result->second);
+
+        THEN("at() returns value for existing key")
+        {
+            auto value = map.at(1);
+            REQUIRE(value.has_value());
+            REQUIRE(value->get() == 10);
+
+            auto constValue = const_cast<const decltype(map)*>(&map)->at(2);
+            REQUIRE(constValue.has_value());
+            REQUIRE(constValue->get() == 20);
+        }
+
+        THEN("at() returns empty optional for non-existing key")
+        {
+            auto value = map.at(99);
+            REQUIRE(!value.has_value());
+
+            auto constValue = const_cast<const decltype(map)*>(&map)->at(99);
+            REQUIRE(!constValue.has_value());
+        }
+    }
+}
+
+SCENARIO("Map test: insert() methods")
+{
+    kf::map<int, int, NonPagedPoolNx> map;
+    REQUIRE_NT_SUCCESS(map.initialize());
+
+    WHEN("Using insert with value_type")
+    {
+        auto result = map.insert(std::make_pair(1, 10));
+        REQUIRE(result.has_value());
+        REQUIRE(result->second); // inserted
+
+        THEN("Element is found")
+        {
+            REQUIRE(map.contains(1));
+            auto it = map.find(1);
+            REQUIRE(it != map.end());
+            REQUIRE(it->second == 10);
+        }
+
+        THEN("Insert same key returns false")
+        {
+            auto result2 = map.insert(std::make_pair(1, 20));
+            REQUIRE(result2.has_value());
+            REQUIRE(!result2->second); // not inserted
+            REQUIRE(result2->first->second == 10); // original value
+        }
+    }
+
+    WHEN("Using insert with hint")
+    {
+        auto result = map.insert(map.end(), std::make_pair(5, 50));
+        REQUIRE(result.has_value());
+        REQUIRE(map.contains(5));
+        REQUIRE(map.find(5)->second == 50);
+    }
+
+    WHEN("Using insert with initializer list")
+    {
+        auto result = map.insert({ {1, 10}, {2, 20}, {3, 30} });
+        REQUIRE(result.has_value());
+        
+        REQUIRE(map.size() == 3);
+        REQUIRE(map.contains(1));
+        REQUIRE(map.contains(2));
+        REQUIRE(map.contains(3));
+    }
+}
+
+SCENARIO("Map test: count() and equal_range()")
+{
+    kf::map<int, int, NonPagedPoolNx> map;
+    REQUIRE_NT_SUCCESS(map.initialize());
+
+    map.emplace(1, 10);
+    map.emplace(2, 20);
+    map.emplace(3, 30);
+
+    WHEN("Using count()")
+    {
+        REQUIRE(map.count(1) == 1);
+        REQUIRE(map.count(2) == 1);
+        REQUIRE(map.count(99) == 0);
+    }
+
+    WHEN("Using equal_range()")
+    {
+        auto range = map.equal_range(2);
+        REQUIRE(range.first != map.end());
+        REQUIRE(range.first->first == 2);
+        REQUIRE(range.first->second == 20);
+        REQUIRE(range.second != range.first);
+        
+        auto constRange = const_cast<const decltype(map)*>(&map)->equal_range(2);
+        REQUIRE(constRange.first != map.end());
+        REQUIRE(constRange.first->first == 2);
+    }
+}
+
+SCENARIO("Map test: reverse iterators")
+{
+    kf::map<int, int, NonPagedPoolNx> map;
+    REQUIRE_NT_SUCCESS(map.initialize());
+
+    map.emplace(1, 10);
+    map.emplace(2, 20);
+    map.emplace(3, 30);
+
+    WHEN("Using reverse iterators")
+    {
+        auto rit = map.rbegin();
+        REQUIRE(rit != map.rend());
+        REQUIRE(rit->first == 3);
+        REQUIRE(rit->second == 30);
+
+        ++rit;
+        REQUIRE(rit->first == 2);
+        REQUIRE(rit->second == 20);
+
+        THEN("Const reverse iterators work")
+        {
+            auto crit = const_cast<const decltype(map)*>(&map)->rbegin();
+            REQUIRE(crit != map.rend());
+            REQUIRE(crit->first == 3);
+
+            auto crrit = map.crbegin();
+            REQUIRE(crrit != map.crend());
+            REQUIRE(crrit->first == 3);
+        }
+    }
+}
+
+SCENARIO("Map test: utility methods")
+{
+    kf::map<int, int, NonPagedPoolNx> map;
+    REQUIRE_NT_SUCCESS(map.initialize());
+
+    WHEN("Testing utility methods")
+    {
+        REQUIRE(map.max_size() > 0);
+        
+        auto keyComp = map.key_comp();
+        REQUIRE(keyComp(1, 2));
+        REQUIRE(!keyComp(2, 1));
+        
+        auto valueComp = map.value_comp();
+        REQUIRE(valueComp(std::make_pair(1, 10), std::make_pair(2, 20)));
+    }
+}
+
+SCENARIO("Map test: try_emplace()")
+{
+    kf::map<int, int, NonPagedPoolNx> map;
+    REQUIRE_NT_SUCCESS(map.initialize());
+
+    WHEN("Using try_emplace")
+    {
+        auto result = map.try_emplace(1, 10);
+        REQUIRE(result.has_value());
+        REQUIRE(result->second); // inserted
+        REQUIRE(result->first->second == 10);
+
+        THEN("try_emplace with existing key doesn't modify value")
+        {
+            auto result2 = map.try_emplace(1, 20);
+            REQUIRE(result2.has_value());
+            REQUIRE(!result2->second); // not inserted
+            REQUIRE(result2->first->second == 10); // original value
+        }
+
+        THEN("try_emplace with hint works")
+        {
+            auto result3 = map.try_emplace(map.end(), 2, 20);
+            REQUIRE(result3.has_value());
+            REQUIRE(map.contains(2));
+            REQUIRE(map.find(2)->second == 20);
+        }
+    }
+}
+
+SCENARIO("Map test: insert_or_assign()")
+{
+    kf::map<int, int, NonPagedPoolNx> map;
+    REQUIRE_NT_SUCCESS(map.initialize());
+
+    WHEN("Using insert_or_assign")
+    {
+        auto result = map.insert_or_assign(1, 10);
+        REQUIRE(result.has_value());
+        REQUIRE(result->second); // inserted
+        REQUIRE(result->first->second == 10);
+
+        THEN("insert_or_assign with existing key modifies value")
+        {
+            auto result2 = map.insert_or_assign(1, 20);
+            REQUIRE(result2.has_value());
+            REQUIRE(!result2->second); // not inserted (assigned)
+            REQUIRE(result2->first->second == 20); // new value
+        }
+
+        THEN("insert_or_assign with hint works")
+        {
+            auto result3 = map.insert_or_assign(map.end(), 2, 30);
+            REQUIRE(result3.has_value());
+            REQUIRE(map.contains(2));
+            REQUIRE(map.find(2)->second == 30);
+        }
+    }
+}

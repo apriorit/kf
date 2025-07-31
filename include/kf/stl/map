@@ -2,6 +2,7 @@
 #include <kf/MapAllocator.h>
 #include <map>
 #include <optional>
+#include <initializer_list>
 
 #if _ITERATOR_DEBUG_LEVEL > 0
 #error "_ITERATOR_DEBUG_LEVEL must not be greater than 0"
@@ -153,19 +154,17 @@ namespace kf
         template<class InputIt>
         std::optional<bool> insert(InputIt first, InputIt last)
         {
-            // Calculate how much memory we might need
-            size_t count = 0;
+            // For range insert, we prepare memory for each element as we go
+            // This is a conservative approach that matches the allocator design
             for (auto it = first; it != last; ++it)
             {
                 if (m_internalMap->find(it->first) == m_internalMap->end())
                 {
-                    count++;
+                    if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+                    {
+                        return {};
+                    }
                 }
-            }
-
-            if (count > 0 && !m_internalMap->get_allocator().prepareMemory(kNodeSize * count))
-            {
-                return {};
             }
 
             m_internalMap->insert(first, last);
