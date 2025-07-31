@@ -1,5 +1,6 @@
 #pragma once
 #include <ntifs.h>
+#include <algorithm>
 #include <array>
 
 #include <kmtest/kmtest.h>

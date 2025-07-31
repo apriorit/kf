@@ -1,0 +1,426 @@
+#pragma once
+#include <vector>
+#include <optional>
+#include <kf/Allocator.h>
+
+#if _KERNEL_MODE && _ITERATOR_DEBUG_LEVEL > 0
+//#error "_ITERATOR_DEBUG_LEVEL must not be greater than 0"
+#endif
+
+// Requires the module that uses kf::vector to define the following methods:
+//   _CrtDbgReport
+//   _Xinvalid_argument
+//   _Xlength_error
+//   _Xout_of_range
+
+namespace kf
+{
+    //////////////////////////////////////////////////////////////////////////
+    // vector - Wraps std::vector and allows using it in exception-free environments.
+    //
+    // Note: some methods return NTSTATUS or std::optional to indicate an error
+    // thus they differ from std::vector!
+
+    template<class T, POOL_TYPE PoolType, class Allocator = Allocator<T, PoolType>>
+    class vector
+    {
+    public:
+        using vector_type = std::vector<T, Allocator>;
+        using size_type = vector_type::size_type;
+        using iterator = vector_type::iterator;
+        using const_iterator = vector_type::const_iterator;
+        using reverse_iterator = vector_type::reverse_iterator;
+        using const_reverse_iterator = vector_type::const_reverse_iterator;
+
+        //
+        // Member functions
+        //
+        constexpr vector() noexcept = default;
+
+        vector(const vector&) = delete;
+        vector& operator=(const vector&) = delete;
+
+        constexpr vector(vector&& other) noexcept = default;
+        constexpr vector& operator=(vector&& other) noexcept = default;
+
+        constexpr [[nodiscard]] NTSTATUS assign(size_type count, const T& value) noexcept
+        {
+            if (auto status = reallocateGrowth(count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_vector.assign(count, value);
+
+            return STATUS_SUCCESS;
+        }
+
+        constexpr Allocator get_allocator() noexcept
+        {
+            return m_vector.get_allocator();
+        }
+
+        //
+        // Element access
+        //
+        constexpr std::optional<std::reference_wrapper<T>> at(size_type pos) noexcept
+        {
+            return pos < m_vector.size() ? std::optional(std::ref(m_vector[pos])) : std::nullopt;
+        }
+
+        constexpr std::optional<std::reference_wrapper<const T>> at(size_type pos) const noexcept
+        {
+            return pos < m_vector.size() ? std::optional(std::ref(m_vector[pos])) : std::nullopt;
+        }
+
+        constexpr T& operator[](size_type pos) noexcept
+        {
+            return m_vector[pos];
+        }
+
+        constexpr const T& operator[](size_type pos) const noexcept
+        {
+            return m_vector[pos];
+        }
+
+        constexpr T& front() noexcept
+        {
+            return m_vector.front();
+        }
+
+        constexpr const T& front() const noexcept
+        {
+            return m_vector.front();
+        }
+
+        constexpr T& back() noexcept
+        {
+            return m_vector.back();
+        }
+
+        constexpr const T& back() const noexcept
+        {
+            return m_vector.back();
+        }
+
+        constexpr T* data()
+        {
+            return m_vector.data();
+        }
+
+        constexpr const T* data() const noexcept
+        {
+            return m_vector.data();
+        }
+
+        //
+        // Iterators
+        //
+
+        constexpr iterator begin() noexcept
+        {
+            return m_vector.begin();
+        }
+
+        constexpr const_iterator begin() const noexcept
+        {
+            return m_vector.begin();
+        }
+
+        constexpr const_iterator cbegin() const noexcept
+        {
+            return m_vector.cbegin();
+        }
+
+        constexpr iterator end() noexcept
+        {
+            return m_vector.end();
+        }
+
+        constexpr const_iterator end() const noexcept
+        {
+            return m_vector.end();
+        }
+
+        constexpr const_iterator cend() const noexcept
+        {
+            return m_vector.cend();
+        }
+
+        constexpr reverse_iterator rbegin() noexcept
+        {
+            return m_vector.rbegin();
+        }
+
+        constexpr const_reverse_iterator rbegin() const noexcept
+        {
+            return m_vector.rbegin();
+        }
+
+        constexpr const_reverse_iterator crbegin() const noexcept
+        {
+            return m_vector.crbegin();
+        }
+
+        constexpr reverse_iterator rend() noexcept
+        {
+            return m_vector.rend();
+        }
+
+        constexpr const_reverse_iterator rend() const noexcept
+        {
+            return m_vector.rend();
+        }
+
+        constexpr const_reverse_iterator crend() const noexcept
+        {
+            return m_vector.crend();
+        }
+
+        //
+        // Capacity
+        //
+
+        constexpr bool empty() const noexcept
+        {
+            return m_vector.empty();
+        }
+
+        constexpr size_type size() const noexcept
+        {
+            return m_vector.size();
+        }
+
+        constexpr size_type max_size() const noexcept
+        {
+            return m_vector.max_size();
+        }
+
+        constexpr NTSTATUS reserve(size_type newCapacity) noexcept
+        {
+            if (newCapacity <= m_vector.capacity())
+            {
+                return STATUS_SUCCESS;
+            }
+
+            return reallocateExactly(newCapacity);
+        }
+
+        constexpr size_type capacity() const noexcept
+        {
+            return m_vector.capacity();
+        }
+
+        constexpr NTSTATUS shrink_to_fit() noexcept
+        {
+            if (m_vector.size() == m_vector.capacity())
+            {
+                return STATUS_SUCCESS;
+            }
+
+            if (auto status = reallocateExactly(m_vector.size()); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_vector.shrink_to_fit();
+
+            return STATUS_SUCCESS;
+        }
+
+        //
+        // Modifiers
+        //
+
+        constexpr void clear() noexcept
+        {
+            m_vector.clear();
+        }
+
+        constexpr std::optional<iterator> insert(const_iterator pos, const T& value) noexcept
+        {
+            const auto idx = pos - m_vector.begin();
+
+            if (auto status = reallocateGrowth(m_vector.size() + 1); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_vector.insert(m_vector.begin() + idx, value);
+        }
+
+        constexpr std::optional<iterator> insert(const_iterator pos, T&& value) noexcept
+        {
+            const auto idx = pos - m_vector.begin();
+
+            if (auto status = reallocateGrowth(m_vector.size() + 1); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_vector.insert(m_vector.begin() + idx, std::move(value));
+        }
+
+        constexpr std::optional<iterator> insert(const_iterator pos, size_type count, const T& value) noexcept
+        {
+            const auto idx = pos - m_vector.begin();
+
+            if (auto status = reallocateGrowth(m_vector.size() + count); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_vector.insert(m_vector.begin() + idx, count, value);
+        }
+
+        template<class... Args>
+        constexpr std::optional<iterator> emplace(const_iterator pos, Args&&... args) noexcept
+        {
+            const auto idx = pos - m_vector.begin();
+
+            if (auto status = reallocateGrowth(m_vector.size() + 1); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_vector.emplace(m_vector.begin() + idx, std::forward<Args>(args)...);
+        }
+
+        constexpr iterator erase(const_iterator pos) noexcept
+        {
+            return m_vector.erase(pos);
+        }
+
+        constexpr iterator erase(const_iterator first, const_iterator last) noexcept
+        {
+            return m_vector.erase(first, last);
+        }
+
+        constexpr [[nodiscard]] NTSTATUS push_back(const T& value) noexcept
+        {
+            if (auto status = reallocateGrowth(m_vector.size() + 1); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_vector.push_back(value);
+
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS push_back(T&& value) noexcept
+        {
+            if (auto status = reallocateGrowth(m_vector.size() + 1); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_vector.push_back(std::move(value));
+
+            return STATUS_SUCCESS;
+        }
+
+        template<class... Args>
+        constexpr std::optional<std::reference_wrapper<T>> emplace_back(Args&&... args) noexcept
+        {
+            if (auto status = reallocateGrowth(m_vector.size() + 1); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_vector.emplace_back(std::forward<Args>(args)...);
+        }
+
+        constexpr void pop_back() noexcept
+        {
+            m_vector.pop_back();
+        }
+
+        constexpr [[nodiscard]] NTSTATUS resize(size_type count) noexcept
+        {
+            if (auto status = reallocateGrowth(count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_vector.resize(count);
+
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS resize(size_type count, const T& value) noexcept
+        {
+            if (auto status = reallocateGrowth(count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_vector.resize(count, value);
+
+            return STATUS_SUCCESS;
+        }
+
+        constexpr void swap(vector& other) noexcept
+        {
+            m_vector.swap(other.m_vector);
+        }
+
+    private:
+        constexpr NTSTATUS reallocateGrowth(size_type newSize) noexcept
+        {
+            if (newSize <= m_vector.capacity())
+            {
+                return STATUS_SUCCESS;
+            }
+
+            return moveInternal(calculateGrowth(newSize));
+        }
+
+        constexpr NTSTATUS reallocateExactly(size_type newSize) noexcept
+        {
+            return moveInternal(newSize);
+        }
+
+        constexpr NTSTATUS moveInternal(size_type newCapacity) noexcept
+        {
+            std::vector<T, Allocator> newVector;
+            newVector.reserve(newCapacity);
+            if (!newVector.data())
+            {
+                return STATUS_INSUFFICIENT_RESOURCES;
+            }
+
+            for (auto& elem : m_vector)
+            {
+                newVector.emplace_back(std::move(elem));
+            }
+
+            m_vector.swap(newVector);
+
+            return STATUS_SUCCESS;
+        }
+
+        constexpr size_type calculateGrowth(size_type required) noexcept
+        {
+            const auto oldCapacity = capacity();
+            const auto max = max_size();
+
+            if (oldCapacity > max - oldCapacity / 2)
+            {
+                return max; // geometric growth would overflow
+            }
+
+            const auto geometric = oldCapacity + oldCapacity / 2;
+
+            if (geometric < required)
+            {
+                return required; // geometric growth would be insufficient
+            }
+
+            return geometric; // geometric growth is sufficient
+        }
+
+    private:
+        std::vector<T, Allocator> m_vector;
+    };
+}
