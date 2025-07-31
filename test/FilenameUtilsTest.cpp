@@ -310,30 +310,69 @@ SCENARIO("FilenameUtils getName")
 {
     GIVEN("various file paths")
     {
-        kf::USimpleString fullPath(L"C:\\Windows\\System32\\kernel32.dll");
-        kf::USimpleString networkPath(L"\\\\server\\share\\folder\\file.txt");
-        kf::USimpleString rootFile(L"\\file.txt");
-        kf::USimpleString pathWithoutBackslash(L"file.txt");
-        kf::USimpleString pathEndingWithBackslash(L"C:\\Windows\\");
-        kf::USimpleString emptyPath(L"");
-
-        WHEN("getting filename from path")
+        WHEN("getting filename from native NT full path")
         {
+            kf::USimpleString fullPath(L"\\Device\\HarddiskVolume1\\Windows\\System32\\kernel32.dll");
             auto fullPathResult = kf::FilenameUtils::getName(fullPath);
-            auto networkPathResult = kf::FilenameUtils::getName(networkPath);
-            auto rootFileResult = kf::FilenameUtils::getName(rootFile);
-            auto pathWithoutBackslashResult = kf::FilenameUtils::getName(pathWithoutBackslash);
-            auto pathEndingWithBackslashResult = kf::FilenameUtils::getName(pathEndingWithBackslash);
-            auto emptyPathResult = kf::FilenameUtils::getName(emptyPath);
 
-            THEN("filenames are extracted correctly")
+            THEN("filename is extracted correctly")
             {
                 REQUIRE(fullPathResult.equals(kf::USimpleString(L"kernel32.dll")));
+            }
+        }
+
+        WHEN("getting filename from MUP network path")
+        {
+            kf::USimpleString networkPath(L"\\Device\\Mup\\server\\share\\folder\\file.txt");
+            auto networkPathResult = kf::FilenameUtils::getName(networkPath);
+
+            THEN("filename is extracted correctly")
+            {
                 REQUIRE(networkPathResult.equals(kf::USimpleString(L"file.txt")));
+            }
+        }
+
+        WHEN("getting filename from root file")
+        {
+            kf::USimpleString rootFile(L"\\file.txt");
+            auto rootFileResult = kf::FilenameUtils::getName(rootFile);
+
+            THEN("filename is extracted correctly")
+            {
                 REQUIRE(rootFileResult.equals(kf::USimpleString(L"file.txt")));
-                REQUIRE(pathWithoutBackslashResult.equals(kf::USimpleString(L"file.txt"))); // idx = -1, so returns entire string
-                REQUIRE(pathEndingWithBackslashResult.isEmpty()); // after last backslash is empty
-                REQUIRE(emptyPathResult.isEmpty()); // empty string has no backslash, returns entire string (which is empty)
+            }
+        }
+
+        WHEN("getting filename from path without backslash")
+        {
+            kf::USimpleString pathWithoutBackslash(L"file.txt");
+            auto pathWithoutBackslashResult = kf::FilenameUtils::getName(pathWithoutBackslash);
+
+            THEN("entire string is returned as filename")
+            {
+                REQUIRE(pathWithoutBackslashResult.equals(kf::USimpleString(L"file.txt")));
+            }
+        }
+
+        WHEN("getting filename from native NT path ending with backslash")
+        {
+            kf::USimpleString pathEndingWithBackslash(L"\\Device\\HarddiskVolume1\\Windows\\");
+            auto pathEndingWithBackslashResult = kf::FilenameUtils::getName(pathEndingWithBackslash);
+
+            THEN("empty filename is returned")
+            {
+                REQUIRE(pathEndingWithBackslashResult.isEmpty());
+            }
+        }
+
+        WHEN("getting filename from empty path")
+        {
+            kf::USimpleString emptyPath(L"");
+            auto emptyPathResult = kf::FilenameUtils::getName(emptyPath);
+
+            THEN("empty filename is returned")
+            {
+                REQUIRE(emptyPathResult.isEmpty());
             }
         }
     }
@@ -343,29 +382,68 @@ SCENARIO("FilenameUtils getServerAndShareName")
 {
     GIVEN("various network and local paths")
     {
-        kf::USimpleString mupPath(L"\\device\\mup\\172.24.79.245\\my-dfs\\dir\\file");
-        kf::USimpleString mupPathUpperCase(L"\\DEVICE\\MUP\\192.168.1.1\\share\\folder\\test.txt");
-        kf::USimpleString regularPath(L"C:\\Windows\\System32\\file.txt");
-        kf::USimpleString partialMupPath(L"\\device\\mup\\server");
-        kf::USimpleString emptyPath(L"");
-        kf::USimpleString invalidMupPath(L"\\device\\other\\server\\share");
-
-        WHEN("getting server and share name")
+        WHEN("getting server and share name from MUP path")
         {
+            kf::USimpleString mupPath(L"\\device\\mup\\172.24.79.245\\my-dfs\\dir\\file");
             auto mupPathResult = kf::FilenameUtils::getServerAndShareName(mupPath);
-            auto mupPathUpperCaseResult = kf::FilenameUtils::getServerAndShareName(mupPathUpperCase);
-            auto regularPathResult = kf::FilenameUtils::getServerAndShareName(regularPath);
-            auto partialMupPathResult = kf::FilenameUtils::getServerAndShareName(partialMupPath);
-            auto emptyPathResult = kf::FilenameUtils::getServerAndShareName(emptyPath);
-            auto invalidMupPathResult = kf::FilenameUtils::getServerAndShareName(invalidMupPath);
 
-            THEN("server and share names are extracted correctly")
+            THEN("server and share name is extracted correctly")
             {
                 REQUIRE(mupPathResult.equals(kf::USimpleString(L"\\172.24.79.245\\my-dfs")));
+            }
+        }
+
+        WHEN("getting server and share name from MUP path with uppercase")
+        {
+            kf::USimpleString mupPathUpperCase(L"\\DEVICE\\MUP\\192.168.1.1\\share\\folder\\test.txt");
+            auto mupPathUpperCaseResult = kf::FilenameUtils::getServerAndShareName(mupPathUpperCase);
+
+            THEN("server and share name is extracted correctly ignoring case")
+            {
                 REQUIRE(mupPathUpperCaseResult.equals(kf::USimpleString(L"\\192.168.1.1\\share")));
+            }
+        }
+
+        WHEN("getting server and share name from regular native NT path")
+        {
+            kf::USimpleString regularPath(L"\\Device\\HarddiskVolume1\\Windows\\System32\\file.txt");
+            auto regularPathResult = kf::FilenameUtils::getServerAndShareName(regularPath);
+
+            THEN("empty result is returned for non-MUP path")
+            {
                 REQUIRE(regularPathResult.isEmpty());
+            }
+        }
+
+        WHEN("getting server and share name from partial MUP path")
+        {
+            kf::USimpleString partialMupPath(L"\\device\\mup\\server");
+            auto partialMupPathResult = kf::FilenameUtils::getServerAndShareName(partialMupPath);
+
+            THEN("empty result is returned for incomplete MUP path")
+            {
                 REQUIRE(partialMupPathResult.isEmpty());
+            }
+        }
+
+        WHEN("getting server and share name from empty path")
+        {
+            kf::USimpleString emptyPath(L"");
+            auto emptyPathResult = kf::FilenameUtils::getServerAndShareName(emptyPath);
+
+            THEN("empty result is returned for empty path")
+            {
                 REQUIRE(emptyPathResult.isEmpty());
+            }
+        }
+
+        WHEN("getting server and share name from invalid device path")
+        {
+            kf::USimpleString invalidMupPath(L"\\device\\other\\server\\share");
+            auto invalidMupPathResult = kf::FilenameUtils::getServerAndShareName(invalidMupPath);
+
+            THEN("empty result is returned for non-MUP device path")
+            {
                 REQUIRE(invalidMupPathResult.isEmpty());
             }
         }
@@ -376,36 +454,54 @@ SCENARIO("FilenameUtils getNameCount")
 {
     GIVEN("various paths with different element counts")
     {
-        kf::USimpleString emptyPath(L"");
-        kf::USimpleString rootPath(L"\\");
-        kf::USimpleString doubleBackslash(L"\\\\");
-        kf::USimpleString singleElement(L"aa");
-        kf::USimpleString singleElementWithLeadingSlash(L"\\aa");
-        kf::USimpleString singleElementWithTrailingSlash(L"\\aa\\");
-        kf::USimpleString twoElements(L"\\aa\\bb");
-        kf::USimpleString twoElementsWithTrailingSlash(L"\\aa\\bb\\");
-        kf::USimpleString twoElementsNoLeadingSlash(L"aa\\bb");
-
-        WHEN("counting path elements")
+        WHEN("counting elements in empty and minimal paths")
         {
+            kf::USimpleString emptyPath(L"");
+            kf::USimpleString rootPath(L"\\");
+            kf::USimpleString doubleBackslash(L"\\\\");
+            
             auto emptyPathCount = kf::FilenameUtils::getNameCount(emptyPath);
             auto rootPathCount = kf::FilenameUtils::getNameCount(rootPath);
             auto doubleBackslashCount = kf::FilenameUtils::getNameCount(doubleBackslash);
-            auto singleElementCount = kf::FilenameUtils::getNameCount(singleElement);
-            auto singleElementWithLeadingSlashCount = kf::FilenameUtils::getNameCount(singleElementWithLeadingSlash);
-            auto singleElementWithTrailingSlashCount = kf::FilenameUtils::getNameCount(singleElementWithTrailingSlash);
-            auto twoElementsCount = kf::FilenameUtils::getNameCount(twoElements);
-            auto twoElementsWithTrailingSlashCount = kf::FilenameUtils::getNameCount(twoElementsWithTrailingSlash);
-            auto twoElementsNoLeadingSlashCount = kf::FilenameUtils::getNameCount(twoElementsNoLeadingSlash);
 
-            THEN("element counts are correct")
+            THEN("minimal paths have zero elements")
             {
                 REQUIRE(emptyPathCount == 0);
                 REQUIRE(rootPathCount == 0);
                 REQUIRE(doubleBackslashCount == 0);
+            }
+        }
+
+        WHEN("counting elements in single element paths")
+        {
+            kf::USimpleString singleElement(L"aa");
+            kf::USimpleString singleElementWithLeadingSlash(L"\\aa");
+            kf::USimpleString singleElementWithTrailingSlash(L"\\aa\\");
+            
+            auto singleElementCount = kf::FilenameUtils::getNameCount(singleElement);
+            auto singleElementWithLeadingSlashCount = kf::FilenameUtils::getNameCount(singleElementWithLeadingSlash);
+            auto singleElementWithTrailingSlashCount = kf::FilenameUtils::getNameCount(singleElementWithTrailingSlash);
+
+            THEN("single element paths have one element")
+            {
                 REQUIRE(singleElementCount == 1);
                 REQUIRE(singleElementWithLeadingSlashCount == 1);
                 REQUIRE(singleElementWithTrailingSlashCount == 1);
+            }
+        }
+
+        WHEN("counting elements in two element paths")
+        {
+            kf::USimpleString twoElements(L"\\aa\\bb");
+            kf::USimpleString twoElementsWithTrailingSlash(L"\\aa\\bb\\");
+            kf::USimpleString twoElementsNoLeadingSlash(L"aa\\bb");
+            
+            auto twoElementsCount = kf::FilenameUtils::getNameCount(twoElements);
+            auto twoElementsWithTrailingSlashCount = kf::FilenameUtils::getNameCount(twoElementsWithTrailingSlash);
+            auto twoElementsNoLeadingSlashCount = kf::FilenameUtils::getNameCount(twoElementsNoLeadingSlash);
+
+            THEN("two element paths have two elements")
+            {
                 REQUIRE(twoElementsCount == 2);
                 REQUIRE(twoElementsWithTrailingSlashCount == 2);
                 REQUIRE(twoElementsNoLeadingSlashCount == 2);
@@ -418,34 +514,54 @@ SCENARIO("FilenameUtils subpath")
 {
     GIVEN("paths with multiple elements")
     {
-        kf::USimpleString pathAaBb(L"aa\\bb");
-        kf::USimpleString pathWithLeadingSlash(L"\\aa\\bb");
-        kf::USimpleString pathWithTrailingSlash(L"\\aa\\bb\\");
-        kf::USimpleString longPath(L"\\one\\two\\three\\four\\five");
-        kf::USimpleString emptyPath(L"");
-        kf::USimpleString singleElement(L"test");
-
-        WHEN("extracting subpaths with various parameters")
+        WHEN("extracting single element subpaths")
         {
+            kf::USimpleString pathAaBb(L"aa\\bb");
+            kf::USimpleString pathWithLeadingSlash(L"\\aa\\bb");
+            
             auto pathAaBbResult1 = kf::FilenameUtils::subpath(pathAaBb, 0, 1);
             auto pathWithLeadingSlashResult1 = kf::FilenameUtils::subpath(pathWithLeadingSlash, 0, 1);
+
+            THEN("single elements are extracted correctly")
+            {
+                REQUIRE(pathAaBbResult1.equals(kf::USimpleString(L"aa")));
+                REQUIRE(pathWithLeadingSlashResult1.equals(kf::USimpleString(L"aa")));
+            }
+        }
+
+        WHEN("extracting multiple element subpaths")
+        {
+            kf::USimpleString pathWithLeadingSlash(L"\\aa\\bb");
+            kf::USimpleString pathWithTrailingSlash(L"\\aa\\bb\\");
+            kf::USimpleString longPath(L"\\one\\two\\three\\four\\five");
+            
             auto pathWithLeadingSlashResult2 = kf::FilenameUtils::subpath(pathWithLeadingSlash, 0, 2);
             auto pathWithTrailingSlashResult = kf::FilenameUtils::subpath(pathWithTrailingSlash, 0, 2);
             auto longPathResult1 = kf::FilenameUtils::subpath(longPath, 1, 2);
             auto longPathResult2 = kf::FilenameUtils::subpath(longPath, 2);
+
+            THEN("multiple elements are extracted correctly")
+            {
+                REQUIRE(pathWithLeadingSlashResult2.equals(kf::USimpleString(L"aa\\bb")));
+                REQUIRE(pathWithTrailingSlashResult.equals(kf::USimpleString(L"aa\\bb")));
+                REQUIRE(longPathResult1.equals(kf::USimpleString(L"two\\three")));
+                REQUIRE(longPathResult2.equals(kf::USimpleString(L"three\\four\\five")));
+            }
+        }
+
+        WHEN("extracting subpaths with invalid parameters")
+        {
+            kf::USimpleString pathAaBb(L"aa\\bb");
+            kf::USimpleString emptyPath(L"");
+            kf::USimpleString singleElement(L"test");
+            
             auto emptyPathResult = kf::FilenameUtils::subpath(emptyPath, 0, 1);
             auto invalidIndexResult = kf::FilenameUtils::subpath(pathAaBb, -1, 1);
             auto invalidCountResult = kf::FilenameUtils::subpath(pathAaBb, 0, -1);
             auto outOfRangeResult = kf::FilenameUtils::subpath(singleElement, 5, 1);
 
-            THEN("subpaths are extracted correctly")
+            THEN("invalid parameters return empty results")
             {
-                REQUIRE(pathAaBbResult1.equals(kf::USimpleString(L"aa")));
-                REQUIRE(pathWithLeadingSlashResult1.equals(kf::USimpleString(L"aa")));
-                REQUIRE(pathWithLeadingSlashResult2.equals(kf::USimpleString(L"aa\\bb")));
-                REQUIRE(pathWithTrailingSlashResult.equals(kf::USimpleString(L"aa\\bb")));
-                REQUIRE(longPathResult1.equals(kf::USimpleString(L"two\\three")));
-                REQUIRE(longPathResult2.equals(kf::USimpleString(L"three\\four\\five")));
                 REQUIRE(emptyPathResult.isEmpty());
                 REQUIRE(invalidIndexResult.isEmpty());
                 REQUIRE(invalidCountResult.isEmpty());
@@ -459,23 +575,46 @@ SCENARIO("FilenameUtils dosNameToNative")
 {
     GIVEN("various DOS path formats")
     {
-        kf::USimpleString extendedPath(L"\\\\?\\C:\\Windows\\System32\\file.txt");
-        kf::USimpleString uncPath(L"\\\\server\\share\\folder\\file.txt");
-        kf::USimpleString regularDosPath(L"C:\\Windows\\System32\\file.txt");
-        kf::USimpleString emptyPath(L"");
-
-        WHEN("converting DOS names to native format")
+        WHEN("converting extended DOS path to native format")
         {
+            kf::USimpleString extendedPath(L"\\\\?\\C:\\Windows\\System32\\file.txt");
             auto extendedPathResult = kf::FilenameUtils::dosNameToNative<PagedPool>(extendedPath);
-            auto uncPathResult = kf::FilenameUtils::dosNameToNative<PagedPool>(uncPath);
-            auto regularDosPathResult = kf::FilenameUtils::dosNameToNative<PagedPool>(regularDosPath);
-            auto emptyPathResult = kf::FilenameUtils::dosNameToNative<PagedPool>(emptyPath);
 
-            THEN("paths are converted to native format correctly")
+            THEN("extended path is converted to native NT format")
             {
                 REQUIRE(extendedPathResult.equals(kf::USimpleString(L"\\??\\C:\\Windows\\System32\\file.txt")));
+            }
+        }
+
+        WHEN("converting UNC DOS path to native format")
+        {
+            kf::USimpleString uncPath(L"\\\\server\\share\\folder\\file.txt");
+            auto uncPathResult = kf::FilenameUtils::dosNameToNative<PagedPool>(uncPath);
+
+            THEN("UNC path is converted to MUP device format")
+            {
                 REQUIRE(uncPathResult.equals(kf::USimpleString(L"\\device\\mup\\server\\share\\folder\\file.txt")));
+            }
+        }
+
+        WHEN("converting regular DOS path to native format")
+        {
+            kf::USimpleString regularDosPath(L"C:\\Windows\\System32\\file.txt");
+            auto regularDosPathResult = kf::FilenameUtils::dosNameToNative<PagedPool>(regularDosPath);
+
+            THEN("regular DOS path is converted to native NT format")
+            {
                 REQUIRE(regularDosPathResult.equals(kf::USimpleString(L"\\??\\C:\\Windows\\System32\\file.txt")));
+            }
+        }
+
+        WHEN("converting empty DOS path to native format")
+        {
+            kf::USimpleString emptyPath(L"");
+            auto emptyPathResult = kf::FilenameUtils::dosNameToNative<PagedPool>(emptyPath);
+
+            THEN("empty path gets NT prefix")
+            {
                 REQUIRE(emptyPathResult.equals(kf::USimpleString(L"\\??\\")));
             }
         }
@@ -486,29 +625,68 @@ SCENARIO("FilenameUtils isAbsoluteRegistryPath")
 {
     GIVEN("various path types")
     {
-        kf::USimpleString registryPath(L"\\REGISTRY\\MACHINE\\SOFTWARE\\Test");
-        kf::USimpleString registryPathLowerCase(L"\\registry\\user\\test");
-        kf::USimpleString regularPath(L"C:\\Windows\\System32\\file.txt");
-        kf::USimpleString partialRegistryPath(L"REGISTRY\\MACHINE\\test");
-        kf::USimpleString emptyPath(L"");
-        kf::USimpleString registryInPath(L"C:\\REGISTRY\\file.txt");
-
-        WHEN("checking if paths are absolute registry paths")
+        WHEN("checking if uppercase registry path is absolute")
         {
+            kf::USimpleString registryPath(L"\\REGISTRY\\MACHINE\\SOFTWARE\\Test");
             auto registryPathResult = kf::FilenameUtils::isAbsoluteRegistryPath(registryPath);
-            auto registryPathLowerCaseResult = kf::FilenameUtils::isAbsoluteRegistryPath(registryPathLowerCase);
-            auto regularPathResult = kf::FilenameUtils::isAbsoluteRegistryPath(regularPath);
-            auto partialRegistryPathResult = kf::FilenameUtils::isAbsoluteRegistryPath(partialRegistryPath);
-            auto emptyPathResult = kf::FilenameUtils::isAbsoluteRegistryPath(emptyPath);
-            auto registryInPathResult = kf::FilenameUtils::isAbsoluteRegistryPath(registryInPath);
 
-            THEN("registry paths are identified correctly")
+            THEN("uppercase registry path is identified correctly")
             {
                 REQUIRE(registryPathResult == true);
+            }
+        }
+
+        WHEN("checking if lowercase registry path is absolute")
+        {
+            kf::USimpleString registryPathLowerCase(L"\\registry\\user\\test");
+            auto registryPathLowerCaseResult = kf::FilenameUtils::isAbsoluteRegistryPath(registryPathLowerCase);
+
+            THEN("lowercase registry path is identified correctly")
+            {
                 REQUIRE(registryPathLowerCaseResult == true);
+            }
+        }
+
+        WHEN("checking if regular native NT path is absolute registry path")
+        {
+            kf::USimpleString regularPath(L"\\Device\\HarddiskVolume1\\Windows\\System32\\file.txt");
+            auto regularPathResult = kf::FilenameUtils::isAbsoluteRegistryPath(regularPath);
+
+            THEN("regular native NT path is not identified as registry path")
+            {
                 REQUIRE(regularPathResult == false);
+            }
+        }
+
+        WHEN("checking if partial registry path is absolute")
+        {
+            kf::USimpleString partialRegistryPath(L"REGISTRY\\MACHINE\\test");
+            auto partialRegistryPathResult = kf::FilenameUtils::isAbsoluteRegistryPath(partialRegistryPath);
+
+            THEN("partial registry path is not identified as absolute")
+            {
                 REQUIRE(partialRegistryPathResult == false);
+            }
+        }
+
+        WHEN("checking if empty path is absolute registry path")
+        {
+            kf::USimpleString emptyPath(L"");
+            auto emptyPathResult = kf::FilenameUtils::isAbsoluteRegistryPath(emptyPath);
+
+            THEN("empty path is not identified as registry path")
+            {
                 REQUIRE(emptyPathResult == false);
+            }
+        }
+
+        WHEN("checking if native NT path containing registry keyword is absolute registry path")
+        {
+            kf::USimpleString registryInPath(L"\\Device\\HarddiskVolume1\\REGISTRY\\file.txt");
+            auto registryInPathResult = kf::FilenameUtils::isAbsoluteRegistryPath(registryInPath);
+
+            THEN("path containing registry keyword is not identified as registry path")
+            {
                 REQUIRE(registryInPathResult == false);
             }
         }
