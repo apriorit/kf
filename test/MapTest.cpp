@@ -381,3 +381,56 @@ SCENARIO("Map test: insert_or_assign()")
         }
     }
 }
+
+SCENARIO("Map test: range insert with proper memory allocation")
+{
+    kf::map<int, int, NonPagedPoolNx> map;
+    REQUIRE_NT_SUCCESS(map.initialize());
+
+    WHEN("Using range insert with vector")
+    {
+        std::vector<std::pair<int, int>> data = {
+            {1, 10}, {2, 20}, {3, 30}, {4, 40}
+        };
+        
+        auto result = map.insert(data.begin(), data.end());
+        REQUIRE(result.has_value());
+        
+        THEN("All elements are inserted")
+        {
+            REQUIRE(map.size() == 4);
+            REQUIRE(map.contains(1));
+            REQUIRE(map.contains(2));
+            REQUIRE(map.contains(3));
+            REQUIRE(map.contains(4));
+            REQUIRE(map.find(1)->second == 10);
+            REQUIRE(map.find(2)->second == 20);
+            REQUIRE(map.find(3)->second == 30);
+            REQUIRE(map.find(4)->second == 40);
+        }
+    }
+    
+    WHEN("Using range insert with some existing elements")
+    {
+        // Pre-populate with some elements
+        map.emplace(2, 200);
+        map.emplace(4, 400);
+        
+        std::vector<std::pair<int, int>> data = {
+            {1, 10}, {2, 20}, {3, 30}, {4, 40}, {5, 50}
+        };
+        
+        auto result = map.insert(data.begin(), data.end());
+        REQUIRE(result.has_value());
+        
+        THEN("Only new elements are inserted, existing ones unchanged")
+        {
+            REQUIRE(map.size() == 5);
+            REQUIRE(map.find(1)->second == 10);  // new
+            REQUIRE(map.find(2)->second == 200); // existing unchanged
+            REQUIRE(map.find(3)->second == 30);  // new
+            REQUIRE(map.find(4)->second == 400); // existing unchanged
+            REQUIRE(map.find(5)->second == 50);  // new
+        }
+    }
+}
