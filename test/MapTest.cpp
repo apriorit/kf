@@ -17,15 +17,16 @@ SCENARIO("Map test: insert and find integers")
         REQUIRE(map.size() == 0);
     }
 
-    static const int kIterations = 5; // Number of iterations to insert
-    static const int kKeyMultiplier = 2; // Multiplier for keys to ensure they are not equal to iteration index
+    const int kIterations = 5; // Number of iterations to insert
+    const int kKeyMultiplier = 2; // Multiplier for keys to ensure they are not equal to iteration index
+
     WHEN("Map is populated with integers")
     {
         for (int i = 0; i < kIterations; ++i)
         {
             auto result = map.emplace(i * kKeyMultiplier, i * kIterations);
             REQUIRE(result.has_value());
-            REQUIRE(result.value().second);
+            REQUIRE(result->second);
         }
 
         THEN("It contains proper count of pairs")

@@ -2,7 +2,6 @@
 
 #pragma warning(push)
 #pragma warning(disable : 4595) // non-member operator new or delete functions may not be declared inline
-#pragma warning(disable : 4996) // TODO: ExAllocatePoolWithTag is deprecated, use ExAllocatePool2
 
 inline void* __cdecl operator new(size_t size, POOL_TYPE poolType) noexcept
 {

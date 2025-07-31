@@ -48,7 +48,7 @@ namespace kf
         {
             if (ptr != m_ptr || count * sizeof(T) > m_size)
             {
-                _Xinvalid_argument("ptr != m_ptr  || count * sizeof(T) > m_size");
+                _Xinvalid_argument("ptr != m_ptr || count * sizeof(T) > m_size");
             }
 
             operator delete(m_ptr);
