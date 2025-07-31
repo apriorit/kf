@@ -1,5 +1,5 @@
 #pragma once
-#include "USimpleString.h"
+#include "UStringBuilder.h"
 #include <utility>
 #include <ranges>
 
