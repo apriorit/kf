@@ -3,6 +3,8 @@
 
 namespace kf
 {
+    // TODO: refactor
+
     struct AllocatorState
     {
         std::unique_ptr<char[]> buffer;

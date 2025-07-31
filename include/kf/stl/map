@@ -9,40 +9,49 @@
 
 namespace kf
 {
+    //////////////////////////////////////////////////////////////////////////
+    // map - wraps std::map and allows using it in exception-free environments.
+    //
+    // Note: some methods return NTSTATUS or std::optional to indicate an error
+    // thus they differ from std::map!
+
     template<typename KeyType, typename ValueType, POOL_TYPE poolType, typename LessComparer = std::less<KeyType>>
-    class Map
+    class map
     {
     public:
-        using AllocatorType = MapAllocator<std::pair<const KeyType, ValueType>, poolType>;
-        using MapType = std::map<KeyType, ValueType, LessComparer, AllocatorType>;
-        using Iterator = MapType::iterator;
-        using ConstIterator = MapType::const_iterator;
-        using SizeType = MapType::size_type;
+        using allocator_type = MapAllocator<std::pair<const KeyType, ValueType>, poolType>;
+        using map_type = std::map<KeyType, ValueType, LessComparer, allocator_type>;
+        using key_type = map_type::key_type;
+        using mapped_type = map_type::mapped_type;
+        using value_type = map_type::value_type;
+        using size_type = map_type::size_type;
+        using iterator = map_type::iterator;
+        using const_iterator = map_type::const_iterator;
 
     public:
-        Map() = default;
+        map() = default;
 
-        Map(const Map&) = delete;
-        Map& operator=(const Map&) = delete;
+        map(const map&) = delete;
+        map& operator=(const map&) = delete;
 
-        Map(Map&& other) = default;
-        Map& operator=(Map&& other) = default;
+        map(map&& other) = default;
+        map& operator=(map&& other) = default;
 
         [[nodiscard]] NTSTATUS initialize()
         {
-            AllocatorType allocator;
+            allocator_type allocator;
             if (!allocator.initialize())
             {
                 return STATUS_INSUFFICIENT_RESOURCES;
             }
-            
+
             // Prepare memory for head node
             if (!allocator.prepareMemory(kNodeSize))
             {
                 return STATUS_INSUFFICIENT_RESOURCES;
             }
 
-            m_internalMap = make_unique<MapType, poolType>(allocator);
+            m_internalMap = make_unique<map_type, poolType>(allocator);
             if (!m_internalMap)
             {
                 return STATUS_INSUFFICIENT_RESOURCES;
@@ -61,23 +70,23 @@ namespace kf
             return std::ref((*m_internalMap)[std::forward<KeyType>(key)]);
         }
 
-        template <class... ValuesType>
-        std::optional<std::pair<Iterator, bool>> emplace(ValuesType&&... values)
+        template <class... Args>
+        std::optional<std::pair<iterator, bool>> emplace(Args&&... values)
         {
             if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
             {
                 return {};
             }
 
-            return m_internalMap->emplace(std::forward<ValuesType>(values)...);
+            return m_internalMap->emplace(std::forward<Args>(values)...);
         }
 
-        [[nodiscard]] Iterator find(const KeyType& key)
+        [[nodiscard]] iterator find(const KeyType& key)
         {
             return m_internalMap->find(key);
         }
 
-        [[nodiscard]] ConstIterator find(const KeyType& key) const
+        [[nodiscard]] const_iterator find(const KeyType& key) const
         {
             return m_internalMap->find(key);
         }
@@ -92,57 +101,57 @@ namespace kf
             m_internalMap->clear();
         }
 
-        Iterator erase(ConstIterator where) noexcept
+        iterator erase(const_iterator where) noexcept
         {
             return m_internalMap->erase(where);
         }
 
-        Iterator erase(ConstIterator first, ConstIterator last) noexcept
+        iterator erase(const_iterator first, const_iterator last) noexcept
         {
             return m_internalMap->erase(first, last);
         }
 
-        SizeType erase(const KeyType& key) noexcept
+        size_type erase(const KeyType& key) noexcept
         {
             return m_internalMap->erase(key);
         }
 
-        [[nodiscard]] Iterator begin() noexcept
+        [[nodiscard]] iterator begin() noexcept
         {
             return m_internalMap->begin();
         }
 
-        [[nodiscard]] ConstIterator begin() const noexcept
+        [[nodiscard]] const_iterator begin() const noexcept
         {
             return m_internalMap->begin();
         }
 
-        [[nodiscard]] Iterator end() noexcept
+        [[nodiscard]] iterator end() noexcept
         {
             return m_internalMap->end();
         }
 
-        [[nodiscard]] ConstIterator end() const noexcept
+        [[nodiscard]] const_iterator end() const noexcept
         {
             return m_internalMap->end();
         }
 
-        [[nodiscard]] Iterator upper_bound(const KeyType& key)
+        [[nodiscard]] iterator upper_bound(const KeyType& key)
         {
             return m_internalMap->upper_bound(key);
         }
 
-        [[nodiscard]] ConstIterator upper_bound(const KeyType& key) const
+        [[nodiscard]] const_iterator upper_bound(const KeyType& key) const
         {
             return m_internalMap->upper_bound(key);
         }
 
-        [[nodiscard]] Iterator lower_bound(const KeyType& key)
+        [[nodiscard]] iterator lower_bound(const KeyType& key)
         {
             return m_internalMap->lower_bound(key);
         }
 
-        [[nodiscard]] ConstIterator lower_bound(const KeyType& key) const
+        [[nodiscard]] const_iterator lower_bound(const KeyType& key) const
         {
             return m_internalMap->lower_bound(key);
         }
@@ -152,13 +161,13 @@ namespace kf
             return m_internalMap->empty();
         }
 
-        SizeType size() const noexcept
+        size_type size() const noexcept
         {
             return m_internalMap->size();
         }
 
     private:
-        static constexpr size_t kNodeSize = sizeof(MapType::_Alnode_traits::value_type);
-        std::unique_ptr<MapType> m_internalMap;
+        static constexpr size_t kNodeSize = sizeof(map_type::_Alnode_traits::value_type);
+        std::unique_ptr<map_type> m_internalMap;
     };
 }
