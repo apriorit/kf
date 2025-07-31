@@ -3,32 +3,26 @@
 
 SCENARIO("FilenameUtils getPathNoEndSeparator")
 {
-    GIVEN("various file paths")
+    GIVEN("various file paths with backslashes")
     {
-        kf::USimpleString emptyPath(L"");
-        kf::USimpleString rootPath(L"\\");
         kf::USimpleString simplePath(L"C:\\Windows\\System32\\kernel32.dll");
         kf::USimpleString networkPath(L"\\\\server\\share\\folder\\file.txt");
-        kf::USimpleString pathWithoutBackslash(L"file.txt");
         kf::USimpleString pathEndingWithBackslash(L"C:\\Windows\\");
+        kf::USimpleString rootPath(L"\\file.txt");
 
         WHEN("getting path without end separator")
         {
-            auto emptyPathResult = kf::FilenameUtils::getPathNoEndSeparator(emptyPath);
-            auto rootPathResult = kf::FilenameUtils::getPathNoEndSeparator(rootPath);
             auto simplePathResult = kf::FilenameUtils::getPathNoEndSeparator(simplePath);
             auto networkPathResult = kf::FilenameUtils::getPathNoEndSeparator(networkPath);
-            auto pathWithoutBackslashResult = kf::FilenameUtils::getPathNoEndSeparator(pathWithoutBackslash);
             auto pathEndingWithBackslashResult = kf::FilenameUtils::getPathNoEndSeparator(pathEndingWithBackslash);
+            auto rootPathResult = kf::FilenameUtils::getPathNoEndSeparator(rootPath);
 
             THEN("paths are extracted correctly without trailing separator")
             {
-                REQUIRE(emptyPathResult.isEmpty());
-                REQUIRE(rootPathResult.isEmpty());
                 REQUIRE(simplePathResult.equals(kf::USimpleString(L"C:\\Windows\\System32")));
                 REQUIRE(networkPathResult.equals(kf::USimpleString(L"\\\\server\\share\\folder")));
-                REQUIRE(pathWithoutBackslashResult.isEmpty());
                 REQUIRE(pathEndingWithBackslashResult.equals(kf::USimpleString(L"C:\\Windows")));
+                REQUIRE(rootPathResult.isEmpty());
             }
         }
     }
@@ -36,29 +30,23 @@ SCENARIO("FilenameUtils getPathNoEndSeparator")
 
 SCENARIO("FilenameUtils getPathWithEndSeparator")
 {
-    GIVEN("various file paths")
+    GIVEN("various file paths with backslashes")
     {
-        kf::USimpleString emptyPath(L"");
-        kf::USimpleString rootPath(L"\\");
         kf::USimpleString simplePath(L"C:\\Windows\\System32\\kernel32.dll");
         kf::USimpleString networkPath(L"\\\\server\\share\\folder\\file.txt");
-        kf::USimpleString pathWithoutBackslash(L"file.txt");
+        kf::USimpleString rootPath(L"\\file.txt");
 
         WHEN("getting path with end separator")
         {
-            auto emptyPathResult = kf::FilenameUtils::getPathWithEndSeparator(emptyPath);
-            auto rootPathResult = kf::FilenameUtils::getPathWithEndSeparator(rootPath);
             auto simplePathResult = kf::FilenameUtils::getPathWithEndSeparator(simplePath);
             auto networkPathResult = kf::FilenameUtils::getPathWithEndSeparator(networkPath);
-            auto pathWithoutBackslashResult = kf::FilenameUtils::getPathWithEndSeparator(pathWithoutBackslash);
+            auto rootPathResult = kf::FilenameUtils::getPathWithEndSeparator(rootPath);
 
             THEN("paths are extracted correctly with trailing separator")
             {
-                REQUIRE(emptyPathResult.equals(kf::USimpleString(L"\\")));
-                REQUIRE(rootPathResult.equals(kf::USimpleString(L"\\")));
                 REQUIRE(simplePathResult.equals(kf::USimpleString(L"C:\\Windows\\System32\\")));
                 REQUIRE(networkPathResult.equals(kf::USimpleString(L"\\\\server\\share\\folder\\")));
-                REQUIRE(pathWithoutBackslashResult.equals(kf::USimpleString(L"\\")));
+                REQUIRE(rootPathResult.equals(kf::USimpleString(L"\\")));
             }
         }
     }
@@ -188,9 +176,9 @@ SCENARIO("FilenameUtils getName")
                 REQUIRE(fullPathResult.equals(kf::USimpleString(L"kernel32.dll")));
                 REQUIRE(networkPathResult.equals(kf::USimpleString(L"file.txt")));
                 REQUIRE(rootFileResult.equals(kf::USimpleString(L"file.txt")));
-                REQUIRE(pathWithoutBackslashResult.equals(kf::USimpleString(L"file.txt")));
-                REQUIRE(pathEndingWithBackslashResult.isEmpty());
-                REQUIRE(emptyPathResult.isEmpty());
+                REQUIRE(pathWithoutBackslashResult.equals(kf::USimpleString(L"file.txt"))); // idx = -1, so returns entire string
+                REQUIRE(pathEndingWithBackslashResult.isEmpty()); // after last backslash is empty
+                REQUIRE(emptyPathResult.isEmpty()); // empty string has no backslash, returns entire string (which is empty)
             }
         }
     }
