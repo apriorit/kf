@@ -1,6 +1,7 @@
 #pragma once
 #include "USimpleString.h"
 #include <utility>
+#include <ranges>
 
 namespace kf
 {
