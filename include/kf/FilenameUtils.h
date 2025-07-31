@@ -187,7 +187,7 @@ namespace kf
                 nativeFilename.append(kNtPrefix, dosFilename);
             }
 
-            return std::move(nativeFilename.string());
+            return nativeFilename.release();
         }
 
         static bool isAbsoluteRegistryPath(const USimpleString& path)

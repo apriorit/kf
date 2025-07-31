@@ -43,6 +43,13 @@ namespace kf
             return m_str;
         }
 
+        UString<poolType> release()
+        {
+            UString<poolType> result(std::move(m_str));
+            m_str.free();
+            return result;
+        }
+
     private:
         template<typename T, typename... Args>
         void concat(_In_ const T& arg, _In_ const Args&... args)
