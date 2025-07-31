@@ -155,79 +155,32 @@ SCENARIO("FilenameUtils getExtension")
 {
     GIVEN("various file paths with and without extensions")
     {
-        WHEN("getting extension from native NT file with single extension")
+        kf::USimpleString fileWithExt(L"C:\\folder\\file.txt");
+        kf::USimpleString fileWithMultipleExt(L"C:\\folder\\file.tar.gz");
+        kf::USimpleString fileWithoutExt(L"C:\\folder\\file");
+        kf::USimpleString fileWithExtAndStream(L"C:\\folder\\file.txt:stream");
+        kf::USimpleString pathOnly(L"C:\\folder\\");
+        kf::USimpleString emptyPath(L"");
+        kf::USimpleString dotFile(L"C:\\folder\\.hidden");
+
+        WHEN("getting file extension")
         {
-            kf::USimpleString fileWithExt(L"\\Device\\HarddiskVolume1\\folder\\file.txt");
             auto fileWithExtResult = kf::FilenameUtils::getExtension(fileWithExt);
-
-            THEN("extension is extracted correctly")
-            {
-                REQUIRE(fileWithExtResult.equals(kf::USimpleString(L"txt")));
-            }
-        }
-
-        WHEN("getting extension from native NT file with multiple extensions")
-        {
-            kf::USimpleString fileWithMultipleExt(L"\\Device\\HarddiskVolume1\\folder\\file.tar.gz");
             auto fileWithMultipleExtResult = kf::FilenameUtils::getExtension(fileWithMultipleExt);
-
-            THEN("last extension is extracted correctly")
-            {
-                REQUIRE(fileWithMultipleExtResult.equals(kf::USimpleString(L"gz")));
-            }
-        }
-
-        WHEN("getting extension from native NT file without extension")
-        {
-            kf::USimpleString fileWithoutExt(L"\\Device\\HarddiskVolume1\\folder\\file");
             auto fileWithoutExtResult = kf::FilenameUtils::getExtension(fileWithoutExt);
-
-            THEN("empty extension is returned")
-            {
-                REQUIRE(fileWithoutExtResult.isEmpty());
-            }
-        }
-
-        WHEN("getting extension from native NT file with extension and stream")
-        {
-            kf::USimpleString fileWithExtAndStream(L"\\Device\\HarddiskVolume1\\folder\\file.txt:stream");
             auto fileWithExtAndStreamResult = kf::FilenameUtils::getExtension(fileWithExtAndStream);
-
-            THEN("extension is extracted correctly ignoring stream")
-            {
-                REQUIRE(fileWithExtAndStreamResult.equals(kf::USimpleString(L"txt")));
-            }
-        }
-
-        WHEN("getting extension from native NT path only")
-        {
-            kf::USimpleString pathOnly(L"\\Device\\HarddiskVolume1\\folder\\");
             auto pathOnlyResult = kf::FilenameUtils::getExtension(pathOnly);
-
-            THEN("empty extension is returned")
-            {
-                REQUIRE(pathOnlyResult.isEmpty());
-            }
-        }
-
-        WHEN("getting extension from empty path")
-        {
-            kf::USimpleString emptyPath(L"");
             auto emptyPathResult = kf::FilenameUtils::getExtension(emptyPath);
-
-            THEN("empty extension is returned")
-            {
-                REQUIRE(emptyPathResult.isEmpty());
-            }
-        }
-
-        WHEN("getting extension from native NT dot file")
-        {
-            kf::USimpleString dotFile(L"\\Device\\HarddiskVolume1\\folder\\.hidden");
             auto dotFileResult = kf::FilenameUtils::getExtension(dotFile);
 
-            THEN("extension is extracted correctly")
+            THEN("extensions are extracted correctly")
             {
+                REQUIRE(fileWithExtResult.equals(kf::USimpleString(L"txt")));
+                REQUIRE(fileWithMultipleExtResult.equals(kf::USimpleString(L"gz")));
+                REQUIRE(fileWithoutExtResult.isEmpty());
+                REQUIRE(fileWithExtAndStreamResult.equals(kf::USimpleString(L"txt")));
+                REQUIRE(pathOnlyResult.isEmpty());
+                REQUIRE(emptyPathResult.isEmpty());
                 REQUIRE(dotFileResult.equals(kf::USimpleString(L"hidden")));
             }
         }
@@ -238,69 +191,30 @@ SCENARIO("FilenameUtils removeExtension")
 {
     GIVEN("various file paths with and without extensions")
     {
-        WHEN("removing extension from native NT file with extension")
+        kf::USimpleString fileWithExt(L"C:\\folder\\file.txt");
+        kf::USimpleString fileWithMultipleExt(L"C:\\folder\\file.tar.gz");
+        kf::USimpleString fileWithoutExt(L"C:\\folder\\file");
+        kf::USimpleString pathOnly(L"C:\\folder\\");
+        kf::USimpleString emptyPath(L"");
+        kf::USimpleString dotFile(L"C:\\folder\\.hidden");
+
+        WHEN("removing file extension")
         {
-            kf::USimpleString fileWithExt(L"\\Device\\HarddiskVolume1\\folder\\file.txt");
             auto fileWithExtResult = kf::FilenameUtils::removeExtension(fileWithExt);
-
-            THEN("extension is removed correctly")
-            {
-                REQUIRE(fileWithExtResult.equals(kf::USimpleString(L"\\Device\\HarddiskVolume1\\folder\\file")));
-            }
-        }
-
-        WHEN("removing extension from native NT file with multiple extensions")
-        {
-            kf::USimpleString fileWithMultipleExt(L"\\Device\\HarddiskVolume1\\folder\\file.tar.gz");
             auto fileWithMultipleExtResult = kf::FilenameUtils::removeExtension(fileWithMultipleExt);
-
-            THEN("last extension is removed correctly")
-            {
-                REQUIRE(fileWithMultipleExtResult.equals(kf::USimpleString(L"\\Device\\HarddiskVolume1\\folder\\file.tar")));
-            }
-        }
-
-        WHEN("removing extension from native NT file without extension")
-        {
-            kf::USimpleString fileWithoutExt(L"\\Device\\HarddiskVolume1\\folder\\file");
             auto fileWithoutExtResult = kf::FilenameUtils::removeExtension(fileWithoutExt);
-
-            THEN("file path remains unchanged")
-            {
-                REQUIRE(fileWithoutExtResult.equals(kf::USimpleString(L"\\Device\\HarddiskVolume1\\folder\\file")));
-            }
-        }
-
-        WHEN("removing extension from native NT path only")
-        {
-            kf::USimpleString pathOnly(L"\\Device\\HarddiskVolume1\\folder\\");
             auto pathOnlyResult = kf::FilenameUtils::removeExtension(pathOnly);
-
-            THEN("path remains unchanged")
-            {
-                REQUIRE(pathOnlyResult.equals(kf::USimpleString(L"\\Device\\HarddiskVolume1\\folder\\")));
-            }
-        }
-
-        WHEN("removing extension from empty path")
-        {
-            kf::USimpleString emptyPath(L"");
             auto emptyPathResult = kf::FilenameUtils::removeExtension(emptyPath);
-
-            THEN("empty path remains empty")
-            {
-                REQUIRE(emptyPathResult.isEmpty());
-            }
-        }
-
-        WHEN("removing extension from native NT dot file")
-        {
-            kf::USimpleString dotFile(L"\\Device\\HarddiskVolume1\\folder\\.hidden");
             auto dotFileResult = kf::FilenameUtils::removeExtension(dotFile);
 
-            THEN("extension is removed correctly")
+            THEN("extensions are removed correctly")
             {
-                REQUIRE(dotFileResult.equals(kf::USimpleString(L"\\Device\\HarddiskVolume1\\folder\\.")));
+                REQUIRE(fileWithExtResult.equals(kf::USimpleString(L"C:\\folder\\file")));
+                REQUIRE(fileWithMultipleExtResult.equals(kf::USimpleString(L"C:\\folder\\file.tar")));
+                REQUIRE(fileWithoutExtResult.equals(kf::USimpleString(L"C:\\folder\\file")));
+                REQUIRE(pathOnlyResult.equals(kf::USimpleString(L"C:\\folder\\")));
+                REQUIRE(emptyPathResult.isEmpty());
+                REQUIRE(dotFileResult.equals(kf::USimpleString(L"C:\\folder\\.")));
             }
         }
     }
