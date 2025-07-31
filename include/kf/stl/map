@@ -3,6 +3,7 @@
 #include <map>
 #include <optional>
 #include <initializer_list>
+#include <concepts>
 
 #if _ITERATOR_DEBUG_LEVEL > 0
 #error "_ITERATOR_DEBUG_LEVEL must not be greater than 0"
@@ -16,6 +17,12 @@ namespace kf
     
     template<typename Comp>
     struct has_is_transparent<Comp, std::void_t<typename Comp::is_transparent>> : std::true_type {};
+
+    // C++20 concept for transparent comparators
+    template<typename Comp>
+    concept TransparentComparator = requires {
+        typename Comp::is_transparent;
+    };
 
     //////////////////////////////////////////////////////////////////////////
     // map - wraps std::map and allows using it in exception-free environments.
@@ -169,26 +176,23 @@ namespace kf
         }
 
         template<class InputIt>
-        std::optional<bool> insert(InputIt first, InputIt last)
+        bool insert(InputIt first, InputIt last)
         {
             // Insert elements one by one to properly handle memory allocation
             // prepareMemory must be called once, then consumed, then called again
             for (auto it = first; it != last; ++it)
             {
-                if (m_internalMap->find(it->first) == m_internalMap->end())
+                if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
                 {
-                    if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
-                    {
-                        return {};
-                    }
-                    m_internalMap->insert(*it);
+                    return false;
                 }
+                m_internalMap->insert(*it);
             }
 
             return true;
         }
 
-        std::optional<bool> insert(std::initializer_list<value_type> ilist)
+        bool insert(std::initializer_list<value_type> ilist)
         {
             return insert(ilist.begin(), ilist.end());
         }
@@ -293,15 +297,13 @@ namespace kf
 
         // Heterogeneous lookup methods (enabled only for transparent comparators)
         template<typename K>
-        [[nodiscard]] auto find(const K& key) 
-            -> typename std::enable_if_t<has_is_transparent<key_compare>::value, iterator>
+        [[nodiscard]] iterator find(const K& key) requires TransparentComparator<key_compare>
         {
             return m_internalMap->find(key);
         }
 
         template<typename K>
-        [[nodiscard]] auto find(const K& key) const
-            -> typename std::enable_if_t<has_is_transparent<key_compare>::value, const_iterator>
+        [[nodiscard]] const_iterator find(const K& key) const requires TransparentComparator<key_compare>
         {
             return m_internalMap->find(key);
         }
@@ -312,8 +314,7 @@ namespace kf
         }
 
         template<typename K>
-        [[nodiscard]] auto contains(const K& key) const
-            -> typename std::enable_if_t<has_is_transparent<key_compare>::value, bool>
+        [[nodiscard]] bool contains(const K& key) const requires TransparentComparator<key_compare>
         {
             return m_internalMap->contains(key);
         }
@@ -324,8 +325,7 @@ namespace kf
         }
 
         template<typename K>
-        [[nodiscard]] auto count(const K& key) const
-            -> typename std::enable_if_t<has_is_transparent<key_compare>::value, size_type>
+        [[nodiscard]] size_type count(const K& key) const requires TransparentComparator<key_compare>
         {
             return m_internalMap->count(key);
         }
@@ -341,15 +341,13 @@ namespace kf
         }
 
         template<typename K>
-        [[nodiscard]] auto equal_range(const K& key)
-            -> typename std::enable_if_t<has_is_transparent<key_compare>::value, std::pair<iterator, iterator>>
+        [[nodiscard]] std::pair<iterator, iterator> equal_range(const K& key) requires TransparentComparator<key_compare>
         {
             return m_internalMap->equal_range(key);
         }
 
         template<typename K>
-        [[nodiscard]] auto equal_range(const K& key) const
-            -> typename std::enable_if_t<has_is_transparent<key_compare>::value, std::pair<const_iterator, const_iterator>>
+        [[nodiscard]] std::pair<const_iterator, const_iterator> equal_range(const K& key) const requires TransparentComparator<key_compare>
         {
             return m_internalMap->equal_range(key);
         }
@@ -445,15 +443,13 @@ namespace kf
         }
 
         template<typename K>
-        [[nodiscard]] auto upper_bound(const K& key)
-            -> typename std::enable_if_t<has_is_transparent<key_compare>::value, iterator>
+        [[nodiscard]] iterator upper_bound(const K& key) requires TransparentComparator<key_compare>
         {
             return m_internalMap->upper_bound(key);
         }
 
         template<typename K>
-        [[nodiscard]] auto upper_bound(const K& key) const
-            -> typename std::enable_if_t<has_is_transparent<key_compare>::value, const_iterator>
+        [[nodiscard]] const_iterator upper_bound(const K& key) const requires TransparentComparator<key_compare>
         {
             return m_internalMap->upper_bound(key);
         }
@@ -469,15 +465,13 @@ namespace kf
         }
 
         template<typename K>
-        [[nodiscard]] auto lower_bound(const K& key)
-            -> typename std::enable_if_t<has_is_transparent<key_compare>::value, iterator>
+        [[nodiscard]] iterator lower_bound(const K& key) requires TransparentComparator<key_compare>
         {
             return m_internalMap->lower_bound(key);
         }
 
         template<typename K>
-        [[nodiscard]] auto lower_bound(const K& key) const
-            -> typename std::enable_if_t<has_is_transparent<key_compare>::value, const_iterator>
+        [[nodiscard]] const_iterator lower_bound(const K& key) const requires TransparentComparator<key_compare>
         {
             return m_internalMap->lower_bound(key);
         }
