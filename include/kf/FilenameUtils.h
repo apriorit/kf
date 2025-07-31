@@ -19,13 +19,13 @@ namespace kf
                 return filename;
             }
                 
-            int len = filename.getSize();
-            while (len > 0 && filename[len - 1] == L'\\')
+            int len = filename.charLength();
+            while (len > 0 && filename.charAt(len - 1) == L'\\')
             {
                 len--;
             }
                 
-            return len == filename.getSize() ? filename : filename.substring(0, len);
+            return len == filename.charLength() ? filename : filename.substring(0, len);
         }
 
         static USimpleString getPathWithEndSeparator(const USimpleString& filename)
@@ -44,7 +44,7 @@ namespace kf
             }
                 
             // If already ends with separator, return unchanged
-            if (filename[filename.getSize() - 1] == L'\\')
+            if (filename.charAt(filename.charLength() - 1) == L'\\')
             {
                 return filename;
             }
