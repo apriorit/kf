@@ -57,10 +57,9 @@ namespace kf
             return buffer;
         }
 
-        void deallocate(T*, std::size_t)
+        void deallocate(T* buf, std::size_t)
         {
-            m_state->buffer.reset();
-            m_state->size = 0;
+            delete buf;
         }
 
         [[nodiscard]] bool prepareMemory(std::size_t size)
@@ -70,7 +69,7 @@ namespace kf
                 return false;
             }
 
-            if (m_state->buffer)
+            if (m_state->buffer && m_state->size == size)
             {
                 return true;
             }
