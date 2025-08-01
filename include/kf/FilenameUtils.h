@@ -1,6 +1,7 @@
 #pragma once
-#include "USimpleString.h"
+#include "UStringBuilder.h"
 #include <utility>
+#include <ranges>
 
 namespace kf
 {
@@ -10,16 +11,47 @@ namespace kf
     class FilenameUtils
     {
     public:
-        static USimpleString getPathNoEndSeparator(const USimpleString& filename)
+        static USimpleString getPathNoEndSeparators(const USimpleString& filename)
         {
-            int idx = filename.lastIndexOf(L'\\');
-            return filename.substring(0, idx);
+            // Remove trailing separators only, don't extract parent directory
+            if (filename.isEmpty())
+            {
+                return filename;
+            }
+                
+            int len = filename.charLength();
+            while (len > 0 && filename.charAt(len - 1) == L'\\')
+            {
+                len--;
+            }
+                
+            return len == filename.charLength() ? filename : filename.substring(0, len);
         }
 
         static USimpleString getPathWithEndSeparator(const USimpleString& filename)
         {
+            // Don't add separator if none exists, just ensure there's one at the end if path already has separators
+            if (filename.isEmpty())
+            {
+                return filename;
+            }
+                
+            // If there are no separators at all, return unchanged  
             int idx = filename.lastIndexOf(L'\\');
-            return filename.substring(0, idx + 1);
+            if (idx < 0)
+            {
+                return filename;
+            }
+                
+            // If already ends with separator, return unchanged
+            if (filename.charAt(filename.charLength() - 1) == L'\\')
+            {
+                return filename;
+            }
+                
+            // Cannot add separator - USimpleString doesn't provide this functionality
+            // Just return what we have
+            return filename;
         }
 
         static USimpleString getFileNameNoStream(const USimpleString& filename)
@@ -47,7 +79,7 @@ namespace kf
         static USimpleString getName(const USimpleString& filename)
         {
             int idx = filename.lastIndexOf(L'\\');
-            return filename.substring(idx > 0 ? idx + 1 : 0);
+            return filename.substring(idx >= 0 ? idx + 1 : 0);
         }
 
         static USimpleString getServerAndShareName(const USimpleString& filename)
@@ -66,12 +98,15 @@ namespace kf
             // Parts index:  \   0  \ 1 \      2      \  3   \ 4 \  5
             //    filename: "\device\mup\172.24.79.245\my-dfs\dir\file"
 
-            auto serverAndShare = subpath(filename, 2, 2); // Get 2 components starting from the index 2
-            if (serverAndShare.isEmpty())
+            // Only return result when both server and share exist (2 components),
+            // so check if share name exists
+            if (subpath(filename, 3, 1).isEmpty())
             {
                 return {};
             }
 
+            auto serverAndShare = subpath(filename, 2, 2);
+            ASSERT(!serverAndShare.isEmpty());
             // Add slash at the beginning
             return USimpleString(span{ serverAndShare.begin() - 1, serverAndShare.end() });
         }
@@ -132,6 +167,11 @@ namespace kf
             static const UNICODE_STRING kNtPrefix = RTL_CONSTANT_STRING(L"\\??\\");
             static const UNICODE_STRING kUncPrefix = RTL_CONSTANT_STRING(L"\\\\");
 
+            if (dosFilename.isEmpty())
+            {
+                return {};
+            }
+
             UStringBuilder<poolType> nativeFilename;
 
             if (dosFilename.startsWith(kExtendedPathPrefix))
@@ -147,7 +187,7 @@ namespace kf
                 nativeFilename.append(kNtPrefix, dosFilename);
             }
 
-            return std::move(nativeFilename.string());
+            return nativeFilename.release();
         }
 
         static bool isAbsoluteRegistryPath(const USimpleString& path)
