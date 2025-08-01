@@ -98,10 +98,12 @@ namespace kf
             // Parts index:  \   0  \ 1 \      2      \  3   \ 4 \  5
             //    filename: "\device\mup\172.24.79.245\my-dfs\dir\file"
 
-            // Only return result when both server and share exist (2 components)
-            auto serverAndShare = subpath(filename, 2, 2); // Get 2 components starting from the index 2
-            if (!serverAndShare.isEmpty())
+            // Only return result when both server and share exist (2 components),
+            // so check if share name exists
+            if (!subpath(filename, 3, 1).isEmpty())
             {
+                auto serverAndShare = subpath(filename, 2, 2);
+                ASSERT(!serverAndShare.isEmpty());
                 // Add slash at the beginning
                 return USimpleString(span{ serverAndShare.begin() - 1, serverAndShare.end() });
             }
