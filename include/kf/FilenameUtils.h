@@ -100,16 +100,15 @@ namespace kf
 
             // Only return result when both server and share exist (2 components),
             // so check if share name exists
-            if (!subpath(filename, 3, 1).isEmpty())
+            if (subpath(filename, 3, 1).isEmpty())
             {
-                auto serverAndShare = subpath(filename, 2, 2);
-                ASSERT(!serverAndShare.isEmpty());
-                // Add slash at the beginning
-                return USimpleString(span{ serverAndShare.begin() - 1, serverAndShare.end() });
+                return {};
             }
 
-            // Function should not return server name without share name according to its name
-            return {};
+            auto serverAndShare = subpath(filename, 2, 2);
+            ASSERT(!serverAndShare.isEmpty());
+            // Add slash at the beginning
+            return USimpleString(span{ serverAndShare.begin() - 1, serverAndShare.end() });
         }
 
         // Returns the number of name elements in the path split by path separator '\\':
@@ -168,7 +167,6 @@ namespace kf
             static const UNICODE_STRING kNtPrefix = RTL_CONSTANT_STRING(L"\\??\\");
             static const UNICODE_STRING kUncPrefix = RTL_CONSTANT_STRING(L"\\\\");
 
-            // Handle empty path as edge case
             if (dosFilename.isEmpty())
             {
                 return {};
