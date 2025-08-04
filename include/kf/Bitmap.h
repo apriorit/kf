@@ -32,6 +32,7 @@ namespace kf
         {
             if (&other != this)
             {
+                deinitialize();
                 m_header = other.m_header;
                 other.m_header = {};
             }
