@@ -6,6 +6,10 @@ namespace kf
 {
     using namespace std;
 
+    //////////////////////////////////////////////////////////////////////////////////
+    // EncodingDetector class identifies the encoding of a buffer.
+    // It detects ANSI, UTF-8, UTF-16 (LE/BE), and UTF-32 (LE/BE) encodings,
+    // based on the presence of a Byte Order Mark(BOM) or by analyzing byte patterns.
     class EncodingDetector
     {
     public:

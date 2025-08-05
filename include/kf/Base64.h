@@ -8,6 +8,10 @@ namespace kf
 
     // original implementation is taken from https://github.com/adamvr/arduino-base64/blob/master/Base64.cpp
 
+    //////////////////////////////////////////////////////////////////////////////////
+    // Base64 is utility for decoding Base64-encoded strings.
+    // Only ASCII-compatible Base64 is supported.
+    // Decoded buffer contains bytes as 'char', not 'WCHAR'.
     class Base64
     {
     public:

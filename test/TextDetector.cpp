@@ -1,7 +1,7 @@
 #include "pch.h"
 #include <kf/TextDetector.h>
 
-SCENARIO("kf::TextDetector::isText")
+SCENARIO("TextDetector::isText")
 {
     GIVEN("Valid UTF-8 text with BOM")
     {
@@ -20,7 +20,7 @@ SCENARIO("kf::TextDetector::isText")
     {
         std::byte data[] = {
             std::byte(0xEF), std::byte(0xBB), std::byte(0xBF),
-			std::byte(0x01), // invalid char
+            std::byte(0x01), // invalid char
             std::byte('a'), std::byte('b')
         };
 
@@ -120,8 +120,6 @@ SCENARIO("kf::TextDetector::isText")
 
     GIVEN("Valid UTF-32BE text with BOM")
     {
-        // UTF-32BE BOM 0x00 0x00 0xFE 0xFF
-        // 'T' = 0x00 0x00 0x00 0x54, 'e' = 0x00 0x00 0x00 0x65
         std::byte data[] = {
             std::byte(0x00), std::byte(0x00), std::byte(0xFE), std::byte(0xFF),
             std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte('T'),

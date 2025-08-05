@@ -46,7 +46,7 @@ SCENARIO("Base64::decodeLen")
 }
 
 
-SCENARIO("Base64::decode - decodes 1-byte string")
+SCENARIO("Base64::decode")
 {
     GIVEN("Encoded string 'VA=='")
     {
