@@ -603,10 +603,11 @@ namespace kf
             {
                 patternPos++;
                 starPos = currentPos;
+                currentPos--; // '*' can match zero characters, so we will check the current character on the next iteration
             }
             else if (starPos != -1)
             {
-                int nextWildCPos = expression.charLength() - 1;
+                int nextWildCPos = expression.charLength();
                 int asteriskIndex = expression.indexOf(kQuestionMarkSymbol, patternPos);
                 int questionMarkIndex = expression.indexOf(kStarSymbol, patternPos);
 
@@ -623,7 +624,7 @@ namespace kf
                     nextWildCPos = questionMarkIndex;
                 }
 
-                auto patternSubString = expression.substring(patternPos, nextWildCPos + 1);
+                auto patternSubString = expression.substring(patternPos, nextWildCPos);
 
                 auto restOfString = substring(currentPos);
                 int matchPos = restOfString.indexOf(patternSubString);
