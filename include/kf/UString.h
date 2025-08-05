@@ -75,7 +75,7 @@ namespace kf
 
             if (newByteLength > 0)
             {
-#pragma warning(suppress : 4996) // ExAllocatePoolWithTag is deprecated, use ExAllocatePool2
+#pragma warning(disable : 4996) // ExAllocatePoolWithTag is deprecated, use ExAllocatePool2
 #pragma warning(suppress: 28160) // Must succeed pool allocations are forbidden. Allocation failures cause a system crash.
                 newBuffer = ::ExAllocatePoolWithTag(poolType, newByteLength, PoolTag);
 
