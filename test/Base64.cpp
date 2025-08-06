@@ -43,6 +43,14 @@ SCENARIO("Base64::decodeLen")
             REQUIRE(kf::Base64::decodeLen(kf::USimpleString(L"VGVzdA==")) == 4); // "Test"
         }
     }
+
+    WHEN("Encoded string is ==")
+    {
+        THEN("Decode length is -1")
+        {
+            REQUIRE(kf::Base64::decodeLen(kf::USimpleString(L"==")) == -1);
+        }
+    }
 }
 
 

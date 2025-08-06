@@ -146,7 +146,7 @@ SCENARIO("EncodingDetector without BOM")
         }
     }
 
-    GIVEN("Empty buffer small buffer (<kMaximumBomLength)")
+    GIVEN("Empty small buffer (<kMaximumBomLength)")
     {
         std::byte data[1] = {};
         kf::EncodingDetector detector(data);
@@ -158,7 +158,7 @@ SCENARIO("EncodingDetector without BOM")
         }
     }
 
-    GIVEN("Empty buffer big buffer (>kMaximumBomLength)")
+    GIVEN("Empty big buffer (>kMaximumBomLength)")
     {
         std::byte data[10] = {};
         kf::EncodingDetector detector(data);
@@ -175,7 +175,7 @@ SCENARIO("EncodingDetector without BOM")
         std::byte data[] = {
             std::byte(0x00), std::byte('T'),
             std::byte('e'), std::byte(0x00),
-			std::byte('s'), std::byte(0x00),
+            std::byte('s'), std::byte(0x00),
             std::byte('t'), std::byte(0x00),
             std::byte(0x00)
         };
