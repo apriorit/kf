@@ -128,3 +128,71 @@ SCENARIO("intrusive_ptr: methods")
         }
     }
 }
+
+SCENARIO("intrusive_ptr: reference counter")
+{
+    GIVEN("an IntrusivePtrTestStruct object")
+    {
+        IntrusivePtrTestStructPtr structPtr(new(PagedPool) IntrusivePtrTestStruct);
+        REQUIRE_NT_SUCCESS(structPtr->str.init(L"42"));
+        structPtr->number = 42;
+
+        WHEN("use_count is called")
+        {
+            THEN("it returns 1 for the first holder")
+            {
+                REQUIRE(structPtr->use_count() == 1);
+                REQUIRE(structPtr.get() != nullptr);
+                REQUIRE(structPtr->str.equals(L"42"));
+                REQUIRE(structPtr->number == 42);
+            }
+        }
+
+        WHEN("the holder is assigned to nullptr")
+        {
+            structPtr = nullptr;
+            THEN("use_count becomes 0 and the object is deleted")
+            {
+                REQUIRE(structPtr.get() == nullptr);
+            }
+        }
+
+        WHEN("another holder is created")
+        {
+            IntrusivePtrTestStructPtr anotherHolder = structPtr;
+            THEN("use_count increases to 2")
+            {
+                REQUIRE(structPtr->use_count() == 2);
+                REQUIRE(anotherHolder->use_count() == 2);
+                REQUIRE(structPtr.get() != nullptr);
+                REQUIRE(anotherHolder.get() != nullptr);
+                REQUIRE(structPtr->str.equals(L"42"));
+                REQUIRE(structPtr->number == 42);
+                REQUIRE(anotherHolder->str.equals(L"42"));
+                REQUIRE(anotherHolder->number == 42);
+            }
+
+            WHEN("the second holder is reset")
+            {
+                anotherHolder.reset();
+                THEN("use_count decreases to 1")
+                {
+                    REQUIRE(structPtr->use_count() == 1);
+                }
+            }
+        }
+
+        WHEN("the object is moved")
+        {
+            IntrusivePtrTestStructPtr movedHolder = std::move(structPtr);
+            THEN("use_count remains 1 for the moved holder")
+            {
+                REQUIRE(movedHolder->use_count() == 1);
+                REQUIRE(structPtr.get() == nullptr);
+                REQUIRE(movedHolder.get() != nullptr);
+                REQUIRE(movedHolder->str.equals(L"42"));
+                REQUIRE(movedHolder->number == 42);
+            }
+        }
+    }
+}
