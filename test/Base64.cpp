@@ -112,4 +112,17 @@ SCENARIO("Base64::decode")
             REQUIRE(written == 0);
         }
     }
+
+    GIVEN("Output buffer isn't big enought")
+    {
+        kf::USimpleString input(L"VGVzdA==");
+        kf::vector<std::byte, NonPagedPoolNx> output;
+        REQUIRE_NT_SUCCESS(output.resize(2));
+
+        THEN("Decode returns -1")
+        {
+            int written = kf::Base64::decode(input, std::span<std::byte>(output));
+            REQUIRE(written == -1);
+        }
+    }
 }

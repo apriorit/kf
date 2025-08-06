@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include <kf/EncodingDetector.h>
 
 SCENARIO("EncodingDetector detects BOM encodings")
@@ -146,7 +146,7 @@ SCENARIO("EncodingDetector without BOM")
         }
     }
 
-    GIVEN("Empty buffer")
+    GIVEN("Empty buffer small buffer (<kMaximumBomLength)")
     {
         std::byte data[1] = {};
         kf::EncodingDetector detector(data);
@@ -154,6 +154,36 @@ SCENARIO("EncodingDetector without BOM")
         THEN("Encoding is unknown")
         {
             REQUIRE(detector.getEncoding() == kf::EncodingDetector::Unknown);
+            REQUIRE(detector.getBomLength() == 0);
+        }
+    }
+
+    GIVEN("Empty buffer big buffer (>kMaximumBomLength)")
+    {
+        std::byte data[10] = {};
+        kf::EncodingDetector detector(data);
+
+        THEN("Encoding is ANSI")
+        {
+            REQUIRE(detector.getEncoding() == kf::EncodingDetector::ANSI);
+            REQUIRE(detector.getBomLength() == 0);
+        }
+    }
+
+    GIVEN("'00 T 00 e 00 s 00 t 00 00' bytes without BOM and with random position of 0s and odd size")
+    {
+        std::byte data[] = {
+            std::byte(0x00), std::byte('T'),
+            std::byte('e'), std::byte(0x00),
+			std::byte('s'), std::byte(0x00),
+            std::byte('t'), std::byte(0x00),
+            std::byte(0x00)
+        };
+        kf::EncodingDetector detector(data);
+
+        THEN("Encoding is set to ANSI")
+        {
+            REQUIRE(detector.getEncoding() == kf::EncodingDetector::ANSI);
             REQUIRE(detector.getBomLength() == 0);
         }
     }

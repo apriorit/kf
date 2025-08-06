@@ -40,6 +40,11 @@ namespace kf
             uint8_t a3[3];
             uint8_t a4[4];
 
+			if (output.size() < decodeLen(input))
+			{
+				return -1; // Output buffer is too small
+			}
+
             while (inputIdx < input.charLength()) 
             {
                 auto ch = static_cast<char>(input.charAt(inputIdx++));
