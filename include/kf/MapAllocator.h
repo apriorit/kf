@@ -59,7 +59,7 @@ namespace kf
 
         void deallocate(T* buf, std::size_t)
         {
-            delete buf;
+            operator delete(buf);
         }
 
         [[nodiscard]] bool prepareMemory(std::size_t size)
