@@ -9,6 +9,10 @@ namespace kf
 {
     using namespace std;
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    // TextDetector class provides a utility to determine whether a given buffer contains textual data.
+    // It filters out control characters (except for \t, \n, \r) to verify that the content represents valid text.
+    // Supported encodings include ANSI, UTF-8, UTF-16 (LE/BE), and UTF-32 (LE/BE).
     class TextDetector
     {
     public:
