@@ -439,6 +439,7 @@ SCENARIO("reverse_elements function")
         vec.push_back(3);
         vec.push_back(4);
         vec.push_back(5);
+
         int expected[] = { 5, 4, 3, 2, 1 };
 
         WHEN("Reversing the entire vector")
@@ -459,6 +460,7 @@ SCENARIO("reverse_elements function")
         vec.push_back(-20);
         vec.push_back(-30);
         vec.push_back(-40);
+
         int expected[] = { -40, -30, -20, -10 };
 
         WHEN("Reversing the entire vector")
@@ -480,6 +482,7 @@ SCENARIO("reverse_elements function")
         vec.push_back(0);
         vec.push_back(2);
         vec.push_back(4);
+
         int expected[] = { -5, 2, 0, -3, 4 };
 
         WHEN("Reversing form 1s to 3rd element")
@@ -548,6 +551,7 @@ SCENARIO("count_run function")
         vec.push_back(3);
         vec.push_back(2);
         vec.push_back(1);
+
         int expected[] = { 1, 2, 3, 4, 5 };
 
         WHEN("Start from 0")
@@ -861,6 +865,7 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
         };
 
         TEMP_STORAGE_T<int> store = {};
+
         int expected[] = { 1, 2, 3, 4, 5, 6 };
 
         WHEN("Merging the runs")
@@ -887,6 +892,7 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
         };
 
         TEMP_STORAGE_T<int> store = {};
+
         int expected[] = { 1, 2, 3 };
 
         WHEN("Merging the runs")
@@ -937,6 +943,7 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
         };
 
         TEMP_STORAGE_T<int> store = {};
+
         int expected[] = { 1, 3, 3, 4, 5, 6 };
 
         WHEN("Merging runs with duplicates")
@@ -955,12 +962,14 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
         kf::vector<int, NonPagedPoolNx> vec;
         vec.push_back(5);
         vec.push_back(2);
+
         TIM_SORT_RUN_T stack[] = {
             {0, 1}, // [5]
             {1, 1}  // [2]
         };
 
         TEMP_STORAGE_T<int> store = {};
+
         int expected[] = { 2, 5 };
 
         WHEN("Merging two one-element runs")
@@ -990,6 +999,7 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
         };
 
         TEMP_STORAGE_T<int> store = {};
+
         int expected[] = { 7, 7, 7, 7, 7, 7 };
 
         WHEN("Merging equal values")
@@ -1020,13 +1030,14 @@ SCENARIO("tim_sort_collapse function")
         TIM_SORT_RUN_T stack[] = { {0, 5} };
         int stack_curr = 1;
 
+        TIM_SORT_RUN_T expectedStack[] = { {0, 5} };
+
         WHEN("Collapsing a single-run stack")
         {
             int result = tim_sort_collapse(vec.data(), stack, stack_curr, &store, vec.size());
 
             THEN("Stack remains unchanged")
             {
-                TIM_SORT_RUN_T expectedStack[] = { {0, 5} };
                 REQUIRE(result == 1);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
@@ -1045,7 +1056,13 @@ SCENARIO("tim_sort_collapse function")
             {0, 2}, // [1,3]
             {2, 2}  // [2,4]
         };
+
         int stack_size = 2;
+
+        TIM_SORT_RUN_T expectedStack[] = {
+            {0, 4},
+            {0, 0}
+        };
 
         WHEN("Collapsing a two-run stack that covers full vector")
         {
@@ -1053,10 +1070,6 @@ SCENARIO("tim_sort_collapse function")
 
             THEN("Runs are merged into one run")
             {
-                TIM_SORT_RUN_T expectedStack[] = { 
-                    {0, 4},
-                    {0, 0}
-                };
                 REQUIRE(result == 1);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
@@ -1077,16 +1090,17 @@ SCENARIO("tim_sort_collapse function")
         };
         int stack_size = 2;
 
+        TIM_SORT_RUN_T expectedStack[] = {
+            {0, 4},
+            {0, 0}
+        };
+
         WHEN("Collapsing stack where first run length <= second run length")
         {
             int result = tim_sort_collapse(vec.data(), stack, stack_size, &store, vec.size());
 
             THEN("Runs are merged into one run")
             {
-                TIM_SORT_RUN_T expectedStack[] = { 
-                    {0, 4},
-                    {0, 0}
-                };
                 REQUIRE(result == 1);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
@@ -1124,18 +1138,19 @@ SCENARIO("tim_sort_collapse function")
         };
         int stack_size = 4;
 
+        TIM_SORT_RUN_T expectedStack[] = {
+            {0, 7},
+            {7, 5},
+            {12, 1},
+            {0, 0}  // Last run is empty after merge
+        };
+
         WHEN("Collapsing stack with left merge condition")
         {
             int result = tim_sort_collapse(vec.data(), stack, stack_size, &store, vec.size());
 
             THEN("Left merge occurs and stack size decreases")
             {
-                TIM_SORT_RUN_T expectedStack[] = { 
-                    {0, 7},
-                    {7, 5},
-                    {12, 1},
-                    {0, 0}  // Last run is empty after merge
-                };
                 REQUIRE(result == 3);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
@@ -1175,18 +1190,19 @@ SCENARIO("tim_sort_collapse function")
         };
         int stack_size = 4;
 
+        TIM_SORT_RUN_T expectedStack[] = {
+            {0, 8},
+            {8, 4},
+            {12, 3},
+            {0, 0}  // Last run is empty after merge
+        };
+
         WHEN("Collapsing stack with right merge condition")
         {
             int result = tim_sort_collapse(vec.data(), stack, stack_size, &store, vec.size());
 
             THEN("Right merge occurs and stack size decreases")
             {
-                TIM_SORT_RUN_T expectedStack[] = {
-                    {0, 8},
-                    {8, 4},
-                    {12, 3},
-                    {0, 0}  // Last run is empty after merge
-                };
                 REQUIRE(result == 3);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
@@ -1222,18 +1238,19 @@ SCENARIO("tim_sort_collapse function")
         };
         int stack_size = 4;
 
+        TIM_SORT_RUN_T expectedStack[] = {
+            {0, 7},
+            {7, 4},
+            {11, 2},
+            {13, 1}
+        };
+
         WHEN("Collapsing stack with no merges needed")
         {
             int result = tim_sort_collapse(vec.data(), stack, stack_size, &store, vec.size());
 
             THEN("Stack remains unchanged and data intact")
             {
-                TIM_SORT_RUN_T expectedStack[] = {
-                    {0, 7},
-                    {7, 4},
-                    {11, 2},
-                    {13, 1}
-                };
                 REQUIRE(result == 4);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
@@ -1271,16 +1288,17 @@ SCENARIO("tim_sort_collapse function")
         };
         int stack_size = 2;
 
+        TIM_SORT_RUN_T expectedStack[] = {
+            {0, 2},
+            {2, 1}
+        };
+
         WHEN("Collapsing stack with size larger than runs sum")
         {
             int result = tim_sort_collapse(vec.data(), stack, stack_size, &store, 4);
 
             THEN("Function does not merge")
             {
-                TIM_SORT_RUN_T expectedStack[] = {
-                    {0, 2},
-                    {2, 1}
-                };
                 REQUIRE(result == 2);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
@@ -1310,18 +1328,19 @@ SCENARIO("tim_sort_collapse function")
         };
         int stack_curr = 4;
 
+        TIM_SORT_RUN_T expectedStack[] = {
+            {0, 8},
+            {0, 0},
+            {0, 0},
+            {0, 0}
+        };
+
         WHEN("Collapsing stack with ABC condition")
         {
             int result = tim_sort_collapse(vec.data(), stack, stack_curr, &store, vec.size());
 
             THEN("Left merge of B and C occurs")
             {
-                TIM_SORT_RUN_T expectedStack[] = {
-                    {0, 8},
-                    {0, 0},
-                    {0, 0},
-                    {0, 0}
-                };
                 REQUIRE(result == 1);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
@@ -1351,13 +1370,14 @@ SCENARIO("PUSH_NEXT function")
         size_t curr = 0;
         size_t minrun = compute_minrun(arrSize);
 
+        TIM_SORT_RUN_T expectedStack[] = { {0, 32} };
+
         WHEN("PUSH_NEXT is called on an unsorted vector")
         {
             int result = PUSH_NEXT(unsortedArray, arrSize, &store, minrun, stack, &stack_curr, &curr);
 
             THEN("The function should correctly identify the first run")
             {
-                TIM_SORT_RUN_T expectedStack[] = { {0, 32} };
                 REQUIRE(result == 1);
                 REQUIRE(stack_curr == 1);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
@@ -1382,13 +1402,14 @@ SCENARIO("PUSH_NEXT function")
         size_t curr = 0;
         size_t minrun = compute_minrun(vec.size());
 
+        TIM_SORT_RUN_T expectedStack[] = { {0, 5} };
+
         WHEN("PUSH_NEXT is called on an unsorted vector")
         {
             int result = PUSH_NEXT(vec.data(), vec.size(), &store, minrun, stack, &stack_curr, &curr);
 
             THEN("The function should sort all array as there is no reasons to devide it into parts")
             {
-                TIM_SORT_RUN_T expectedStack[] = { {0, 5} };
                 REQUIRE(result == 0);
                 REQUIRE(stack_curr == 1);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
@@ -1417,13 +1438,14 @@ SCENARIO("PUSH_NEXT function")
         size_t curr = 0;
         size_t minrun = compute_minrun(vec.size());
 
+        TIM_SORT_RUN_T expectedStack[] = { {0, vec.size()} };
+
         WHEN("PUSH_NEXT is called on a sorted array")
         {
             int result = PUSH_NEXT(vec.data(), vec.size(), &store, minrun, stack, &stack_curr, &curr);
 
             THEN("The function should identify the entire array as a single run")
             {
-                TIM_SORT_RUN_T expectedStack[] = { {0, vec.size()}};
                 REQUIRE(result == 0);
                 REQUIRE(stack_curr == 1);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
@@ -1464,13 +1486,14 @@ SCENARIO("PUSH_NEXT function")
         size_t curr = 0;
         size_t minrun = compute_minrun(vec.size());
 
+        TIM_SORT_RUN_T expectedStack[] = { {0, 1} };
+
         WHEN("PUSH_NEXT is called on an array with one element")
         {
             int result = PUSH_NEXT(vec.data(), vec.size(), &store, minrun, stack, &stack_curr, &curr);
 
             THEN("The function should identify the single element as a run")
             {
-                TIM_SORT_RUN_T expectedStack[] = { {0, 1} };
                 REQUIRE(result == 0);
                 REQUIRE(stack_curr == 1);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
@@ -1481,6 +1504,229 @@ SCENARIO("PUSH_NEXT function")
         if (store.storage)
         {
             timsort::detail::free(store.storage);
+        }
+    }
+}
+
+SCENARIO("binary_insertion_sort function")
+{
+    GIVEN("An unsorted vector of integers")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+        vec.push_back(5);
+        vec.push_back(2);
+        vec.push_back(9);
+        vec.push_back(1);
+        vec.push_back(6);
+
+        int expected[] = { 1, 2, 5, 6, 9 };
+
+        WHEN("Calling binary_insertion_sort")
+        {
+            timsort::binary_insertion_sort(vec.data(), vec.size());
+
+            THEN("The vector becomes sorted")
+            {
+                REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
+            }
+        }
+    }
+
+    GIVEN("An empty vector")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+
+        WHEN("Calling binary_insertion_sort")
+        {
+            timsort::binary_insertion_sort(vec.data(), vec.size());
+
+            THEN("Nothing happens and no crash occurs")
+            {
+                REQUIRE(vec.size() == 0);
+            }
+        }
+    }
+
+    GIVEN("A vector with a single element")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+        vec.push_back(1);
+
+        WHEN("Calling binary_insertion_sort")
+        {
+            timsort::binary_insertion_sort(vec.data(), vec.size());
+
+            THEN("The vector remains unchanged")
+            {
+                REQUIRE(vec.at(0) == 1);
+            }
+        }
+    }
+
+    GIVEN("A vector with all elements equal")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+        vec.push_back(7);
+        vec.push_back(7);
+        vec.push_back(7);
+        vec.push_back(7);
+
+        int expected[] = { 7, 7, 7, 7 };
+
+        WHEN("Calling binary_insertion_sort")
+        {
+            timsort::binary_insertion_sort(vec.data(), vec.size());
+
+            THEN("The vector remains unchanged")
+            {
+                REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
+            }
+        }
+    }
+
+    GIVEN("A vector with already sorted elements")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+        vec.push_back(1);
+        vec.push_back(2);
+        vec.push_back(3);
+        vec.push_back(4);
+        vec.push_back(5);
+
+        int expected[] = { 1, 2, 3, 4, 5 };
+
+        WHEN("Calling binary_insertion_sort")
+        {
+            timsort::binary_insertion_sort(vec.data(), vec.size());
+
+            THEN("The vector remains unchanged")
+            {
+                REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
+            }
+        }
+    }
+
+    GIVEN("A vector with negative and positive integers")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+        vec.push_back(0);
+        vec.push_back(2);
+        vec.push_back(-3);
+        vec.push_back(4);
+        vec.push_back(-1);
+
+        int expected[] = { -3, -1, 0, 2, 4 };
+
+        WHEN("Calling binary_insertion_sort")
+        {
+            timsort::binary_insertion_sort(vec.data(), vec.size());
+
+            THEN("The vector becomes sorted")
+            {
+                REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
+            }
+        }
+    }
+
+    GIVEN("A vector with duplicate elements")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+        vec.push_back(3);
+        vec.push_back(1);
+        vec.push_back(2);
+        vec.push_back(3);
+        vec.push_back(4);
+        vec.push_back(3);
+
+        int expected[] = { 1, 2, 3, 3, 3, 4 };
+
+        WHEN("Calling binary_insertion_sort")
+        {
+            timsort::binary_insertion_sort(vec.data(), vec.size());
+
+            THEN("The vector becomes sorted with duplicates in order")
+            {
+                REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
+            }
+        }
+    }
+}
+
+SCENARIO("tim_sort function")
+{
+    GIVEN("An empty vector")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+
+        WHEN("Calling tim_sort")
+        {
+            timsort::tim_sort(vec.data(), vec.size());
+
+            THEN("Nothing happens and no crash occurs")
+            {
+                REQUIRE(vec.size() == 0);
+            }
+        }
+    }
+
+    GIVEN("A vector with a single element")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+        vec.push_back(1);
+
+        WHEN("Calling tim_sort")
+        {
+            timsort::tim_sort(vec.data(), vec.size());
+
+            THEN("The vector remains unchanged")
+            {
+                REQUIRE(vec.at(0) == 1);
+            }
+        }
+    }
+
+    GIVEN("Vector with <64 elements")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+        vec.push_back(5);
+        vec.push_back(2);
+        vec.push_back(9);
+        vec.push_back(1);
+        vec.push_back(6);
+
+        int expected[] = { 1, 2, 5, 6, 9 };
+
+        WHEN("Calling tim_sort")
+        {
+            timsort::tim_sort(vec.data(), vec.size());
+
+            THEN("The vector becomes sorted")
+            {
+                REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
+            }
+        }
+    }
+
+    GIVEN("A vector with more than 64 elements")
+    {
+        kf::vector<int, NonPagedPoolNx> vec;
+        for (int i = 1000; i > 0; --i) {
+            vec.push_back(i);
+        }
+
+        int expected[1000];
+        for (int i = 0; i < 1000; ++i) {
+            expected[i] = i + 1;
+        }
+
+        WHEN("Calling tim_sort")
+        {
+            timsort::tim_sort(vec.data(), vec.size());
+
+            THEN("The vector becomes sorted")
+            {
+                REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
+            }
         }
     }
 }

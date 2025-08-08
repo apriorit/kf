@@ -605,6 +605,11 @@ namespace timsort
     template<class T>
     inline void binary_insertion_sort(T* dst, const size_t size)
     {
+        if (dst == nullptr)
+        {
+            return;
+        }
+
         /* don't bother sorting an array of size <= 1 */
         if (size <= 1)
         {
@@ -617,6 +622,11 @@ namespace timsort
     template<class T>
     inline void tim_sort(T* dst, const size_t size)
     {
+        if (dst == nullptr)
+        {
+            return;
+        }
+
         /* don't bother sorting an array of size 1 */
         if (size <= 1)
         {
