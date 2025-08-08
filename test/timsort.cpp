@@ -847,7 +847,7 @@ SCENARIO("tim_sort_resize function")
     }
 }
 
-SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
+SCENARIO("tim_sort_merge function")
 {
     GIVEN("Two sorted runs of equal size")
     {
@@ -877,6 +877,8 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
                 REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Two runs where one is empty")
@@ -904,6 +906,8 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
                 REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Both runs are empty")
@@ -925,6 +929,8 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
                 REQUIRE(vec.size() == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Two runs with duplicate values")
@@ -955,6 +961,8 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
                 REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Each run has one element")
@@ -981,6 +989,8 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
                 REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("All values are equal")
@@ -1011,13 +1021,13 @@ SCENARIO("tim_sort_merge function with TIM_SORT_RUN_T stack")
                 REQUIRE(memcmp(vec.data(), expected, sizeof(expected)) == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 }
 
 SCENARIO("tim_sort_collapse function")
 {
-    TEMP_STORAGE_T<int> store = {};
-
     GIVEN("Stack with only one run")
     {
         kf::vector<int, NonPagedPoolNx> vec;
@@ -1027,6 +1037,7 @@ SCENARIO("tim_sort_collapse function")
         vec.push_back(4);
         vec.push_back(5);
 
+        TEMP_STORAGE_T<int> store = {};
         TIM_SORT_RUN_T stack[] = { {0, 5} };
         int stack_curr = 1;
 
@@ -1042,6 +1053,8 @@ SCENARIO("tim_sort_collapse function")
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Stack with two runs that sum to full vector size")
@@ -1052,6 +1065,7 @@ SCENARIO("tim_sort_collapse function")
         vec.push_back(2);
         vec.push_back(4);
 
+        TEMP_STORAGE_T<int> store = {};
         TIM_SORT_RUN_T stack[] = {
             {0, 2}, // [1,3]
             {2, 2}  // [2,4]
@@ -1073,7 +1087,10 @@ SCENARIO("tim_sort_collapse function")
                 REQUIRE(result == 1);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
+
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Stack with two runs violating invariant (stack[0].length <= stack[1].length)")
@@ -1084,6 +1101,7 @@ SCENARIO("tim_sort_collapse function")
         vec.push_back(3);
         vec.push_back(4);
 
+        TEMP_STORAGE_T<int> store = {};
         TIM_SORT_RUN_T stack[] = {
             {0, 2},
             {2, 2}
@@ -1104,7 +1122,10 @@ SCENARIO("tim_sort_collapse function")
                 REQUIRE(result == 1);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
+
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Stack with three runs triggering left merge")
@@ -1137,7 +1158,7 @@ SCENARIO("tim_sort_collapse function")
             {12, 1}  // D
         };
         int stack_size = 4;
-
+        TEMP_STORAGE_T<int> store = {};
         TIM_SORT_RUN_T expectedStack[] = {
             {0, 7},
             {7, 5},
@@ -1154,7 +1175,10 @@ SCENARIO("tim_sort_collapse function")
                 REQUIRE(result == 3);
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
+
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Stack with three runs triggering right merge")
@@ -1189,7 +1213,7 @@ SCENARIO("tim_sort_collapse function")
             {13, 2}  // D
         };
         int stack_size = 4;
-
+        TEMP_STORAGE_T<int> store = {};
         TIM_SORT_RUN_T expectedStack[] = {
             {0, 8},
             {8, 4},
@@ -1207,6 +1231,8 @@ SCENARIO("tim_sort_collapse function")
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Stack with 4 runs where invariants hold")
@@ -1237,7 +1263,7 @@ SCENARIO("tim_sort_collapse function")
             {13, 1}  //D
         };
         int stack_size = 4;
-
+        TEMP_STORAGE_T<int> store = {};
         TIM_SORT_RUN_T expectedStack[] = {
             {0, 7},
             {7, 4},
@@ -1255,6 +1281,8 @@ SCENARIO("tim_sort_collapse function")
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Stack_curr == 0)")
@@ -1262,6 +1290,7 @@ SCENARIO("tim_sort_collapse function")
         kf::vector<int, NonPagedPoolNx> vec = {};
         TIM_SORT_RUN_T stack[1] = {};
         int stack_size = 0;
+        TEMP_STORAGE_T<int> store = {};
 
         WHEN("Collapsing empty stack")
         {
@@ -1287,7 +1316,7 @@ SCENARIO("tim_sort_collapse function")
             {2, 1}
         };
         int stack_size = 2;
-
+        TEMP_STORAGE_T<int> store = {};
         TIM_SORT_RUN_T expectedStack[] = {
             {0, 2},
             {2, 1}
@@ -1303,6 +1332,8 @@ SCENARIO("tim_sort_collapse function")
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 
     GIVEN("Stack with four runs triggering ABC condition merge")
@@ -1327,7 +1358,7 @@ SCENARIO("tim_sort_collapse function")
             {7, 1}   // D
         };
         int stack_curr = 4;
-
+        TEMP_STORAGE_T<int> store = {};
         TIM_SORT_RUN_T expectedStack[] = {
             {0, 8},
             {0, 0},
@@ -1345,6 +1376,8 @@ SCENARIO("tim_sort_collapse function")
                 REQUIRE(memcmp(stack, expectedStack, sizeof(expectedStack)) == 0);
             }
         }
+
+        timsort::detail::free(store.storage);
     }
 }
 
