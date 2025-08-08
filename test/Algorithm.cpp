@@ -63,7 +63,7 @@ SCENARIO("Algorithm binary_search_it")
         {
             THEN("Returns iterator to the end")
             {
-                std::vector<kf::USimpleString> empty;
+                kf::vector<kf::USimpleString, NonPagedPoolNx> empty;
                 auto it = binary_search_it(empty.begin(), empty.end(), third);
                 REQUIRE(it == empty.end());
             }
