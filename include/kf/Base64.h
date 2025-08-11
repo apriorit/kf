@@ -8,6 +8,11 @@ namespace kf
 
     // original implementation is taken from https://github.com/adamvr/arduino-base64/blob/master/Base64.cpp
 
+    //////////////////////////////////////////////////////////////////////////////////
+    // Base64 is utility for decoding Base64-encoded strings.
+    // Only ASCII-compatible Base64 is supported.
+    // Decoded buffer contains bytes as 'char', not 'WCHAR'.
+    // If the string contains many '=' characters, the decoded length may be negative.
     class Base64
     {
     public:
@@ -20,7 +25,7 @@ namespace kf
 
             int numEq = 0;
             
-            for (int i = input.charLength() - 1; static_cast<char>(input.charAt(i)) == '='; --i)
+            for (int i = input.charLength() - 1; i >= 0 && static_cast<char>(input.charAt(i)) == '='; --i)
             {
                 numEq++;
             }
@@ -35,6 +40,11 @@ namespace kf
             int outputIdx = 0;
             uint8_t a3[3];
             uint8_t a4[4];
+
+            if (output.size() < decodeLen(input))
+            {
+                return -1; // Output buffer is too small
+            }
 
             while (inputIdx < input.charLength()) 
             {
