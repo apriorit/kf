@@ -2,11 +2,11 @@
 #include <kf/stl/new>
 #include <kf/boost/intrusive_ptr.hpp>
 #include <kf/boost/intrusive_ref_counter.hpp>
-#include <kf/UString.h>
 
 struct IntrusivePtrTestStruct : public boost::intrusive_ref_counter<IntrusivePtrTestStruct>
 {
-    kf::UString<PagedPool> str;
+    virtual ~IntrusivePtrTestStruct() = default;
+
     UINT64 number = 0;
 };
 
@@ -19,11 +19,9 @@ SCENARIO("intrusive_ptr: methods")
     GIVEN("two IntrusivePtrTestStruct are initialized")
     {
         IntrusivePtrTestStructPtr struct1(new(PagedPool) IntrusivePtrTestStruct);
-        REQUIRE_NT_SUCCESS(struct1->str.init(L"42"));
         struct1->number = 42;
 
         IntrusivePtrTestStructPtr struct2(new(PagedPool) IntrusivePtrTestStruct);
-        REQUIRE_NT_SUCCESS(struct2->str.init(L"533"));
         struct2->number = 533;
 
         WHEN("operator bool is called")
@@ -64,7 +62,6 @@ SCENARIO("intrusive_ptr: methods")
             THEN("detached object is accessible and valid")
             {
                 REQUIRE(ptr != nullptr);
-                REQUIRE(ptr->str.equals(L"42"));
                 REQUIRE(ptr->number == 42);
             }
 
@@ -83,7 +80,6 @@ SCENARIO("intrusive_ptr: methods")
             THEN("the holder of recipient holds the donor")
             {
                 REQUIRE(struct1.get() != nullptr);
-                REQUIRE(struct1->str.equals(L"533"));
                 REQUIRE(struct1->number == 533);
             }
         }
@@ -94,9 +90,7 @@ SCENARIO("intrusive_ptr: methods")
 
             THEN("the content is swapped")
             {
-                REQUIRE(struct1->str.equals(L"533"));
                 REQUIRE(struct1->number == 533);
-                REQUIRE(struct2->str.equals(L"42"));
                 REQUIRE(struct2->number == 42);
             }
         }
@@ -108,7 +102,6 @@ SCENARIO("intrusive_ptr: methods")
             THEN("the holder of recipient holds the donor")
             {
                 REQUIRE(struct1.get() != nullptr);
-                REQUIRE(struct1->str.equals(L"533"));
                 REQUIRE(struct1->number == 533);
             }
         }
@@ -120,9 +113,7 @@ SCENARIO("intrusive_ptr: methods")
 
             THEN("it dereferences the proper object")
             {
-                REQUIRE(ref1.str.equals(L"42"));
                 REQUIRE(ref1.number == 42);
-                REQUIRE(ref2.str.equals(L"533"));
                 REQUIRE(ref2.number == 533);
             }
         }
@@ -134,7 +125,6 @@ SCENARIO("intrusive_ptr: reference counter")
     GIVEN("an IntrusivePtrTestStruct object")
     {
         IntrusivePtrTestStructPtr structPtr(new(PagedPool) IntrusivePtrTestStruct);
-        REQUIRE_NT_SUCCESS(structPtr->str.init(L"42"));
         structPtr->number = 42;
 
         WHEN("use_count is called")
@@ -143,7 +133,6 @@ SCENARIO("intrusive_ptr: reference counter")
             {
                 REQUIRE(structPtr->use_count() == 1);
                 REQUIRE(structPtr.get() != nullptr);
-                REQUIRE(structPtr->str.equals(L"42"));
                 REQUIRE(structPtr->number == 42);
             }
         }
@@ -166,9 +155,7 @@ SCENARIO("intrusive_ptr: reference counter")
                 REQUIRE(anotherHolder->use_count() == 2);
                 REQUIRE(structPtr.get() != nullptr);
                 REQUIRE(anotherHolder.get() != nullptr);
-                REQUIRE(structPtr->str.equals(L"42"));
                 REQUIRE(structPtr->number == 42);
-                REQUIRE(anotherHolder->str.equals(L"42"));
                 REQUIRE(anotherHolder->number == 42);
             }
 
@@ -190,9 +177,48 @@ SCENARIO("intrusive_ptr: reference counter")
                 REQUIRE(movedHolder->use_count() == 1);
                 REQUIRE(structPtr.get() == nullptr);
                 REQUIRE(movedHolder.get() != nullptr);
-                REQUIRE(movedHolder->str.equals(L"42"));
                 REQUIRE(movedHolder->number == 42);
             }
+        }
+    }
+}
+
+struct IntrusivePtrDtorCheck : public IntrusivePtrTestStruct
+{
+    static inline int dtorCallCount = 0;
+
+    ~IntrusivePtrDtorCheck()
+    {
+        ++dtorCallCount;
+    }
+};
+
+using IntrusivePtrDtorCheckPtr = boost::intrusive_ptr<IntrusivePtrDtorCheck>;
+
+SCENARIO("intrusive_ptr: destructor is called only once")
+{
+    GIVEN("an IntrusivePtrDtorCheck object")
+    {
+        IntrusivePtrDtorCheck::dtorCallCount = 0;
+
+        {
+            IntrusivePtrDtorCheckPtr ptr1(new(PagedPool) IntrusivePtrDtorCheck);
+            REQUIRE(ptr1.get() != nullptr);
+            REQUIRE(IntrusivePtrDtorCheck::dtorCallCount == 0);
+
+            {
+                IntrusivePtrDtorCheckPtr ptr2 = ptr1;
+                REQUIRE(ptr1->use_count() == 2);
+                REQUIRE(IntrusivePtrDtorCheck::dtorCallCount == 0);
+            }
+
+            REQUIRE(ptr1->use_count() == 1);
+            REQUIRE(IntrusivePtrDtorCheck::dtorCallCount == 0);
+        }
+
+        THEN("destructor is called exactly once after all references are gone")
+        {
+            REQUIRE(IntrusivePtrDtorCheck::dtorCallCount == 1);
         }
     }
 }
