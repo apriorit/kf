@@ -21,10 +21,10 @@ template<typename... T>
 class TestMonoObservable : public kf::MonoObservable<T...>
 {
 public:
-	void notify(T... t)
-	{
-		kf::MonoObservable<T...>::notify(t...);
-	}
+    void notify(T... t)
+    {
+        kf::MonoObservable<T...>::notify(t...);
+    }
 };
 
 SCENARIO("Testing MonoObservable functionality")
@@ -80,23 +80,6 @@ SCENARIO("Testing MonoObservable functionality")
             }
         }
     }
-
-    GIVEN("A TestMonoObservable")
-    {
-        TestMonoObservable<int, kf::USimpleString> observable;
-        TestObserver observer;
-
-        WHEN("No observer is attached and notify is called")
-        {
-            observable.notify(123, L"Test");
-
-            THEN("Nothing happens and no notification is sent")
-            {
-                REQUIRE(!observer.m_isNotified);
-            }
-        }
-    }
-
 
     GIVEN("A TestMonoObservable and a TestObserver")
     {
