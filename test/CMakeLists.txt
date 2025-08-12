@@ -44,6 +44,11 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     HexTest.cpp
     MapTest.cpp
     Vector.cpp
+    DoubleLinkedListTest.cpp
+    ArrayUtilsTest.cpp
+    VariableSizeStructTest.cpp
+    ScopeFailureTest.cpp
+    Base64Test.cpp
     TreeMapTest.cpp
 )
 
