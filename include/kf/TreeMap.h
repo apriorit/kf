@@ -101,12 +101,6 @@ namespace kf
             return m_table.deleteElement(Node::fromKey(key));
         }
 
-        bool removeByObject(const V* value)
-        {
-            Node* node = CONTAINING_RECORD(value, Node, m_value);
-            return m_table.deleteElement(*node);
-        }
-
         TreeMap& operator=(_Inout_ TreeMap&& another)
         {
             m_table = std::move(another.m_table);

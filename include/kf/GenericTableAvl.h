@@ -152,6 +152,7 @@ namespace kf
         __drv_allocatesMem(Mem)
         static void* NTAPI allocateRoutine(_In_ RTL_AVL_TABLE*, _In_ CLONG byteSize)
         {
+#pragma warning(suppress: 4996) // 'ExAllocatePoolWithTag': ExAllocatePoolWithTag is deprecated, use ExAllocatePool2.
             return ::ExAllocatePoolWithTag(poolType, byteSize, PoolTag);
         }
 
