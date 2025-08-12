@@ -41,10 +41,10 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     AdjacentView.cpp
     Bitmap.cpp
     BitmapRangeIterator.cpp
-    Hex.cpp
-    Map.cpp
+    HexTest.cpp
+    MapTest.cpp
     Vector.cpp
-    USimpleString.cpp
+    USimpleStringTest.cpp
 )
 
 target_link_libraries(kf-test kf::kf kmtest::kmtest)
