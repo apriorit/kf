@@ -7,7 +7,8 @@
 namespace kf
 {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    // LinkedTreeMap - map container for NT kernel with predictable iteration order, inspired by https://docs.oracle.com/javase/8/docs/api/java/util/LinkedHashMap.html
+    // LinkedTreeMap - map container for NT kernel with predictable iteration order,
+    // inspired by https://docs.oracle.com/javase/8/docs/api/java/util/LinkedHashMap.html
 
     template<class K, class V, POOL_TYPE poolType, class LessComparer=std::less<K>>
     class LinkedTreeMap
@@ -121,10 +122,14 @@ namespace kf
 
         bool remove(const K& key)
         {
-            auto value = get(key);
-            Node* node = CONTAINING_RECORD(value, Node, m_value);
+            auto node = m_table.lookupElement(Node::fromKey(key));
+            if (node == nullptr)
+            {
+                return false;
+            }
+
             m_links.remove(*node);
-            return m_table.deleteElement(Node::fromKey(key));
+            return m_table.deleteElement(*node);
         }
 
         bool removeByObject(const V* value)
