@@ -44,7 +44,8 @@ SCENARIO("Testing kf::Guard::Guard basic functionality")
 
     GIVEN("A Guard constructed with a valid resource pointer")
     {
-        TestResource resource(123);
+        int value = 123;
+        TestResource resource(value);
         TestGuard guard(&resource);
         g_closeCallCount = 0;
         g_lastClosedResource = nullptr;
@@ -52,6 +53,7 @@ SCENARIO("Testing kf::Guard::Guard basic functionality")
         THEN("Value is stored correctly")
         {
             REQUIRE(guard.get() == &resource);
+            REQUIRE(guard.get()->m_value == value);
         }
 
         WHEN("Guard is reset with no arguments")
@@ -97,7 +99,8 @@ SCENARIO("Testing kf::Guard::Guard basic functionality")
 
     GIVEN("A Guard constructed with a valid resource pointer")
     {
-        TestResource resource(123);
+        int value = 123;
+        TestResource resource(value);
         TestGuard guard(&resource);
         g_closeCallCount = 0;
         g_lastClosedResource = nullptr;
@@ -109,6 +112,7 @@ SCENARIO("Testing kf::Guard::Guard basic functionality")
             THEN("The second Guard owns the resource")
             {
                 REQUIRE(otherGuard.get() == &resource);
+                REQUIRE(otherGuard.get()->m_value == value);
             }
 
             THEN("The original guard holds nullptr and no closeFn was called for the resource")
@@ -121,14 +125,16 @@ SCENARIO("Testing kf::Guard::Guard basic functionality")
 
     GIVEN("A Guard constructed with a valid resource pointer")
     {
-        TestResource resource(123);
+        int value = 123;
+        TestResource resource(value);
         TestGuard guard(&resource);
         g_closeCallCount = 0;
         g_lastClosedResource = nullptr;
 
         WHEN("Guard is move-assigned from another Guard")
         {
-            TestResource otherResource{ 456 };
+            int otherValue = 456;
+            TestResource otherResource(otherValue);
             TestGuard guard2(&otherResource);
 
             guard2 = std::move(guard);
@@ -136,6 +142,7 @@ SCENARIO("Testing kf::Guard::Guard basic functionality")
             THEN("The second guard now owns the first resource")
             {
                 REQUIRE(guard2.get() == &resource);
+                REQUIRE(guard2.get()->m_value == value);
             }
 
             THEN("The original guard holds nullptr and closeFn was called for other resource")
