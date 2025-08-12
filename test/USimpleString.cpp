@@ -83,71 +83,51 @@ SCENARIO("USimpleString::matches")
         WHEN("'?' at the beginning")
         {
             kf::USimpleString pattern(L"?xample.txt");
-            kf::USimpleString matchingStr (L"example.txt");
-            kf::USimpleString nonMatchingStr (L"eeamppe.txt");
+            kf::USimpleString matchingStr(L"example.txt");
+            kf::USimpleString nonMatchingStr(L"eeamppe.txt");
 
-            THEN("example.txt matches the pattern")
+            THEN("example.txt matches the pattern ?xample.txt")
             {
                 REQUIRE(matchingStr.matches(pattern));
             }
 
-            THEN("eeamppe.txt does not match the pattern")
+            THEN("eeamppe.txt does not match the pattern ?xample.txt")
             {
                 REQUIRE(!nonMatchingStr.matches(pattern));
             }
         }
 
-        GIVEN("A pattern with '?' wildcard")
+        WHEN("'?' in the middle")
         {
-            WHEN("'?' at the beginning")
+            kf::USimpleString pattern(L"exa?ple.txt");
+            kf::USimpleString matchingStr(L"example.txt");
+            kf::USimpleString nonMatchingStr(L"eeamppe.txt");
+
+            THEN("example.txt matches the pattern exa?ple.txt")
             {
-                kf::USimpleString pattern(L"?xample.txt");
-                kf::USimpleString matchingStr(L"example.txt");
-                kf::USimpleString nonMatchingStr(L"eeamppe.txt");
-
-                THEN("example.txt matches the pattern ?xample.txt")
-                {
-                    REQUIRE(matchingStr.matches(pattern));
-                }
-
-                THEN("eeamppe.txt does not match the pattern ?xample.txt")
-                {
-                    REQUIRE(!nonMatchingStr.matches(pattern));
-                }
+                REQUIRE(matchingStr.matches(pattern));
             }
 
-            WHEN("'?' in the middle")
+            THEN("eeamppe.txt does not match the pattern exa?ple.txt")
             {
-                kf::USimpleString pattern(L"exa?ple.txt");
-                kf::USimpleString matchingStr(L"example.txt");
-                kf::USimpleString nonMatchingStr(L"eeamppe.txt");
+                REQUIRE(!nonMatchingStr.matches(pattern));
+            }
+        }
 
-                THEN("example.txt matches the pattern exa?ple.txt")
-                {
-                    REQUIRE(matchingStr.matches(pattern));
-                }
+        WHEN("'?' in the end")
+        {
+            kf::USimpleString pattern(L"example.tx?");
+            kf::USimpleString matchingStr(L"example.txt");
+            kf::USimpleString nonMatchingStr(L"eeamppe.txt");
 
-                THEN("eeamppe.txt does not match the pattern exa?ple.txt")
-                {
-                    REQUIRE(!nonMatchingStr.matches(pattern));
-                }
+            THEN("example.txt matches the pattern example.tx?")
+            {
+                REQUIRE(matchingStr.matches(pattern));
             }
 
-            WHEN("'?' in the end")
+            THEN("eeamppe.txt does not match the pattern example.tx?")
             {
-                kf::USimpleString pattern(L"example.tx?");
-                kf::USimpleString matchingStr(L"example.txt");
-                kf::USimpleString nonMatchingStr(L"eeamppe.txt");
-
-                THEN("example.txt matches the pattern example.tx?")
-                {
-                    REQUIRE(matchingStr.matches(pattern));
-                }
-
-                THEN("eeamppe.txt does not match the pattern example.tx?")
-                {
-                    REQUIRE(!nonMatchingStr.matches(pattern));
-                }
+                REQUIRE(!nonMatchingStr.matches(pattern));
             }
         }
     }
