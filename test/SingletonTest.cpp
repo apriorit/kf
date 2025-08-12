@@ -1,6 +1,5 @@
 #include "pch.h"
 #include <kf/Singleton.h>
-#include <kf/stl/new>
 
 class TestSingleton : public kf::Singleton<TestSingleton>
 {
@@ -36,10 +35,10 @@ SCENARIO("Testing Singleton functionality")
 
     WHEN("The TestSingleton object is destroyed")
     {
-        TestSingleton* dynamicSingleton = new(NonPagedPoolNx) TestSingleton();
-        REQUIRE(TestSingleton::getInstance() == dynamicSingleton);
-
-        delete dynamicSingleton;
+        {
+            TestSingleton singleton;
+            REQUIRE(TestSingleton::getInstance() == &singleton);
+        }
 
         THEN("getInstance returns nullptr after destruction")
         {
