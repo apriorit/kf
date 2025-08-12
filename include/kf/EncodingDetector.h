@@ -37,8 +37,8 @@ namespace kf
         bool detectUtf16(span<const std::byte> buffer);
 
     private:
-        Encoding m_encoding;
-        int m_bomLength;
+        Encoding m_encoding = Unknown;
+        int m_bomLength = 0;
     };
 
     inline EncodingDetector::EncodingDetector(span<const std::byte> buffer) : m_encoding(), m_bomLength()
@@ -58,7 +58,7 @@ namespace kf
             return;
         }
 
-        m_encoding = ANSI;
+        //TODO: Add check for ANSI encoding
     }
 
     inline bool EncodingDetector::detectBom(span<const std::byte, kMaximumBomLength> bomBytes)

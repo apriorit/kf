@@ -57,12 +57,11 @@ SCENARIO("EncodingDetector detects BOM encodings")
     GIVEN("'FF FE 00 00 T 00 e 00 s 00 t 00' bytes UTF-32LE BOM")
     {
         std::byte data[] = { 
-            std::byte(0xFF), std::byte(0xFE), 
-            std::byte(0x00), std::byte(0x00),
-            std::byte('T'), std::byte(0x00),
-            std::byte('e'), std::byte(0x00),
-            std::byte('s'), std::byte(0x00),
-            std::byte('t'), std::byte(0x00) 
+            std::byte(0xFF), std::byte(0xFE), std::byte(0x00), std::byte(0x00),
+            std::byte('T'),  std::byte(0x00), std::byte(0x00),  std::byte(0x00),
+            std::byte('e'),  std::byte(0x00), std::byte(0x00),  std::byte(0x00),
+            std::byte('s'),  std::byte(0x00), std::byte(0x00),  std::byte(0x00),
+            std::byte('t'),  std::byte(0x00), std::byte(0x00),  std::byte(0x00)
         };
         kf::EncodingDetector detector(data);
 
@@ -76,12 +75,11 @@ SCENARIO("EncodingDetector detects BOM encodings")
     GIVEN("'00 00 FE FF 00 T 00 e 00 s 00 t' bytes UTF-32BE BOM")
     {
         std::byte data[] = {
-        std::byte(0x00), std::byte(0x00),
-        std::byte(0xFE), std::byte(0xFF),
-        std::byte(0x00), std::byte('T'),
-        std::byte(0x00), std::byte('e'),
-        std::byte(0x00), std::byte('s'),
-        std::byte(0x00), std::byte('t')
+            std::byte(0x00), std::byte(0x00), std::byte(0xFE), std::byte(0xFF),
+            std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte('T'),
+            std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte('e'),
+            std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte('s'),
+            std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte('t')
         };
         kf::EncodingDetector detector(data);
 
@@ -129,24 +127,7 @@ SCENARIO("EncodingDetector without BOM")
         }
     }
 
-    GIVEN("'T e s t' bytes not UTF-16 and without BOM")
-    {
-        std::byte data[] = {
-            std::byte('T'), 
-            std::byte('e'), 
-            std::byte('s'), 
-            std::byte('t')
-        };
-        kf::EncodingDetector detector(data);
-
-        THEN("Encoding is set to ANSI")
-        {
-            REQUIRE(detector.getEncoding() == kf::EncodingDetector::ANSI);
-            REQUIRE(detector.getBomLength() == 0);
-        }
-    }
-
-    GIVEN("Empty small buffer (<kMaximumBomLength)")
+    GIVEN("Small buffer with zeros only (<kMaximumBomLength)")
     {
         std::byte data[1] = {};
         kf::EncodingDetector detector(data);
@@ -158,14 +139,14 @@ SCENARIO("EncodingDetector without BOM")
         }
     }
 
-    GIVEN("Empty big buffer (>kMaximumBomLength)")
+    GIVEN("Big buffer with zeros only (>kMaximumBomLength)")
     {
         std::byte data[10] = {};
         kf::EncodingDetector detector(data);
 
-        THEN("Encoding is ANSI")
+        THEN("Encoding is Unknown")
         {
-            REQUIRE(detector.getEncoding() == kf::EncodingDetector::ANSI);
+            REQUIRE(detector.getEncoding() == kf::EncodingDetector::Unknown);
             REQUIRE(detector.getBomLength() == 0);
         }
     }
@@ -181,9 +162,9 @@ SCENARIO("EncodingDetector without BOM")
         };
         kf::EncodingDetector detector(data);
 
-        THEN("Encoding is set to ANSI")
+        THEN("Encoding is Unknown")
         {
-            REQUIRE(detector.getEncoding() == kf::EncodingDetector::ANSI);
+            REQUIRE(detector.getEncoding() == kf::EncodingDetector::Unknown);
             REQUIRE(detector.getBomLength() == 0);
         }
     }
