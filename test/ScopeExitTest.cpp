@@ -7,37 +7,42 @@ SCENARIO("SCOPE_EXIT macro")
     {
         WHEN("The block is executed")
         {
-            int a = 0;
+            int value = 0;
 
             {
-                SCOPE_EXIT{ a++; };
+                SCOPE_EXIT{ value++; };
+
+                THEN("Scoped function doesn't call until scope not ended")
+                {
+                    REQUIRE(value == 0);
+                }
             }
 
             THEN("The cleanup code should execute after the block")
             {
-                REQUIRE(a == 1);
+                REQUIRE(value == 1);
             }
         }
 
         WHEN("Multiple SCOPE_EXIT macros are used in the same block")
         {
-            int a = 1;
+            int value = 1;
 
             {
                 SCOPE_EXIT
                 {
-                    a *= 5;
+                    value *= 5;
                 };
 
                 SCOPE_EXIT
                 {
-                    a += 2;
+                    value += 2;
                 };
             }
 
             THEN("The cleanup code should execute in reverse order of declaration")
             {
-                REQUIRE(a == 15);
+                REQUIRE(value == 15);
             }
         }
     }
