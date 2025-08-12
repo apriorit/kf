@@ -41,9 +41,10 @@ namespace kf
             uint8_t a3[3];
             uint8_t a4[4];
 
-            if (output.size() < decodeLen(input))
+            int decodedLen = decodeLen(input);
+            if (decodedLen < 0 || output.size() < decodedLen)
             {
-                return -1; // Output buffer is too small
+                return -1;
             }
 
             while (inputIdx < input.charLength()) 
