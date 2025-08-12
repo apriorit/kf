@@ -5,144 +5,141 @@ SCENARIO("TextDetector::isText")
 {
     GIVEN("Valid UTF-8 text with BOM")
     {
-        std::byte data[] = {
-        std::byte(0xEF), std::byte(0xBB), std::byte(0xBF),
-        std::byte('T'), std::byte('e'), std::byte('s'), std::byte('t')
-        };
+        constexpr uint8_t kData[] = { 0xEF, 0xBB, 0xBF, 'T', 'e', 's', 't' };
 
         THEN("Text is detected")
         {
-            REQUIRE(kf::TextDetector::isText(data));
+            REQUIRE(kf::TextDetector::isText(std::as_bytes(std::span{ kData })));
         }
     };
 
     GIVEN("UTF-8 text with BOM and invalid char")
     {
-        std::byte data[] = {
-            std::byte(0xEF), std::byte(0xBB), std::byte(0xBF),
-            std::byte(0x01), // invalid char
-            std::byte('a'), std::byte('b')
-        };
+        constexpr uint8_t kData[] = { 0xEF, 0xBB, 0xBF, 0x01, 'a', 'b' };
 
         THEN("Not a text is detected")
         {
-            REQUIRE(!kf::TextDetector::isText(data));
+            REQUIRE(!kf::TextDetector::isText(std::as_bytes(std::span{ kData })));
         }
     };
 
     GIVEN("Valid UTF-16LE text with BOM")
     {
-        std::byte data[] = {
-            std::byte(0xFF), std::byte(0xFE),
-            std::byte('T'), std::byte(0x00),
-            std::byte('e'), std::byte(0x00),
-            std::byte('s'), std::byte(0x00),
-            std::byte('t'), std::byte(0x00)
+        constexpr uint8_t kData[] = {
+            0xFF, 0xFE,
+            'T', 0x00,
+            'e', 0x00,
+            's', 0x00,
+            't', 0x00
         };
 
         THEN("Text is detected")
         {
-            REQUIRE(kf::TextDetector::isText(data));
+            REQUIRE(kf::TextDetector::isText(std::as_bytes(std::span{ kData })));
         }
     }
 
     GIVEN("UTF-16LE text with BOM and invalid char")
     {
-        std::byte data[] = {
-            std::byte(0xFF), std::byte(0xFE),
-            std::byte(0x01), std::byte(0x00), // invalid char
-            std::byte('a'), std::byte(0x00)
+        constexpr uint8_t kData[] = {
+            0xFF, 0xFE,
+            0x01, 0x00, // invalid char
+            'a', 0x00
         };
 
         THEN("Not a text is detected")
         {
-            REQUIRE(!kf::TextDetector::isText(data));
+            REQUIRE(!kf::TextDetector::isText(std::as_bytes(std::span{ kData })));
         }
     };
 
     GIVEN("UTF-16BE text with BOM")
     {
-        std::byte data[] = {
-            std::byte(0xFE), std::byte(0xFF),
-            std::byte(0x00), std::byte('T'),
-            std::byte(0x00), std::byte('e'),
-            std::byte(0x00), std::byte('s'),
-            std::byte(0x00), std::byte('t')
+        constexpr uint8_t kData[] = {
+            0xFE, 0xFF,
+            0x00, 'T',
+            0x00, 'e',
+            0x00, 's',
+            0x00, 't'
         };
 
         THEN("Text is detected")
         {
-            REQUIRE(kf::TextDetector::isText(data));
+            REQUIRE(kf::TextDetector::isText(std::as_bytes(std::span{ kData })));
         }
     };
 
     GIVEN("UTF-16BE text with BOM and invalid char")
     {
-        std::byte data[] = {
-        std::byte(0xFE), std::byte(0xFF),
-        std::byte(0x00), std::byte(0x01), // invalid char
-        std::byte(0x00), std::byte('a')
+        constexpr uint8_t kData[] = {
+            0xFE, 0xFF,
+            0x00, 0x01, // invalid char
+            0x00, 'a'
         };
 
         THEN("Not a text is detected")
         {
-            REQUIRE(!kf::TextDetector::isText(data));
+            REQUIRE(!kf::TextDetector::isText(std::as_bytes(std::span{ kData })));
         }
     };
 
     GIVEN("Valid UTF-32LE text with BOM")
     {
-        std::byte data[] = {
-            std::byte(0xFF), std::byte(0xFE), std::byte(0x00), std::byte(0x00),
-            std::byte('T'), std::byte(0x00), std::byte(0x00), std::byte(0x00),
-            std::byte('e'), std::byte(0x00), std::byte(0x00), std::byte(0x00)
+        constexpr uint8_t kData[] = {
+            0xFF, 0xFE, 0x00, 0x00,
+            'T', 0x00, 0x00, 0x00,
+            'e', 0x00, 0x00, 0x00,
+            's', 0x00, 0x00, 0x00,
+            't', 0x00, 0x00, 0x00
         };
 
         THEN("Text is detected")
         {
-            REQUIRE(kf::TextDetector::isText(data));
+            REQUIRE(kf::TextDetector::isText(std::as_bytes(std::span{ kData })));
         }
     }
 
     GIVEN("UTF-32LE text with BOM and invalid char")
     {
-        std::byte data[] = {
-            std::byte(0xFF), std::byte(0xFE), std::byte(0x00), std::byte(0x00),
-            std::byte(0x01), std::byte(0x00), std::byte(0x00), std::byte(0x00), // invalid char
-            std::byte('a'), std::byte(0x00), std::byte(0x00), std::byte(0x00)
+        constexpr uint8_t kData[] = {
+            0xFF, 0xFE, 0x00, 0x00,
+            0x01, 0x00, 0x00, 0x00, // invalid char
+            'a', 0x00, 0x00, 0x00
         };
 
         THEN("Not a text is detected")
         {
-            REQUIRE(!kf::TextDetector::isText(data));
+            REQUIRE(!kf::TextDetector::isText(std::as_bytes(std::span{ kData })));
         }
     }
 
     GIVEN("Valid UTF-32BE text with BOM")
     {
-        std::byte data[] = {
-            std::byte(0x00), std::byte(0x00), std::byte(0xFE), std::byte(0xFF),
-            std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte('T'),
-            std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte('e')
+        constexpr uint8_t kData[] = {
+            0x00, 0x00, 0xFE, 0xFF,
+            0x00, 0x00, 0x00, 'T',
+            0x00, 0x00, 0x00, 'e',
+            0x00, 0x00, 0x00, 's',
+            0x00, 0x00, 0x00, 't'
         };
 
         THEN("Text is detected")
         {
-            REQUIRE(kf::TextDetector::isText(data));
+            REQUIRE(kf::TextDetector::isText(std::as_bytes(std::span{ kData })));
         }
     }
 
     GIVEN("UTF-32BE text with BOM and invalid char")
     {
-        std::byte data[] = {
-            std::byte(0x00), std::byte(0x00), std::byte(0xFE), std::byte(0xFF),
-            std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte(0x01), // invalid char
-            std::byte(0x00), std::byte(0x00), std::byte(0x00), std::byte('a')
+        constexpr uint8_t kData[] = {
+            0x00, 0x00, 0xFE, 0xFF,
+            0x00, 0x00, 0x00, 0x01, // invalid char
+            0x00, 0x00, 0x00, 'a'
         };
 
         THEN("Not a text is detected")
         {
-            REQUIRE(!kf::TextDetector::isText(data));
+            REQUIRE(!kf::TextDetector::isText(std::as_bytes(std::span{ kData })));
         }
     }
 }
