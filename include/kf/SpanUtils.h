@@ -3,21 +3,19 @@
 
 namespace kf
 {
-    using namespace std;
-
     template<class T, class U>
-    inline constexpr span<T> span_cast(span<U> input) noexcept
+    inline constexpr std::span<T> span_cast(std::span<U> input) noexcept
     {
         return { reinterpret_cast<T*>(input.data()), input.size_bytes() / sizeof(T) };
     }
 
     template<class T, class U>
-    inline constexpr span<T> span_cast(U* data, size_t size) noexcept
+    inline constexpr std::span<T> span_cast(U* data, size_t size) noexcept
     {
         return { reinterpret_cast<T*>(data), size * sizeof(U) / sizeof(T) };
     }
 
-    inline constexpr span<const std::byte> as_bytes(const void* p, size_t size) noexcept
+    inline constexpr std::span<const std::byte> as_bytes(const void* p, size_t size) noexcept
     {
         return { static_cast<const std::byte*>(p), size };
     }
@@ -26,10 +24,10 @@ namespace kf
     template<class T, size_t N>
     inline constexpr auto as_bytes(const T(&p)[N]) noexcept
     {
-        return span<const std::byte, sizeof(T)* N>{ reinterpret_cast<const std::byte*>(p), sizeof(p) };
+        return std::span<const std::byte, sizeof(T)* N>{ reinterpret_cast<const std::byte*>(p), sizeof(p) };
     }
 
-    inline constexpr span<std::byte> as_writable_bytes(void* p, size_t size) noexcept
+    inline constexpr std::span<std::byte> as_writable_bytes(void* p, size_t size) noexcept
     {
         return { static_cast<std::byte*>(p), size };
     }
@@ -38,11 +36,11 @@ namespace kf
     template<class T, size_t N>
     inline constexpr auto as_writable_bytes(T(&p)[N]) noexcept
     {
-        return span<std::byte, sizeof(T) * N>{ reinterpret_cast<std::byte*>(p), sizeof(p) };
+        return std::span<std::byte, sizeof(T) * N>{ reinterpret_cast<std::byte*>(p), sizeof(p) };
     }
 
     template<class T, size_t dstExtent, size_t srcExtent>
-    inline constexpr span<T> copyTruncate(span<T, dstExtent> dst, span<const T, srcExtent> src) noexcept
+    inline constexpr std::span<T> copyTruncate(std::span<T, dstExtent> dst, std::span<const T, srcExtent> src) noexcept
     {
         //
         // Source can be larger than destination, truncate in such case
@@ -54,17 +52,17 @@ namespace kf
     }
 
     template<class T, size_t dstExtent, size_t srcExtent>
-    inline constexpr span<T> copyExact(span<T, dstExtent> dst, span<const T, srcExtent> src) noexcept
+    inline constexpr std::span<T> copyExact(std::span<T, dstExtent> dst, std::span<const T, srcExtent> src) noexcept
     {
         //
         // Source MUST be equal to destination
         //
 
-        if constexpr (dstExtent == dynamic_extent || srcExtent == dynamic_extent)
+        if constexpr (dstExtent == std::dynamic_extent || srcExtent == std::dynamic_extent)
         {
             if (dst.size() != src.size())
             {
-                _Xinvalid_argument("dst.size() != src.size()");
+                std::_Xinvalid_argument("dst.size() != src.size()");
             }
         }
         else
@@ -76,17 +74,17 @@ namespace kf
     }
 
     template<class T, size_t dstExtent, size_t srcExtent>
-    inline constexpr span<T> copy(span<T, dstExtent> dst, span<const T, srcExtent> src) noexcept
+    inline constexpr std::span<T> copy(std::span<T, dstExtent> dst, std::span<const T, srcExtent> src) noexcept
     {
         //
         // Source MUST be smaller or equal to destination
         //
 
-        if constexpr (dstExtent == dynamic_extent || srcExtent == dynamic_extent)
+        if constexpr (dstExtent == std::dynamic_extent || srcExtent == std::dynamic_extent)
         {
             if (dst.size() < src.size())
             {
-                _Xinvalid_argument("dst.size() < src.size()");
+                std::_Xinvalid_argument("dst.size() < src.size()");
             }
         }
         else
@@ -98,13 +96,13 @@ namespace kf
     }
 
     template<class T, size_t LeftExtent, size_t RightExtent>
-    inline constexpr bool equals(span<T, LeftExtent> left, span<T, RightExtent> right) noexcept
+    inline constexpr bool equals(std::span<T, LeftExtent> left, std::span<T, RightExtent> right) noexcept
     {
         return std::equal(left.begin(), left.end(), right.begin(), right.end());
     }
 
     template<class T>
-    inline constexpr ptrdiff_t indexOf(span<T> input, typename span<T>::const_reference elem, ptrdiff_t fromIndex = 0) noexcept
+    inline constexpr ptrdiff_t indexOf(std::span<T> input, typename std::span<T>::const_reference elem, ptrdiff_t fromIndex = 0) noexcept
     {
         for (auto i = fromIndex; i < ssize(input); ++i)
         {
@@ -118,7 +116,7 @@ namespace kf
     }
 
     template<class T>
-    inline constexpr span<T> split(span<T> input, typename span<T>::const_reference separator, _Inout_ ptrdiff_t& fromIndex) noexcept
+    inline constexpr std::span<T> split(std::span<T> input, typename std::span<T>::const_reference separator, _Inout_ ptrdiff_t& fromIndex) noexcept
     {
         auto originalFromIndex = fromIndex;
 
@@ -135,7 +133,7 @@ namespace kf
     }
 
     template<class T>
-    inline constexpr T atOrDefault(span<T> input, size_t index, convertible_to<T> auto defaultValue) noexcept
+    inline constexpr T atOrDefault(std::span<T> input, size_t index, std::convertible_to<T> auto defaultValue) noexcept
     {
         return input.size() > index ? input[index] : defaultValue;
     }
