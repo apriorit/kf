@@ -5,8 +5,6 @@
 
 struct IntrusivePtrTestStruct : public boost::intrusive_ref_counter<IntrusivePtrTestStruct>
 {
-    virtual ~IntrusivePtrTestStruct() = default;
-
     UINT64 number = 0;
 };
 
