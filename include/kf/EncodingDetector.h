@@ -59,6 +59,7 @@ namespace kf
         }
 
         //TODO: Add check for ANSI encoding
+        m_encoding = ANSI;
     }
 
     inline bool EncodingDetector::detectBom(span<const std::byte, kMaximumBomLength> bomBytes)
