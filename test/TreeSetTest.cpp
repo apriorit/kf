@@ -6,11 +6,6 @@ using Set = kf::TreeSet<int, PagedPool>;
 
 namespace
 {
-    constexpr int KeyToValue(int key)
-    {
-        return key * 10;
-    }
-
     constexpr int kMinElem = 1;
     constexpr int kMaxElem = 5;
     constexpr int kSetSize = kMaxElem - kMinElem + 1;
