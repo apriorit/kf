@@ -50,7 +50,7 @@ SCENARIO("kf::AutoSpinLock")
                 }
             }
 
-            THEN("IRQL staies on the pre-raised DISPATCH_LEVEL")
+            THEN("IRQL stays on the pre-raised DISPATCH_LEVEL")
             {
                 REQUIRE(KeGetCurrentIrql() == DISPATCH_LEVEL);
             }
