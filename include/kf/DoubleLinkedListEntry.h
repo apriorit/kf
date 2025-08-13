@@ -37,7 +37,7 @@ namespace kf
 
         bool isEmpty() const
         {
-            return IsListEmpty(this);
+            return ::IsListEmpty(this);
         }
     };
 }
