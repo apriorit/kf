@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include <kf/EncodingDetector.h>
 
 SCENARIO("EncodingDetector detects BOM encodings")
@@ -54,7 +54,7 @@ SCENARIO("EncodingDetector detects BOM encodings")
         }
     }
 
-    GIVEN("'FF FE 00 00 T 00 e 00 s 00 t 00' bytes UTF-32LE BOM")
+    GIVEN("'FF FE 00 00 T 00 00 00 e 00 00 00 s 00 00 00 t 00 00 00' bytes UTF-32LE BOM")
     {
         constexpr uint8_t kData[] = {
             0xFF, 0xFE, 0x00, 0x00,
@@ -72,7 +72,7 @@ SCENARIO("EncodingDetector detects BOM encodings")
         }
     }
 
-    GIVEN("'00 00 FE FF 00 T 00 e 00 s 00 t' bytes UTF-32BE BOM")
+    GIVEN("'00 00 FE FF 00 00 00 T 00 00 00 e 00 00 00 s 00 00 00 t' bytes UTF-32BE BOM")
     {
         constexpr uint8_t kData[] = {
             0x00, 0x00, 0xFE, 0xFF,
