@@ -1,3 +1,5 @@
+#pragma once
+#include "kf/stl/new"
 /*
  * Taken from https://github.com/swenson/sort
  * Revision: 05fd77bfec049ce8b7c408c4d3dd2d51ee061a15
@@ -51,14 +53,12 @@ namespace timsort
         /* adapted from Hacker's Delight */
         inline int clzll(uint64_t x)
         {
-            int n;
-
             if (x == 0)
             {
                 return 64;
             }
 
-            n = 0;
+            int n = 0;
 
             if (x <= 0x00000000FFFFFFFFL)
             {
@@ -137,14 +137,19 @@ namespace timsort
             size_t r = size - 1;
             size_t c = r >> 1;
 
+            if (dst == nullptr || size == 0)
+            {
+                return 0;
+            }
+
             /* check for out of bounds at the beginning. */
             if (cmp(x, dst[0]) < 0)
             {
                 return 0;
             }
-            else if (cmp(x, dst[r]) > 0)
+            else if (cmp(x, dst[r]) >= 0)
             {
-                return r;
+                return size;
             }
 
             T* cx = &dst[c];
@@ -181,6 +186,11 @@ namespace timsort
         template<class T>
         inline void binary_insertion_sort_start(T* dst, const size_t start, const size_t size)
         {
+            if (dst == nullptr || size == 0)
+            {
+                return;
+            }
+
             for (size_t i = start; i < size; i++)
             {
                 /* If this entry is already correct, just move along */
@@ -211,6 +221,11 @@ namespace timsort
         template<class T>
         inline void reverse_elements(T* dst, size_t start, size_t end)
         {
+            if (dst == nullptr)
+            {
+                return;
+            }
+
             while (true)
             {
                 if (start >= end)
@@ -227,6 +242,11 @@ namespace timsort
         template<class T>
         inline size_t count_run(T* dst, const size_t start, const size_t size)
         {
+            if (dst == nullptr || size == 0)
+            {
+                return 0;
+            }
+
             size_t curr;
 
             if (size - start == 1)
@@ -251,7 +271,7 @@ namespace timsort
                 /* increasing run */
                 while (true)
                 {
-                    if (curr == size - 1)
+                    if (curr == size)
                     {
                         break;
                     }
@@ -271,7 +291,7 @@ namespace timsort
                 /* decreasing run */
                 while (true)
                 {
-                    if (curr == size - 1)
+                    if (curr == size)
                     {
                         break;
                     }
@@ -292,6 +312,11 @@ namespace timsort
 
         inline int check_invariant(TIM_SORT_RUN_T* stack, const int stack_curr)
         {
+            if (stack == nullptr)
+            {
+                return -1;
+            }
+
             if (stack_curr < 2)
             {
                 return 1;
@@ -332,11 +357,24 @@ namespace timsort
         template<class T>
         inline void tim_sort_resize(TEMP_STORAGE_T<T>* store, const size_t new_size)
         {
+            if (store == nullptr)
+            {
+                return;
+            }
+
             if (store->alloc < new_size)
             {
                 T* tempstore = (T*)malloc(new_size * sizeof(T));
-                memcpy(tempstore, store->storage, store->alloc);
-                detail::free(store->storage);
+                if (tempstore == nullptr)
+                {
+                    return;
+                }
+
+                if (store->storage != nullptr)
+                {
+                    memcpy(tempstore, store->storage, store->alloc * sizeof(T));
+                    detail::free(store->storage);
+                }
 
                 store->storage = tempstore;
                 store->alloc = new_size;
@@ -418,47 +456,49 @@ namespace timsort
         }
 
         template<class T>
-        inline int tim_sort_collapse(T* dst, TIM_SORT_RUN_T* stack, int stack_curr, TEMP_STORAGE_T<T>* store, const size_t size)
+        inline int tim_sort_collapse(T* dst, TIM_SORT_RUN_T* stack, int stack_size, TEMP_STORAGE_T<T>* store, const size_t size)
         {
             while (true)
             {
                 /* if the stack only has one thing on it, we are done with the collapse */
-                if (stack_curr <= 1)
+                if (stack_size <= 1)
                 {
                     break;
                 }
 
                 /* if this is the last merge, just do it */
-                if ((stack_curr == 2) && (stack[0].length + stack[1].length == size))
+                if ((stack_size == 2) && (stack[0].length + stack[1].length == size))
                 {
-                    tim_sort_merge(dst, stack, stack_curr, store);
+                    tim_sort_merge(dst, stack, stack_size, store);
                     stack[0].length += stack[1].length;
-                    stack_curr--;
+                    stack[1] = { 0, 0 };
+                    stack_size--;
                     break;
                 }
                 /* check if the invariant is off for a stack of 2 elements */
-                else if ((stack_curr == 2) && (stack[0].length <= stack[1].length))
+                else if ((stack_size == 2) && (stack[0].length <= stack[1].length))
                 {
-                    tim_sort_merge(dst, stack, stack_curr, store);
+                    tim_sort_merge(dst, stack, stack_size, store);
                     stack[0].length += stack[1].length;
-                    stack_curr--;
+                    stack[1] = { 0, 0 };
+                    stack_size--;
                     break;
                 }
-                else if (stack_curr == 2)
+                else if (stack_size == 2)
                 {
                     break;
                 }
 
                 size_t A;
-                size_t B = stack[stack_curr - 3].length;
-                size_t C = stack[stack_curr - 2].length;
-                size_t D = stack[stack_curr - 1].length;
+                size_t B = stack[stack_size - 3].length;
+                size_t C = stack[stack_size - 2].length;
+                size_t D = stack[stack_size - 1].length;
 
                 int ABC, BCD, CD;
 
-                if (stack_curr >= 4)
+                if (stack_size >= 4)
                 {
-                    A = stack[stack_curr - 4].length;
+                    A = stack[stack_size - 4].length;
                     ABC = (A <= B + C);
                 }
                 else
@@ -478,21 +518,23 @@ namespace timsort
                 /* left merge */
                 if (BCD && !CD)
                 {
-                    tim_sort_merge(dst, stack, stack_curr - 1, store);
-                    stack[stack_curr - 3].length += stack[stack_curr - 2].length;
-                    stack[stack_curr - 2] = stack[stack_curr - 1];
-                    stack_curr--;
+                    tim_sort_merge(dst, stack, stack_size - 1, store);
+                    stack[stack_size - 3].length += stack[stack_size - 2].length;
+                    stack[stack_size - 2] = stack[stack_size - 1];
+                    stack[stack_size - 1] = { 0, 0 };
+                    stack_size--;
                 }
                 else
                 {
                     /* right merge */
-                    tim_sort_merge(dst, stack, stack_curr, store);
-                    stack[stack_curr - 2].length += stack[stack_curr - 1].length;
-                    stack_curr--;
+                    tim_sort_merge(dst, stack, stack_size, store);
+                    stack[stack_size - 2].length += stack[stack_size - 1].length;
+                    stack[stack_size - 1] = { 0, 0 };
+                    stack_size--;
                 }
             }
 
-            return stack_curr;
+            return stack_size;
         }
 
         template<class T>
@@ -501,36 +543,49 @@ namespace timsort
             TEMP_STORAGE_T<T>* store,
             const size_t minrun,
             TIM_SORT_RUN_T* run_stack,
-            size_t* stack_curr,
+            size_t* stack_size,
             size_t* curr)
         {
+
+            if (dst == nullptr ||
+                store == nullptr ||
+                run_stack == nullptr ||
+                stack_size == nullptr ||
+                curr == nullptr)
+            {
+                return 0;
+            }
+
             size_t len = count_run(dst, *curr, size);
             size_t run = minrun;
 
+            /* If there is less than minrun left until the end of the array */
             if (run > size - *curr)
             {
                 run = size - *curr;
             }
 
+            /* If the found sorted run is smaller than minrun,
+             * we need to extend this segment by sorting the rest of the elements to match the run size */
             if (run > len)
             {
                 binary_insertion_sort_start(&dst[*curr], len, run);
                 len = run;
             }
 
-            run_stack[*stack_curr].start = *curr;
-            run_stack[*stack_curr].length = len;
-            (*stack_curr)++;
+            run_stack[*stack_size].start = *curr;
+            run_stack[*stack_size].length = len;
+            (*stack_size)++;
             *curr += len;
 
             if (*curr == size)
             {
                 /* finish up */
-                while (*stack_curr > 1)
+                while (*stack_size > 1)
                 {
-                    tim_sort_merge(dst, run_stack, static_cast<int>(*stack_curr), store);
-                    run_stack[*stack_curr - 2].length += run_stack[*stack_curr - 1].length;
-                    (*stack_curr)--;
+                    tim_sort_merge(dst, run_stack, static_cast<int>(*stack_size), store);
+                    run_stack[*stack_size - 2].length += run_stack[*stack_size - 1].length;
+                    (*stack_size)--;
                 }
 
                 if (store->storage)
@@ -550,6 +605,11 @@ namespace timsort
     template<class T>
     inline void binary_insertion_sort(T* dst, const size_t size)
     {
+        if (dst == nullptr)
+        {
+            return;
+        }
+
         /* don't bother sorting an array of size <= 1 */
         if (size <= 1)
         {
@@ -562,6 +622,11 @@ namespace timsort
     template<class T>
     inline void tim_sort(T* dst, const size_t size)
     {
+        if (dst == nullptr)
+        {
+            return;
+        }
+
         /* don't bother sorting an array of size 1 */
         if (size <= 1)
         {
