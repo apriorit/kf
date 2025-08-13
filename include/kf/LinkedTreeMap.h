@@ -14,15 +14,11 @@ namespace kf
     class LinkedTreeMap
     {
     public:
-        LinkedTreeMap()
-        {
-        }
+        LinkedTreeMap() = default;
+        LinkedTreeMap(_Inout_ LinkedTreeMap&& another) = default;
 
-        LinkedTreeMap(_Inout_ LinkedTreeMap&& another)
-            : m_table(std::move(another.m_table))
-            , m_links(std::move(another.m_links))
-        {
-        }
+        LinkedTreeMap(const LinkedTreeMap&) = delete;
+        LinkedTreeMap& operator=(const LinkedTreeMap&) = delete;
 
         ~LinkedTreeMap()
         {
@@ -48,7 +44,6 @@ namespace kf
             NTSTATUS status = m_table.insertElement(std::move(node));
             if (!NT_SUCCESS(status))
             {
-                value = std::move(node.m_value);
                 return status;
             }
 
@@ -85,9 +80,10 @@ namespace kf
             auto it = m_links.iterator();
             while (it.hasNext())
             {
+                auto node = it.next();
                 if (currentIndex == index)
                 {
-                    return &it.next()->m_value;
+                    return &node->m_value;
                 }
 
                 ++currentIndex;
@@ -134,23 +130,15 @@ namespace kf
             return m_table.deleteElement(*node);
         }
 
-        bool removeByObject(const V* value)
-        {
-            Node* node = CONTAINING_RECORD(value, Node, m_value);
-            m_links.remove(*node);
-            return m_table.deleteElement(*node);
-        }
-
         LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another)
         {
-            m_links = std::move(another.m_links);
-            m_table = std::move(another.m_table);
+            if (&another != this)
+            {
+                *this = std::move(another);
+            }
+            
             return *this;
         }
-
-    private:
-        LinkedTreeMap(const LinkedTreeMap&);
-        LinkedTreeMap& operator=(const LinkedTreeMap&);
 
     private:
         struct Node
