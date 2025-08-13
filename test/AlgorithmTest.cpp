@@ -5,32 +5,27 @@ SCENARIO("Algorithm kf::binary_search_it")
 {
     GIVEN("A sorted array of int values")
     {
-        int first = 111;
-        int second = 222;
-        int third = 333;
-        int last = 444;
-
-        int notInArray = 555;
-
-        constexpr int size = 4;
-        std::array<int, size> arr = { first, second, third, last };
+        constexpr int kSize = 4;
+        constexpr std::array<int, kSize> kArr = { 111, 222, 333, 444 };
 
         WHEN("Searching for existing value")
         {
             THEN("Returns iterator to the element")
             {
-                auto it = kf::binary_search_it(arr.begin(), arr.end(), second);
-                REQUIRE(it != arr.end());
-                REQUIRE(*it == second);
+                auto it = kf::binary_search_it(kArr.begin(), kArr.end(), kArr[1]);
+                REQUIRE(it != kArr.end());
+                REQUIRE(*it == kArr[1]);
             }
         }
 
         WHEN("Searching for non-existing value")
         {
+            constexpr int kNotInArray = 555;
+
             THEN("Returns end iterator")
             {
-                auto it = kf::binary_search_it(arr.begin(), arr.end(), notInArray);
-                REQUIRE(it == arr.end());
+                auto it = kf::binary_search_it(kArr.begin(), kArr.end(), kNotInArray);
+                REQUIRE(it == kArr.end());
             }
         }
 
@@ -38,9 +33,9 @@ SCENARIO("Algorithm kf::binary_search_it")
         {
             THEN("Returns iterator to beginning")
             {
-                auto it = kf::binary_search_it(arr.begin(), arr.end(), first);
-                REQUIRE(it == arr.begin());
-                REQUIRE(*it == first);
+                auto it = kf::binary_search_it(kArr.begin(), kArr.end(), kArr[0]);
+                REQUIRE(it == kArr.begin());
+                REQUIRE(*it == kArr[0]);
             }
         }
 
@@ -48,9 +43,9 @@ SCENARIO("Algorithm kf::binary_search_it")
         {
             THEN("Returns iterator to the end - 1")
             {
-                auto it = kf::binary_search_it(arr.begin(), arr.end(), last);
-                REQUIRE(it == arr.end() - 1);
-                REQUIRE(*it == last);
+                auto it = kf::binary_search_it(kArr.begin(), kArr.end(), kArr[kSize - 1]);
+                REQUIRE(it == kArr.end() - 1);
+                REQUIRE(*it == kArr[kSize - 1]);
             }
         }
 
@@ -59,7 +54,7 @@ SCENARIO("Algorithm kf::binary_search_it")
             THEN("Returns iterator to the end")
             {
                 std::array<int, 0> empty;
-                auto it = kf::binary_search_it(empty.begin(), empty.end(), third);
+                auto it = kf::binary_search_it(empty.begin(), empty.end(), kArr[2]);
                 REQUIRE(it == empty.end());
             }
         }
