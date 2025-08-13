@@ -12,7 +12,7 @@ SCENARIO("SCOPE_EXIT macro")
             {
                 SCOPE_EXIT{ value++; };
 
-                THEN("Scoped function doesn't call until scope not ended")
+                THEN("Scoped function doesn't execute until scope ends")
                 {
                     REQUIRE(value == 0);
                 }
