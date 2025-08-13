@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <kf/patterns/Observer.h>
 #include <string_view>
+#include <optional>
 
 namespace
 {
@@ -10,24 +11,9 @@ namespace
     public:
         void onNotify(T... t) override
         {
-            tpl = std::make_tuple(t...);
-            m_isNotified = true;
+            m_values.emplace(std::tuple<T...>(t...));
         }
-        std::tuple<T...> tpl;
-        bool m_isNotified = false;
-    };
-
-    class TestRefObserver : public kf::IObserver<int&, std::array<wchar_t, 4>&>
-    {
-    public:
-        void onNotify(int& value, std::array<wchar_t, 4>& arr) override
-        {
-            value = 456;
-            arr = {L'D', L'o', L'n', L'e'};
-            m_isNotified = true;
-        }
-
-        bool m_isNotified = false;
+        std::optional<std::tuple<T...>> m_values;
     };
 
     template<typename... T>
@@ -50,17 +36,17 @@ SCENARIO("Testing MonoObservable functionality")
 
         WHEN("An observer is notified")
         {
-            int value = 123;
-            std::wstring_view message(L"Test");
+            constexpr int kValue = 123;
+            constexpr std::wstring_view kMessage(L"Test");
 
             observable.attach(&observer);
-            observable.notify(value, message);
+            observable.notify(kValue, kMessage);
 
             THEN("The observer is attached and receives the notification")
             {
-                REQUIRE(observer.m_isNotified);
-                REQUIRE(std::get<0>(observer.tpl) == value);
-                REQUIRE(std::get<1>(observer.tpl) == message);
+                REQUIRE(observer.m_values.has_value());
+                REQUIRE(std::get<0>(*observer.m_values) == kValue);
+                REQUIRE(std::get<1>(*observer.m_values) == kMessage);
             }
         }
     }
@@ -72,15 +58,15 @@ SCENARIO("Testing MonoObservable functionality")
 
         WHEN("An observer is detached")
         {
-            int value = 123;
-            std::wstring_view message(L"Test");
+            constexpr int kValue = 123;
+            constexpr std::wstring_view kMessage(L"Test");
             observable.attach(&observer);
             observable.detach(&observer);
-            observable.notify(value, message);
+            observable.notify(kValue, kMessage);
 
             THEN("The observer does not receive notifications")
             {
-                REQUIRE(observer.m_isNotified == false);
+                REQUIRE(observer.m_values.has_value() == false);
             }
 
             THEN("Second detach should do nothing")
@@ -97,30 +83,30 @@ SCENARIO("Testing MonoObservable functionality")
 
         WHEN("Multiple notifications are sent")
         {
-            int firstA = 123;
-            int firstB = 456;
-            std::wstring_view firstMessage(L"First");
+            constexpr int kFirstA = 123;
+            constexpr int kFirstB = 456;
+            constexpr std::wstring_view kFirstMessage(L"First");
             observable.attach(&observer);
-            observable.notify(firstA, firstMessage, firstB);
+            observable.notify(kFirstA, kFirstMessage, kFirstB);
             THEN("First notification is received")
             {
-                REQUIRE(observer.m_isNotified);
-                REQUIRE(std::get<0>(observer.tpl) == firstA);
-                REQUIRE(std::get<1>(observer.tpl) == firstMessage);
-                REQUIRE(std::get<2>(observer.tpl) == firstB);
+                REQUIRE(observer.m_values.has_value());
+                REQUIRE(std::get<0>(*observer.m_values) == kFirstA);
+                REQUIRE(std::get<1>(*observer.m_values) == kFirstMessage);
+                REQUIRE(std::get<2>(*observer.m_values) == kFirstB);
             }
 
-            int secondA = 567;
-            int secondB = 890;
+            constexpr int kSecondA = 567;
+            constexpr int kSecondB = 890;
             std::wstring_view secondMessage(L"Second");
-            observable.notify(secondA, secondMessage, secondB);
+            observable.notify(kSecondA, secondMessage, kSecondB);
 
             THEN("Second notification is received")
             {
-                REQUIRE(observer.m_isNotified);
-                REQUIRE(std::get<0>(observer.tpl) == secondA);
-                REQUIRE(std::get<1>(observer.tpl) == secondMessage);
-                REQUIRE(std::get<2>(observer.tpl) == secondB);
+                REQUIRE(observer.m_values.has_value());
+                REQUIRE(std::get<0>(*observer.m_values) == kSecondA);
+                REQUIRE(std::get<1>(*observer.m_values) == secondMessage);
+                REQUIRE(std::get<2>(*observer.m_values) == kSecondB);
             }
         }
     }
@@ -128,23 +114,39 @@ SCENARIO("Testing MonoObservable functionality")
     GIVEN("A TestMonoObservable and a TestObserver with references in notify parameters")
     {
         TestMonoObservable<int&, std::array<wchar_t, 4>&> observable;
-        TestRefObserver observer;
+        TestObserver<int&, std::array<wchar_t, 4>&> observer;
 
         int value = 123;
-        int expectedValue = 456;
+        constexpr int kExpectedValue = 456;
         std::array<wchar_t, 4> message = { L'T', L'e', L's', L't' };
-        constexpr std::wstring_view expectedMessage(L"Done");
+        constexpr std::array<wchar_t, 4> kExpectedMessage = { L'D', L'o', L'n', L'e' };
 
         WHEN("An observer is notified with references")
         {
             observable.attach(&observer);
             observable.notify(value, message);
 
+            value = kExpectedValue;
+            message = kExpectedMessage;
+
             THEN("The observer receives references to the original values and changes it")
             {
-                REQUIRE(observer.m_isNotified);
-                REQUIRE(value == expectedValue);
-                REQUIRE(std::wstring_view(message.data(), message.size()) == expectedMessage);
+                REQUIRE(observer.m_values.has_value());
+                REQUIRE(std::get<0>(*observer.m_values) == kExpectedValue);
+                REQUIRE(std::get<1>(*observer.m_values) == kExpectedMessage);
+            }
+        }
+    }
+
+    GIVEN("A TestMonoObservable without an attached observer")
+    {
+        TestMonoObservable<int> observable;
+
+        WHEN("Notifying without observers")
+        {
+            THEN("No crashes occure")
+            {
+                observable.notify(123);
             }
         }
     }
