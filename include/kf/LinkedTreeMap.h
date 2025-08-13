@@ -18,7 +18,9 @@ namespace kf
         {
         }
 
-        LinkedTreeMap(_Inout_ LinkedTreeMap&& another) : m_table(std::move(another.m_table))
+        LinkedTreeMap(_Inout_ LinkedTreeMap&& another)
+            : m_table(std::move(another.m_table))
+            , m_links(std::move(another.m_links))
         {
         }
 
