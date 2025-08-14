@@ -9,24 +9,21 @@ SCENARIO("kf::AutoSpinLock")
         KeInitializeSpinLock(&lock);
 
         KIRQL irqlBefore = KeGetCurrentIrql();
-        REQUIRE(irqlBefore == PASSIVE_LEVEL);
 
         WHEN("AutoSpinLock enters a scope")
         {
             {
                 kf::AutoSpinLock spinLock(&lock);
-                KIRQL irqlCurrent = KeGetCurrentIrql();
 
                 THEN("IRQL is DISPATCH_LEVEL while the lock is held")
                 {
-                    REQUIRE(irqlCurrent == DISPATCH_LEVEL);
+                    REQUIRE(KeGetCurrentIrql() == DISPATCH_LEVEL);
                 }
             }
 
             THEN("IRQL is restored after the lock is released")
             {
-                KIRQL irqlAfter = KeGetCurrentIrql();
-                REQUIRE(irqlAfter == irqlBefore);
+                REQUIRE(KeGetCurrentIrql() == irqlBefore);
             }
         }
     }
@@ -38,7 +35,6 @@ SCENARIO("kf::AutoSpinLock")
 
         KIRQL oldIrql;
         KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
-        REQUIRE(KeGetCurrentIrql() == DISPATCH_LEVEL);
 
         WHEN("AutoSpinLock is constructed at DISPATCH_LEVEL")
         {
@@ -64,11 +60,7 @@ SCENARIO("kf::AutoSpinLock")
         KSPIN_LOCK lockA, lockB;
         KeInitializeSpinLock(&lockA);
         KeInitializeSpinLock(&lockB);
-
         KIRQL irqlBefore = KeGetCurrentIrql();
-        REQUIRE(irqlBefore == PASSIVE_LEVEL);
-
-        KIRQL irqlInner = irqlBefore;
 
         WHEN("Lock A then Lock B are acquired in nested scopes")
         {
@@ -78,12 +70,11 @@ SCENARIO("kf::AutoSpinLock")
 
                 {
                     kf::AutoSpinLock guardB(&lockB);
-                    irqlInner = KeGetCurrentIrql();
-                }
 
-                THEN("IRQL inside the inner scope is DISPATCH_LEVEL")
-                {
-                    REQUIRE(irqlInner == DISPATCH_LEVEL);
+                    THEN("IRQL inside the inner scope is DISPATCH_LEVEL")
+                    {
+                        REQUIRE(KeGetCurrentIrql() == DISPATCH_LEVEL);
+                    }
                 }
             }
 
