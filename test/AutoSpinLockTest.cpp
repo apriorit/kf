@@ -8,8 +8,6 @@ SCENARIO("kf::AutoSpinLock")
         KSPIN_LOCK lock;
         KeInitializeSpinLock(&lock);
 
-        KIRQL irqlBefore = KeGetCurrentIrql();
-
         WHEN("AutoSpinLock enters a scope")
         {
             {
@@ -23,7 +21,7 @@ SCENARIO("kf::AutoSpinLock")
 
             THEN("IRQL is restored after the lock is released")
             {
-                REQUIRE(KeGetCurrentIrql() == irqlBefore);
+                REQUIRE(KeGetCurrentIrql() == PASSIVE_LEVEL);
             }
         }
     }
@@ -60,7 +58,6 @@ SCENARIO("kf::AutoSpinLock")
         KSPIN_LOCK lockA, lockB;
         KeInitializeSpinLock(&lockA);
         KeInitializeSpinLock(&lockB);
-        KIRQL irqlBefore = KeGetCurrentIrql();
 
         WHEN("Lock A then Lock B are acquired in nested scopes")
         {
@@ -80,7 +77,7 @@ SCENARIO("kf::AutoSpinLock")
 
             THEN("IRQL is restored after both locks are released")
             {
-                REQUIRE(KeGetCurrentIrql() == irqlBefore);
+                REQUIRE(KeGetCurrentIrql() == PASSIVE_LEVEL);
             }
         }
     }
