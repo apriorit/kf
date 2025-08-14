@@ -136,7 +136,6 @@ SCENARIO("kf::Event")
             std::pair firstContext{ &ev, &firstWoken };
             std::pair secondContext{ &ev, &secondWoken };
 
-
             thread1.start([](void* context) {
                 auto e = static_cast<std::pair<kf::Event*, bool*>*>(context);
                 e->first->wait();
