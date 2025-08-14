@@ -11,7 +11,7 @@ namespace
     public:
         void onNotify(T... t) override
         {
-            m_values.emplace(std::tuple<T...>(t...));
+            m_values.emplace(t...);
         }
         std::optional<std::tuple<T...>> m_values;
     };
@@ -66,7 +66,7 @@ SCENARIO("Testing MonoObservable functionality")
 
             THEN("The observer does not receive notifications")
             {
-                REQUIRE(observer.m_values.has_value() == false);
+                REQUIRE(!observer.m_values.has_value());
             }
 
             THEN("Second detach should do nothing")
@@ -86,6 +86,7 @@ SCENARIO("Testing MonoObservable functionality")
             constexpr int kFirstA = 123;
             constexpr int kFirstB = 456;
             constexpr std::wstring_view kFirstMessage(L"First");
+
             observable.attach(&observer);
             observable.notify(kFirstA, kFirstMessage, kFirstB);
             THEN("First notification is received")
@@ -98,7 +99,8 @@ SCENARIO("Testing MonoObservable functionality")
 
             constexpr int kSecondA = 567;
             constexpr int kSecondB = 890;
-            std::wstring_view secondMessage(L"Second");
+            constexpr std::wstring_view secondMessage(L"Second");
+
             observable.notify(kSecondA, secondMessage, kSecondB);
 
             THEN("Second notification is received")
@@ -126,14 +128,14 @@ SCENARIO("Testing MonoObservable functionality")
             observable.attach(&observer);
             observable.notify(value, message);
 
-            value = kExpectedValue;
-            message = kExpectedMessage;
+            std::get<0>(*observer.m_values) = kExpectedValue;
+            std::get<1>(*observer.m_values) = kExpectedMessage;
 
             THEN("The observer receives references to the original values and changes it")
             {
                 REQUIRE(observer.m_values.has_value());
-                REQUIRE(std::get<0>(*observer.m_values) == kExpectedValue);
-                REQUIRE(std::get<1>(*observer.m_values) == kExpectedMessage);
+                REQUIRE(value == kExpectedValue);
+                REQUIRE(message == kExpectedMessage);
             }
         }
     }
