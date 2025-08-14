@@ -16,6 +16,7 @@ namespace kf
     public:
         LinkedTreeMap() = default;
         LinkedTreeMap(_Inout_ LinkedTreeMap&& another) = default;
+        LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another) = default;
 
         LinkedTreeMap(const LinkedTreeMap&) = delete;
         LinkedTreeMap& operator=(const LinkedTreeMap&) = delete;
@@ -128,16 +129,6 @@ namespace kf
 
             m_links.remove(*node);
             return m_table.deleteElement(*node);
-        }
-
-        LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another)
-        {
-            if (&another != this)
-            {
-                *this = std::move(another);
-            }
-            
-            return *this;
         }
 
     private:
