@@ -77,6 +77,7 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     GuardTest.cpp
     ThreadPoolTest.cpp
     TimerThreadTest.cpp
+    EResourceTest.cpp
 )
 
 target_link_libraries(kf-test kf::kf kmtest::kmtest)
