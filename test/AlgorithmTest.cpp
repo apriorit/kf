@@ -6,7 +6,7 @@ SCENARIO("Algorithm kf::binary_search_it")
     GIVEN("A sorted array of int values")
     {
         constexpr int kSize = 4;
-        constexpr std::array<int, kSize> kArr = { 111, 222, 333, 444 };
+        constexpr std::array kArr = { 111, 222, 333, 444 };
 
         WHEN("Searching for existing value")
         {
@@ -53,7 +53,7 @@ SCENARIO("Algorithm kf::binary_search_it")
         {
             THEN("Returns iterator to the end")
             {
-                std::array<int, 0> empty;
+                constexpr std::array<int, 0> empty;
                 auto it = kf::binary_search_it(empty.begin(), empty.end(), kArr[2]);
                 REQUIRE(it == empty.end());
             }
