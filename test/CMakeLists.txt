@@ -54,6 +54,7 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     VariableSizeStructTest.cpp
     ScopeFailureTest.cpp
     Base64Test.cpp
+    EventTest.cpp
 )
 
 target_link_libraries(kf-test kf::kf kmtest::kmtest)
