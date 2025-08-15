@@ -4,34 +4,37 @@
 #include <kf/stl/new>
 #include <kf/EarlyAllocator.h>
 
-template<typename T, POOL_TYPE PoolType, typename... TArgs>
-inline std::unique_ptr<T> make_unique(TArgs&&... Args) noexcept requires !std::is_array_v<T>
+namespace kf
 {
-    return std::unique_ptr<T>(new(PoolType) T(std::forward<TArgs>(Args)...));
-}
-
-template<typename T, POOL_TYPE poolType>
-inline std::unique_ptr<T> make_unique(std::size_t size) noexcept requires std::is_array_v<T>
-{
-    return std::unique_ptr<T>(new(poolType) std::remove_extent_t<T>[size]());
-}
-
-template<class T, POOL_TYPE poolType, typename... TArgs>
-inline std::shared_ptr<T> make_shared(TArgs&&... Args) noexcept requires !std::is_array_v<T>
-{
-    kf::EarlyAllocator allocator;
-
-    struct alignas(void*) SharedPtrControlBlock : std::_Ref_count_base
+    template<typename T, POOL_TYPE PoolType, typename... TArgs>
+    inline std::unique_ptr<T> make_unique(TArgs&&... Args) noexcept requires !std::is_array_v<T>
     {
-        kf::EarlyAllocator<T> allocator;
-        T storage;
-    };
-
-    // Pre-allocate memory required for shared_ptr
-    if (!allocator.initialize<poolType>(sizeof(SharedPtrControlBlock)))
-    {
-        return {};
+        return std::unique_ptr<T>(new(PoolType) T(std::forward<TArgs>(Args)...));
     }
 
-    return std::allocate_shared<T>(allocator, std::forward<TArgs>(Args)...);
+    template<typename T, POOL_TYPE poolType>
+    inline std::unique_ptr<T> make_unique(std::size_t size) noexcept requires std::is_array_v<T>
+    {
+        return std::unique_ptr<T>(new(poolType) std::remove_extent_t<T>[size]());
+    }
+
+    template<class T, POOL_TYPE poolType, typename... TArgs>
+    inline std::shared_ptr<T> make_shared(TArgs&&... Args) noexcept requires !std::is_array_v<T>
+    {
+        kf::EarlyAllocator allocator;
+
+        struct alignas(8) SharedPtrControlBlock : std::_Ref_count_base
+        {
+            kf::EarlyAllocator<T> allocator;
+            T storage;
+        };
+
+        // Pre-allocate memory required for shared_ptr
+        if (!allocator.initialize<poolType>(sizeof(SharedPtrControlBlock)))
+        {
+            return {};
+        }
+
+        return std::allocate_shared<T>(allocator, std::forward<TArgs>(Args)...);
+    }
 }

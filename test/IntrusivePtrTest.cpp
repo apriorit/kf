@@ -6,6 +6,13 @@
 struct IntrusivePtrTestStruct : public boost::intrusive_ref_counter<IntrusivePtrTestStruct>
 {
     UINT64 number = 0;
+
+    static inline int dtorCallCount = 0;
+
+    ~IntrusivePtrTestStruct()
+    {
+        ++dtorCallCount;
+    }
 };
 
 using IntrusivePtrTestStructPtr = boost::intrusive_ptr<IntrusivePtrTestStruct>;
@@ -181,42 +188,30 @@ SCENARIO("intrusive_ptr: reference counter")
     }
 }
 
-struct IntrusivePtrDtorCheck : public IntrusivePtrTestStruct
-{
-    static inline int dtorCallCount = 0;
-
-    ~IntrusivePtrDtorCheck()
-    {
-        ++dtorCallCount;
-    }
-};
-
-using IntrusivePtrDtorCheckPtr = boost::intrusive_ptr<IntrusivePtrDtorCheck>;
-
 SCENARIO("intrusive_ptr: destructor is called only once")
 {
     GIVEN("an IntrusivePtrDtorCheck object")
     {
-        IntrusivePtrDtorCheck::dtorCallCount = 0;
+        IntrusivePtrTestStruct::dtorCallCount = 0;
 
         {
-            IntrusivePtrDtorCheckPtr ptr1(new(PagedPool) IntrusivePtrDtorCheck);
+            IntrusivePtrTestStructPtr ptr1(new(PagedPool) IntrusivePtrTestStruct);
             REQUIRE(ptr1.get() != nullptr);
-            REQUIRE(IntrusivePtrDtorCheck::dtorCallCount == 0);
+            REQUIRE(IntrusivePtrTestStruct::dtorCallCount == 0);
 
             {
-                IntrusivePtrDtorCheckPtr ptr2 = ptr1;
+                IntrusivePtrTestStructPtr ptr2 = ptr1;
                 REQUIRE(ptr1->use_count() == 2);
-                REQUIRE(IntrusivePtrDtorCheck::dtorCallCount == 0);
+                REQUIRE(IntrusivePtrTestStruct::dtorCallCount == 0);
             }
 
             REQUIRE(ptr1->use_count() == 1);
-            REQUIRE(IntrusivePtrDtorCheck::dtorCallCount == 0);
+            REQUIRE(IntrusivePtrTestStruct::dtorCallCount == 0);
         }
 
         THEN("destructor is called exactly once after all references are gone")
         {
-            REQUIRE(IntrusivePtrDtorCheck::dtorCallCount == 1);
+            REQUIRE(IntrusivePtrTestStruct::dtorCallCount == 1);
         }
     }
 }
