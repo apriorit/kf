@@ -2,6 +2,18 @@
 #include <kf/EResource.h>
 #include <kf/Thread.h>
 
+namespace
+{
+    constexpr int kOneMillisecond = 10'000; // 1 ms in 100-nanosecond intervals
+
+    void delay()
+    {
+        LARGE_INTEGER interval;
+        interval.QuadPart = -kOneMillisecond;
+        KeDelayExecutionThread(KernelMode, FALSE, &interval);
+    }
+}
+
 SCENARIO("kf::EResource")
 {
     GIVEN("An EResource object")
@@ -49,7 +61,7 @@ SCENARIO("kf::EResource")
         {
             REQUIRE(acquired == true);
             REQUIRE(resource.isAcquiredExclusive() == false);
-            REQUIRE(resource.isAcquiredShared() > 0);
+            REQUIRE(resource.isAcquiredShared() == 1);
         }
 
         WHEN("The shared lock is released")
@@ -67,18 +79,17 @@ SCENARIO("kf::EResource")
     GIVEN("The EResource acquired exclusive")
     {
         kf::EResource resource;
+        bool exclusiveAcquired = resource.acquireExclusive();
+        REQUIRE(exclusiveAcquired == true);
 
         WHEN("The resource is converted to shared")
         {
-            bool exclusiveAcquired = resource.acquireExclusive();
-            REQUIRE(exclusiveAcquired == true);
-
             resource.convertExclusiveToShared();
 
             THEN("The lock is converted to shared")
             {
                 REQUIRE(resource.isAcquiredExclusive() == false);
-                REQUIRE(resource.isAcquiredShared() > 0);
+                REQUIRE(resource.isAcquiredShared() == 1);
             }
 
             WHEN("The shared lock is released")
@@ -125,7 +136,7 @@ SCENARIO("kf::EResource")
         THEN("The resource is acquired shared")
         {
             REQUIRE(resource.isAcquiredExclusive() == false);
-            REQUIRE(resource.isAcquiredShared() > 0);
+            REQUIRE(resource.isAcquiredShared() == 1);
         }
 
         WHEN("The resource is unlocked shared")
@@ -142,7 +153,7 @@ SCENARIO("kf::EResource")
 
     GIVEN("The EResource and 2 threads")
     {
-        constexpr int kOneSecond = 10'000'000; // 1 second in 100-nanosecond intervals
+
         struct Context
         {
             kf::EResource* resource;
@@ -161,6 +172,7 @@ SCENARIO("kf::EResource")
             thread1.start([](void* context) {
                 auto res = static_cast<Context*>(context);
                 res->wasAcquiredByFirst = res->resource->acquireExclusive();
+                delay();
                 res->resource->release();
                 },
                 &context);
@@ -168,6 +180,7 @@ SCENARIO("kf::EResource")
             thread2.start([](void* context) {
                 auto res = static_cast<Context*>(context);
                 res->wasAcquiredBySecond = res->resource->acquireExclusive();
+                delay();
                 res->resource->release();
                 },
                 &context);
@@ -195,11 +208,7 @@ SCENARIO("kf::EResource")
             thread1.start([](void* context) {
                 auto res = static_cast<Context*>(context);
                 res->wasAcquiredByFirst = res->resource->acquireShared();
-
-                LARGE_INTEGER interval;
-                interval.QuadPart = -kOneSecond;
-                KeDelayExecutionThread(KernelMode, FALSE, &interval);
-
+                delay();
                 res->resource->release();
                 },
                 &context);
@@ -208,10 +217,7 @@ SCENARIO("kf::EResource")
                 auto res = static_cast<Context*>(context);
 
                 res->wasAcquiredBySecond = res->resource->acquireShared();
-                LARGE_INTEGER interval; 
-                interval.QuadPart = -kOneSecond;
-                KeDelayExecutionThread(KernelMode, FALSE, &interval);
-
+                delay();
                 res->resource->release();
                 },
                 &context);
