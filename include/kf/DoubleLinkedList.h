@@ -36,6 +36,8 @@ namespace kf
         {
             if (this != &other)
             {
+                clear();
+
                 if (!other.isEmpty())
                 {
                     LIST_ENTRY* next = other.m_head.Flink;
