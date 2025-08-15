@@ -1,6 +1,6 @@
 #pragma once
 #include <wdm.h>
-
+#include "AutoSpinLock.h"
 #include "RecursiveSpinLock.h"
 
 namespace kf

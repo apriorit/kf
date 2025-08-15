@@ -282,10 +282,11 @@ SCENARIO("DoubleLinkedListConstIterator")
 
 SCENARIO("DoubleLinkedListIterator")
 {
-    List list;
     TestNode node1{ 1 };
     TestNode node2{ 2 };
     TestNode node3{ 3 };
+
+    List list;
 
     WHEN("iterator is used to modify elements")
     {
