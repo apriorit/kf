@@ -35,7 +35,7 @@ namespace kf
         {
             Node node(key, std::move(value));
             NTSTATUS status = m_table.insertElement(std::move(node));
-
+            
             if (!NT_SUCCESS(status))
             {
                 value = std::move(node.m_value);
@@ -99,6 +99,14 @@ namespace kf
         bool remove(const K& key)
         {
             return m_table.deleteElement(Node::fromKey(key));
+        }
+
+        // Important! Use only the value returned by other map methods.
+        // The usage of the value that doesn't exist in map will lead to undefined behavior.
+        bool removeByObject(const V* value)
+        {
+            Node* node = CONTAINING_RECORD(value, Node, m_value);
+            return m_table.deleteElement(*node);
         }
 
         TreeMap& operator=(_Inout_ TreeMap&& another)
