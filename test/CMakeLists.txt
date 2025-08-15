@@ -56,6 +56,7 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     Base64Test.cpp
     AutoSpinLockTest.cpp
     EResourceSharedLockTest.cpp
+    RecursiveAutoSpinLockTest.cpp
 )
 
 target_link_libraries(kf-test kf::kf kmtest::kmtest)
