@@ -35,7 +35,7 @@ FetchContent_MakeAvailable(findwdk kmtest)
 list(APPEND CMAKE_MODULE_PATH "${findwdk_SOURCE_DIR}/cmake")
 find_package(WDK REQUIRED)
 
-wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
+wdk_add_driver(kf-test KMDF 1.33 WINVER NTDDI_WIN10 STL
     pch.h
     pch.cpp
     AdjacentView.cpp
@@ -59,6 +59,7 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     AutoSpinLockTest.cpp
     EResourceSharedLockTest.cpp
     RecursiveAutoSpinLockTest.cpp
+    WdfWaitAutoLockTest.cpp
 )
 
 target_link_libraries(kf-test kf::kf kmtest::kmtest)
