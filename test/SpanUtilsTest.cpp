@@ -215,12 +215,12 @@ SCENARIO("SpanUtils")
 
     GIVEN("source and destination arrays for copy")
     {
-        constexpr int kArr1[] = { 5, 6 };
+        int arr1[] = { 5, 6 };
         int arr2[] = { 55, 66, 77, 88 };
 
         WHEN("copy is called with source smaller than destination")
         {
-            auto result = kf::copy(std::span<int>(arr2), std::span<const int>(kArr1));
+            auto result = kf::copy(std::span<int>(arr2), std::span<const int>(arr1));
 
             THEN("all source elements are copied")
             {
@@ -235,7 +235,7 @@ SCENARIO("SpanUtils")
             THEN("_Xinvalid_argument is called")
             {
                 std::g_Xinvalid_argument_call_count = 0;
-                kf::copy(std::span<int>(const_cast<int*>(kArr1), 2), std::span<const int>(arr2, 4));
+                kf::copy(std::span<int>(const_cast<int*>(arr1), 2), std::span<const int>(arr2, 4));
                 REQUIRE(std::g_Xinvalid_argument_call_count == 1);
             }
         }
