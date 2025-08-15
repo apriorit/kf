@@ -42,7 +42,7 @@ namespace kf
             uint8_t a4[4];
 
             int decodedLen = decodeLen(input);
-            if (decodedLen < 0 || output.size() < decodedLen)
+            if (decodedLen < 0 || static_cast<int>(output.size()) < decodedLen)
             {
                 return -1;
             }
