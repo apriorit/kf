@@ -164,8 +164,8 @@ SCENARIO("SpanUtils")
             THEN("only the first destination.size() elements are copied")
             {
                 REQUIRE(result.size() == 3);
-                unsigned char expected[] = { 1, 2, 3 };
-                REQUIRE(memcmp(result.data(), expected, sizeof(expected)));
+                constexpr int kExpected[] = { 1, 2, 3 };
+                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)) == 0);
             }
         }
 
@@ -176,8 +176,8 @@ SCENARIO("SpanUtils")
             THEN("all src elements are copied")
             {
                 REQUIRE(result.size() == 3);
-                constexpr unsigned char kExpected[] = { 11, 12, 13, 4, 5 };
-                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)));
+                constexpr int kExpected[] = { 11, 12, 13, 4, 5 };
+                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)) == 0);
             }
         }
     }
@@ -194,8 +194,8 @@ SCENARIO("SpanUtils")
             THEN("all elements are copied")
             {
                 REQUIRE(result.size() == 3);
-                constexpr unsigned char kExpected[] = { 1, 2, 3 };
-                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)));
+                constexpr int kExpected[] = { 1, 2, 3 };
+                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)) == 0);
             }
         }
 
@@ -225,8 +225,8 @@ SCENARIO("SpanUtils")
             THEN("all source elements are copied")
             {
                 REQUIRE(result.size() == 2);
-                constexpr unsigned char kExpected[] = { 5, 6 };
-                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)));
+                constexpr int kExpected[] = { 5, 6 };
+                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)) == 0);
             }
         }
 
