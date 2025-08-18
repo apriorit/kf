@@ -4,7 +4,7 @@
 
 SCENARIO("kf::Event")
 {
-    constexpr auto kOneSecond = 10'000'000; // 1 second in 100-nanosecond intervals
+    constexpr auto kOneMillisecond = 10'000; // 1ms
 
     GIVEN("NotificationEvent with true state")
     {
@@ -79,31 +79,32 @@ SCENARIO("kf::Event")
         }
     }
 
-    GIVEN("NotificationEvent with false state")
+    GIVEN("2 NotificationEvents for triggering and compition with false state")
     {
+        kf::Event triggerEvent(NotificationEvent, false);
+        kf::Event completionEvent(NotificationEvent, false);
+        std::pair<kf::Event*, kf::Event*> events{ &triggerEvent, &completionEvent };
+        kf::Thread thread;
+
         WHEN("A wait is performed with no timeout and the event is not set")
         {
-            kf::Event ev(NotificationEvent, false);
-            kf::Thread thread;
             thread.start([](void* context) {
-                auto e = static_cast<kf::Event*>(context);
-                LARGE_INTEGER delay;
-                delay.QuadPart = -kOneSecond;
-                KeDelayExecutionThread(KernelMode, false, &delay);
-                e->set();
-                }, &ev);
+                const auto events = static_cast<std::pair<kf::Event*, kf::Event*>*>(context);
+                events->first->wait();
+                events->second->set();
+                }, &events);
 
             THEN("Event is not set immediately")
             {
-                REQUIRE(!ev.isSet());
+                REQUIRE(!completionEvent.isSet());
             }
 
-            auto status = ev.wait();
+            triggerEvent.set();
 
-            THEN("The wait succeeds when the event is set")
+            THEN("After trigger event is set, completionEvent from thread is set too")
             {
-                REQUIRE(status == STATUS_SUCCESS);
-                REQUIRE(ev.isSet());
+                REQUIRE(completionEvent.wait() == STATUS_SUCCESS);
+                REQUIRE(completionEvent.isSet());
             }
         }
 
@@ -111,9 +112,9 @@ SCENARIO("kf::Event")
         {
             kf::Event ev(NotificationEvent, false);
             LARGE_INTEGER timeout;
-            timeout.QuadPart = -kOneSecond;
+            timeout.QuadPart = -kOneMillisecond;
 
-            auto status = ev.wait(&timeout);
+            const auto status = ev.wait(&timeout);
 
             THEN("The wait times out")
             {
@@ -123,92 +124,85 @@ SCENARIO("kf::Event")
         }
     }
 
-    GIVEN("NotificationEvent with multiple waiters")
+    GIVEN("NotificationEvent with multiple waiters and NotificationEvent for complition")
     {
-        WHEN("A wait is performed with no timeout and the event is not set")
-        {
-            kf::Event ev(NotificationEvent, false);
-            kf::Thread thread1;
-            kf::Thread thread2;
-            bool firstWoken = false;
-            bool secondWoken = false;
-
-            std::pair firstContext{ &ev, &firstWoken };
-            std::pair secondContext{ &ev, &secondWoken };
-
-            thread1.start([](void* context) {
-                auto e = static_cast<std::pair<kf::Event*, bool*>*>(context);
-                e->first->wait();
-                *e->second = true;
-                }, &firstContext);
-
-            thread2.start([](void* context) {
-                auto e = static_cast<std::pair<kf::Event*, bool*>*>(context);
-                e->first->wait();
-                *e->second = true;
-                }, &secondContext);
-
-            THEN("Both threads are waiting")
-            {
-                REQUIRE(!firstWoken);
-                REQUIRE(!secondWoken);
-            }
-
-            ev.set();
-
-            // Give some time for threads to wake up
-            LARGE_INTEGER delay;
-            delay.QuadPart = -kOneSecond / 2;
-            KeDelayExecutionThread(KernelMode, false, &delay);
-
-            THEN("Both threads are released from waiting")
-            {
-                REQUIRE(firstWoken);
-                REQUIRE(secondWoken);
-            }
-        }
-    }
-    GIVEN("SynchronizationEvent with multiple waiters")
-    {
-        kf::Event ev(SynchronizationEvent, false);
+        kf::Event triggerEvent(NotificationEvent, false);
+        kf::Event completionEvent1(NotificationEvent, false);
+        kf::Event completionEvent2(NotificationEvent, false);
+        std::pair context1{ &triggerEvent, &completionEvent1 };
+        std::pair context2{ &triggerEvent, &completionEvent2 };
         kf::Thread thread1;
         kf::Thread thread2;
 
-        bool firstWoken = false;
-        bool secondWoken = false;
-        std::pair firstContext{ &ev, &firstWoken };
-        std::pair secondContext{ &ev, &secondWoken };
+        thread1.start([](void* context) {
+            const auto e = static_cast<std::pair<kf::Event*, kf::Event*>*>(context);
+            e->first->wait();
+            e->second->set();
+            }, &context1);
+
+        thread2.start([](void* context) {
+            const auto e = static_cast<std::pair<kf::Event*, kf::Event*>*>(context);
+            e->first->wait();
+            e->second->set();
+            }, &context2);
+
+        WHEN("A wait is performed with no timeout and the event is not set")
+        {
+            THEN("Both threads are waiting")
+            {
+                REQUIRE(!completionEvent1.isSet());
+                REQUIRE(!completionEvent2.isSet());
+            }
+
+            triggerEvent.set();
+            completionEvent1.wait();
+            completionEvent2.wait();
+
+            THEN("After trigger event is set, both threads are released from waiting")
+            {
+                REQUIRE(completionEvent1.isSet());
+                REQUIRE(completionEvent2.isSet());
+            }
+        }
+    }
+
+    GIVEN("SynchronizationEvent with multiple waiters and NotificationEvent for complition")
+    {
+        kf::Event triggerEvent(SynchronizationEvent, false);
+        kf::Thread thread1;
+        kf::Thread thread2;
+
+        kf::Event completionEvent1(NotificationEvent, false);
+        kf::Event completionEvent2(NotificationEvent, false);
+        std::pair firstContext{ &triggerEvent, &completionEvent1 };
+        std::pair secondContext{ &triggerEvent, &completionEvent2 };
 
         thread1.start([](void* context) {
-            auto data = static_cast<std::pair<kf::Event*, bool*>*>(context);
+            const auto data = static_cast<std::pair<kf::Event*, kf::Event*>*>(context);
             data->first->wait();
-            *data->second = true;
+            data->second->set();
             }, &firstContext);
 
         thread2.start([](void* context) {
-            auto data = static_cast<std::pair<kf::Event*, bool*>*>(context);
+            const auto data = static_cast<std::pair<kf::Event*, kf::Event*>*>(context);
             data->first->wait();
-            *data->second = true;
+            data->second->set();
             }, &secondContext);
 
         THEN("Both threads are waiting")
         {
-            REQUIRE(!firstWoken);
-            REQUIRE(!secondWoken);
+            REQUIRE(!completionEvent1.isSet());
+            REQUIRE(!completionEvent2.isSet());
         }
 
-        ev.set();
-        // Give some time for threads to wake up
-        LARGE_INTEGER delay;
-        delay.QuadPart = -kOneSecond / 2;
-        KeDelayExecutionThread(KernelMode, false, &delay);
+        triggerEvent.set();
 
         THEN("Only one thread is released and event resets")
         {
-            REQUIRE(firstWoken ^ secondWoken); // Exactly one is true
-            REQUIRE(!ev.isSet());
+            REQUIRE(completionEvent1.isSet() ^ completionEvent2.isSet()); // Exactly one is true
+            REQUIRE(!triggerEvent.isSet());
         }
 
-        ev.set();
+        triggerEvent.set();
     }
 }
