@@ -422,7 +422,7 @@ SCENARIO("TreeMap: destruction check")
         }
     }
 
-    GIVEN("map with multiple items")
+    GIVEN("map moved back from nested scope")
     {
         DestructionCounter::sDestructCount = 0;
 
@@ -432,14 +432,23 @@ SCENARIO("TreeMap: destruction check")
             map.put(kKey1, std::move(DestructionCounter(kKey1)));
             map.put(kKey2, std::move(DestructionCounter(kKey2)));
 
-            WHEN("map is moved")
-            {
-                movedMap = std::move(map);
+            movedMap = std::move(map);
 
-                THEN("destructors are not called yet")
-                {
-                    REQUIRE(DestructionCounter::sDestructCount == 0);
-                }
+            THEN("destructors are not called yet")
+            {
+                REQUIRE(DestructionCounter::sDestructCount == 0);
+            }
+
+            THEN("the moved map is not empty")
+            {
+                REQUIRE(!movedMap.isEmpty());
+                REQUIRE(movedMap.size() == 2);
+            }
+
+            THEN("original map is empty")
+            {
+                REQUIRE(map.isEmpty());
+                REQUIRE(map.size() == 0);
             }
         }
         
@@ -448,6 +457,12 @@ SCENARIO("TreeMap: destruction check")
             THEN("destructors for moved objects are not called")
             {
                 REQUIRE(DestructionCounter::sDestructCount == 0);
+            }
+
+            THEN("the moved map is not empty")
+            {
+                REQUIRE(!movedMap.isEmpty());
+                REQUIRE(movedMap.size() == 2);
             }
         }
 
@@ -458,6 +473,11 @@ SCENARIO("TreeMap: destruction check")
             THEN("destructors are called for moved objects")
             {
                 REQUIRE(DestructionCounter::sDestructCount == 2);
+            }
+
+            THEN("the moved map is empty")
+            {
+                REQUIRE(movedMap.isEmpty());
             }
         }
     }
