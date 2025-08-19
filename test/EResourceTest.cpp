@@ -1,7 +1,7 @@
 #include "pch.h"
 #include <kf/EResource.h>
-#include <kf/Thread.h>
-
+#include <kf/ThreadPool.h>
+#include <kf/stl/vector>
 namespace
 {
     constexpr int kOneMillisecond = 10'000; // 1 ms in 100-nanosecond intervals
@@ -25,11 +25,15 @@ SCENARIO("kf::EResource")
             REQUIRE(resource.isAcquiredExclusive() == false);
             REQUIRE(resource.isAcquiredShared() == 0);
         }
+    }
+
+    GIVEN("The EResource acquired exclusive")
+    {
+        kf::EResource resource;
+        bool acquired = resource.acquireExclusive();
 
         WHEN("The resource is acquired exclusively")
         {
-            bool acquired = resource.acquireExclusive();
-
             //The system considers exclusive access to be a subset of shared access.
             //Therefore, a thread that has exclusive access to a resource also has shared access to the resource.
             THEN("The exclusive and shared locks are acquired")
@@ -151,47 +155,40 @@ SCENARIO("kf::EResource")
         }
     }
 
-    GIVEN("The EResource and 2 threads")
+    GIVEN("The EResource and multiple threads")
     {
-
+        constexpr int kMaxThreadsCount = 64;
+        const ULONG numLogicalProcessors = KeQueryActiveProcessorCount(nullptr);
         struct Context
         {
-            kf::EResource* resource;
-            bool wasAcquiredByFirst = false;
-            bool wasAcquiredBySecond = false;
+            kf::EResource* resource = nullptr;
+            std::array<bool, kMaxThreadsCount>* acquired = nullptr;
+            LONG counter = 0;
         };
+        kf::EResource resource;
+        std::array<bool, kMaxThreadsCount> acquired;
+        Context context{ &resource, &acquired };
+        kf::ThreadPool threadPool(numLogicalProcessors);
 
         WHEN("Multiple threads attempt to acquire exclusive the resource")
         {
-            kf::EResource resource;
-            kf::Thread thread1;
-            kf::Thread thread2;
-
-            Context context{ &resource };
-
-            thread1.start([](void* context) {
+            threadPool.start([](void* context) {
                 auto res = static_cast<Context*>(context);
-                res->wasAcquiredByFirst = res->resource->acquireExclusive();
+                res->resource->acquireExclusive();
+                res->acquired->at(res->counter++) = true;
                 delay();
                 res->resource->release();
-                },
-                &context);
+                }, &context);
 
-            thread2.start([](void* context) {
-                auto res = static_cast<Context*>(context);
-                res->wasAcquiredBySecond = res->resource->acquireExclusive();
-                delay();
-                res->resource->release();
-                },
-                &context);
+            threadPool.join();
 
-            thread1.join();
-            thread2.join();
-
-            THEN("Both threads can acquire and release the resource without deadlock")
+            THEN("All threads can acquire and release the resource without deadlock")
             {
-                REQUIRE(context.wasAcquiredByFirst);
-                REQUIRE(context.wasAcquiredBySecond);
+                auto size = min(kMaxThreadsCount, numLogicalProcessors);
+                for (size_t i = 0; i < size; i++)
+                {
+                    REQUIRE(acquired.at(i) == true);
+                }
                 REQUIRE(resource.isAcquiredExclusive() == false);
                 REQUIRE(resource.isAcquiredShared() == 0);
             }
@@ -199,35 +196,26 @@ SCENARIO("kf::EResource")
 
         WHEN("Multiple threads attempt to acquire shared the resource")
         {
-            kf::EResource resource;
-            kf::Thread thread1;
-            kf::Thread thread2;
-
-            Context context{ &resource };
-
-            thread1.start([](void* context) {
+            threadPool.start([](void* context) {
                 auto res = static_cast<Context*>(context);
-                res->wasAcquiredByFirst = res->resource->acquireShared();
+                res->resource->acquireShared();
+                auto index = InterlockedIncrement(&res->counter) - 1;
+                res->acquired->at(index) = true;
                 delay();
                 res->resource->release();
-                },
-                &context);
+                }, &context);
 
-            thread2.start([](void* context) {
-                auto res = static_cast<Context*>(context);
+            threadPool.join();
 
-                res->wasAcquiredBySecond = res->resource->acquireShared();
-                delay();
-                res->resource->release();
-                },
-                &context);
-
-            THEN("Both threads can acquire and release the resource without deadlock")
+            THEN("All threads can acquire and release the resource without deadlock")
             {
-                thread1.join();
-                thread2.join();
-                REQUIRE(context.wasAcquiredByFirst);
-                REQUIRE(context.wasAcquiredBySecond);
+                auto size = min(kMaxThreadsCount, numLogicalProcessors);
+                for (size_t i = 0; i < size; i++)
+                {
+                    REQUIRE(acquired.at(i) == true);
+                }
+                REQUIRE(resource.isAcquiredExclusive() == false);
+                REQUIRE(resource.isAcquiredShared() == 0);
             }
         }
     }
