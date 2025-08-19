@@ -20,50 +20,6 @@ namespace
     constexpr int kMinKey = 1;
     constexpr int kMaxKey = 5;
     constexpr int kMapSize = kMaxKey - kMinKey + 1;
-
-    // Counts the number of times an object is destructed.
-    // Doesn't count the destructor calls for moved objects.
-    struct DestructionCounter
-    {
-        static inline int sDestructCount = 0;
-
-        int key = 0;
-
-        explicit DestructionCounter(int k)
-            : key(k)
-        {
-            ASSERT(key != 0);
-        }
-
-        ~DestructionCounter()
-        {
-            if (key != 0)
-            {
-                ++sDestructCount;
-            }
-        }
-
-        DestructionCounter(DestructionCounter&& other) noexcept
-            : key(other.key)
-        {
-            other.key = 0;
-        }
-
-        DestructionCounter& operator=(DestructionCounter&& other) noexcept
-        {
-            if (this != &other)
-            {
-                key = other.key;
-                other.key = 0;
-            }
-            return *this;
-        }
-
-        DestructionCounter(const DestructionCounter&) = delete;
-        DestructionCounter& operator=(const DestructionCounter&) = delete;
-    };
-
-    using DestructionMap = kf::TreeMap<int, DestructionCounter, PagedPool>;
 }
 
 SCENARIO("TreeMap: all methods")
@@ -359,6 +315,51 @@ SCENARIO("TreeMap: all methods")
     }
 }
 
+namespace
+{
+    // Counts the number of times an object is constructed and destructed.
+    struct ConstructionDestructionCounter
+    {
+    public:
+        ConstructionDestructionCounter()
+        {
+            ++s_constructCount;
+        }
+
+        ConstructionDestructionCounter(ConstructionDestructionCounter&&) noexcept
+        {
+            ++s_constructCount;
+        }
+
+        ConstructionDestructionCounter& operator=(ConstructionDestructionCounter&& other) noexcept = default;
+
+        ~ConstructionDestructionCounter()
+        {
+            ++s_destructCount;
+        }
+
+        ConstructionDestructionCounter(const ConstructionDestructionCounter&) = delete;
+        ConstructionDestructionCounter& operator=(const ConstructionDestructionCounter&) = delete;
+
+        static void ResetCounters()
+        {
+            s_constructCount = 0;
+            s_destructCount = 0;
+        }
+
+        static bool AllObjectsAreDestructed()
+        {
+            return s_constructCount == s_destructCount;
+        }
+
+    private:
+        static inline int s_constructCount = 0;
+        static inline int s_destructCount = 0;
+    };
+
+    using DestructionMap = kf::TreeMap<int, ConstructionDestructionCounter, PagedPool>;
+}
+
 SCENARIO("TreeMap: destruction check")
 {
     constexpr int kKey1 = 1;
@@ -367,10 +368,10 @@ SCENARIO("TreeMap: destruction check")
 
     GIVEN("map with one item")
     {
-        DestructionCounter::sDestructCount = 0;
+        ConstructionDestructionCounter::ResetCounters();
         DestructionMap map;
 
-        REQUIRE_NT_SUCCESS(map.put(kKey1, DestructionCounter(kKey1)));
+        REQUIRE_NT_SUCCESS(map.put(kKey1, ConstructionDestructionCounter()));
 
         WHEN("item is removed by key")
         {
@@ -379,64 +380,56 @@ SCENARIO("TreeMap: destruction check")
             THEN("destructor is called once")
             {
                 REQUIRE(removed);
-                REQUIRE(DestructionCounter::sDestructCount == 1);
+                REQUIRE(ConstructionDestructionCounter::AllObjectsAreDestructed());
             }
         }
-    }
-
-    GIVEN("map with one item")
-    {
-        DestructionCounter::sDestructCount = 0;
-        DestructionMap map;
-
-        REQUIRE_NT_SUCCESS(map.put(kKey2, DestructionCounter(kKey2)));
-        auto value = map.get(kKey2);
 
         WHEN("item is removed by value")
         {
+            auto value = map.get(kKey1);
             auto removed = map.removeByObject(value);
 
             THEN("destructor is called once")
             {
                 REQUIRE(removed);
-                REQUIRE(DestructionCounter::sDestructCount == 1);
+                REQUIRE(ConstructionDestructionCounter::AllObjectsAreDestructed());
             }
         }
     }
 
     GIVEN("map with multiple items")
     {
-        DestructionCounter::sDestructCount = 0;
+        ConstructionDestructionCounter::ResetCounters();
 
         WHEN("map is going out of scope")
         {
             DestructionMap map;
-            map.put(kKey1, DestructionCounter(kKey1));
-            map.put(kKey2, DestructionCounter(kKey2));
-            map.put(kKey3, DestructionCounter(kKey3));
+            map.put(kKey1, ConstructionDestructionCounter());
+            map.put(kKey2, ConstructionDestructionCounter());
+            map.put(kKey3, ConstructionDestructionCounter());
         }
 
         THEN("destructors are called for all items")
         {
-            REQUIRE(DestructionCounter::sDestructCount == 3);
+            REQUIRE(ConstructionDestructionCounter::AllObjectsAreDestructed());
         }
     }
 
     GIVEN("map moved back from nested scope")
     {
-        DestructionCounter::sDestructCount = 0;
+        ConstructionDestructionCounter::ResetCounters();
 
         DestructionMap movedMap;
         {
             DestructionMap map;
-            map.put(kKey1, std::move(DestructionCounter(kKey1)));
-            map.put(kKey2, std::move(DestructionCounter(kKey2)));
+            map.put(kKey1, std::move(ConstructionDestructionCounter()));
+            map.put(kKey2, std::move(ConstructionDestructionCounter()));
 
             movedMap = std::move(map);
 
-            THEN("destructors are not called yet")
+            THEN("destructors are called for moved-from objests only")
             {
-                REQUIRE(DestructionCounter::sDestructCount == 0);
+                REQUIRE(!ConstructionDestructionCounter::AllObjectsAreDestructed());
             }
 
             THEN("the moved map is not empty")
@@ -454,9 +447,9 @@ SCENARIO("TreeMap: destruction check")
         
         WHEN("original map is out of scope")
         {
-            THEN("destructors for moved objects are not called")
+            THEN("destructors for moved-to objects are still not called")
             {
-                REQUIRE(DestructionCounter::sDestructCount == 0);
+                REQUIRE(!ConstructionDestructionCounter::AllObjectsAreDestructed());
             }
 
             THEN("the moved map is not empty")
@@ -470,9 +463,9 @@ SCENARIO("TreeMap: destruction check")
         {
             movedMap.clear();
 
-            THEN("destructors are called for moved objects")
+            THEN("destructors are called for all objects")
             {
-                REQUIRE(DestructionCounter::sDestructCount == 2);
+                REQUIRE(ConstructionDestructionCounter::AllObjectsAreDestructed());
             }
 
             THEN("the moved map is empty")

@@ -35,7 +35,7 @@ namespace kf
         {
             Node node(key, std::move(value));
             NTSTATUS status = m_table.insertElement(std::move(node));
-            
+
             if (!NT_SUCCESS(status))
             {
                 value = std::move(node.m_value);

@@ -161,7 +161,7 @@ namespace kf
         static void NTAPI freeRoutine(_In_ RTL_AVL_TABLE*, _In_ __drv_freesMem(Mem) _Post_invalid_ void* buffer)
         {
             reinterpret_cast<T*>(static_cast<RTL_BALANCED_LINKS*>(buffer) + 1)->~T();
-            delete buffer;
+            operator delete(buffer);
         }
 
         _IRQL_requires_same_
