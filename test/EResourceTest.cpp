@@ -1,7 +1,7 @@
 #include "pch.h"
 #include <kf/EResource.h>
 #include <kf/ThreadPool.h>
-#include <kf/stl/vector>
+
 namespace
 {
     constexpr int kOneMillisecond = 10'000; // 1 ms in 100-nanosecond intervals
@@ -159,6 +159,8 @@ SCENARIO("kf::EResource")
     {
         constexpr int kMaxThreadsCount = 64;
         const ULONG numLogicalProcessors = KeQueryActiveProcessorCount(nullptr);
+        REQUIRE(numLogicalProcessors <= kMaxThreadsCount);
+
         struct Context
         {
             kf::EResource* resource = nullptr;
