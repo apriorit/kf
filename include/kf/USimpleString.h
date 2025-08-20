@@ -334,7 +334,7 @@ namespace kf
         return const_cast<USimpleString*>(this)->end();
     }
 
-    // Comparison return code meaining:
+    // Comparison return code meaning:
     // Return code	Description
     // 0: this equals str
     // <0: this is less than str
