@@ -11,6 +11,9 @@ namespace kf
     class UString : public USimpleString
     {
     public:
+        UString(const UString&) = delete;
+        UString& operator=(const UString&) = delete;
+
         UString() : m_buffer(nullptr)
         {
         }
@@ -132,10 +135,56 @@ namespace kf
 
             return *this;
         }
+        
+        NTSTATUS concat(_In_ const USimpleString& str)
+        {
+            return ::RtlAppendUnicodeStringToString(&m_str, &str.string());
+        }
 
-    private:
-        UString(const UString&);
-        UString& operator=(const UString&);
+        // concat may return STATUS_BUFFER_TOO_SMALL if internal buffer is not large enough.
+        // Use realloc to increase the size of the buffer before calling concat.
+        NTSTATUS concat(_In_ PCWSTR str)
+        {
+            return ::RtlAppendUnicodeToString(&m_str, str);
+        }
+
+        // format can return STATUS_BUFFER_OVERFLOW if the formatted string exceeds the maximum length.
+        // Use realloc to increase the size of the buffer before calling format.
+        NTSTATUS format(_In_ LPCWSTR fmt, ...)
+        {
+            va_list va;
+            va_start(va, fmt);
+            NTSTATUS status = format(fmt, va);
+            va_end(va);
+
+            return status;
+        }
+
+        // format can return STATUS_BUFFER_OVERFLOW if the formatted string exceeds the maximum length.
+        // Use realloc to increase the size of the buffer before calling format.
+        NTSTATUS format(_In_ LPCWSTR fmt, _In_ va_list va)
+        {
+            // TODO: change _vsnwprintf to something more secure
+            const int charsWritten = _vsnwprintf(m_str.Buffer, maxCharLength(), fmt, va);
+            if (charsWritten < 0)
+            {
+                return STATUS_BUFFER_OVERFLOW;
+            }
+
+            setCharLength(charsWritten);
+            return STATUS_SUCCESS;
+        }
+
+
+        NTSTATUS toUpperCase()
+        {
+            return isEmpty() ? STATUS_SUCCESS : ::RtlUpcaseUnicodeString(const_cast<PUNICODE_STRING>(&string()), &string(), FALSE);
+        }
+
+        NTSTATUS toLowerCase()
+        {
+            return isEmpty() ? STATUS_SUCCESS : ::RtlDowncaseUnicodeString(const_cast<PUNICODE_STRING>(&string()), &string(), FALSE);
+        }
 
     private:
         enum { PoolTag = '++SU' };
