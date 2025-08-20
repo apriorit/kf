@@ -1,5 +1,5 @@
 #pragma once
-
+#include <atomic>
 #include "EResource.h"
 #include "Semaphore.h"
 
@@ -39,13 +39,17 @@ namespace kf
         {
             ++m_waitersCount;
 
-            external.release();
-            auto status = NT_SUCCESS(m_semaphore.wait(timeout)) ? Status::Success : Status::Timeout;
+            if (external.isAcquiredExclusive())
+            {
+                external.release();
+            }
+            auto status = m_semaphore.wait(timeout);
+            auto result = (NT_SUCCESS(status) && status != STATUS_TIMEOUT) ? Status::Success : Status::Timeout;
             external.acquireExclusive();
 
             --m_waitersCount;
 
-            return status;
+            return result;
         }
 
         template<class Predicate>
