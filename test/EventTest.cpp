@@ -5,6 +5,7 @@
 SCENARIO("kf::Event")
 {
     constexpr auto kOneMillisecond = 10'000; // 1ms
+    LARGE_INTEGER kZeroTimeout{0};
 
     GIVEN("NotificationEvent with true state")
     {
@@ -124,85 +125,49 @@ SCENARIO("kf::Event")
         }
     }
 
-    GIVEN("NotificationEvent with multiple waiters and NotificationEvent for complition")
+    GIVEN("NotificationEvent with multiple wait() calls")
     {
-        kf::Event triggerEvent(NotificationEvent, false);
-        kf::Event completionEvent1(NotificationEvent, false);
-        kf::Event completionEvent2(NotificationEvent, false);
-        std::pair context1{ &triggerEvent, &completionEvent1 };
-        std::pair context2{ &triggerEvent, &completionEvent2 };
-        kf::Thread thread1;
-        kf::Thread thread2;
+        kf::Event event(NotificationEvent, false);
 
-        thread1.start([](void* context) {
-            const auto e = static_cast<std::pair<kf::Event*, kf::Event*>*>(context);
-            e->first->wait();
-            e->second->set();
-            }, &context1);
-
-        thread2.start([](void* context) {
-            const auto e = static_cast<std::pair<kf::Event*, kf::Event*>*>(context);
-            e->first->wait();
-            e->second->set();
-            }, &context2);
-
-        WHEN("A wait is performed with no timeout and the event is not set")
+        WHEN("A wait is performed with 0 and the event is not set")
         {
-            THEN("Both threads are waiting")
+            THEN("Both waits are timed out")
             {
-                REQUIRE(!completionEvent1.isSet());
-                REQUIRE(!completionEvent2.isSet());
+                REQUIRE(STATUS_TIMEOUT == event.wait(&kZeroTimeout));
+                REQUIRE(STATUS_TIMEOUT == event.wait(&kZeroTimeout));
             }
 
-            triggerEvent.set();
-            completionEvent1.wait();
-            completionEvent2.wait();
+            event.set();
 
-            THEN("After trigger event is set, both threads are released from waiting")
+            THEN("After event is set, both waits are successed")
             {
-                REQUIRE(completionEvent1.isSet());
-                REQUIRE(completionEvent2.isSet());
+                REQUIRE(STATUS_SUCCESS == event.wait(&kZeroTimeout));
+                REQUIRE(STATUS_SUCCESS == event.wait(&kZeroTimeout));
             }
         }
     }
 
-    GIVEN("SynchronizationEvent with multiple waiters and NotificationEvent for complition")
+    GIVEN("NotificationEvent with multiple wait() calls")
     {
-        kf::Event triggerEvent(SynchronizationEvent, false);
-        kf::Thread thread1;
-        kf::Thread thread2;
+        kf::Event event(SynchronizationEvent, false);
 
-        kf::Event completionEvent1(NotificationEvent, false);
-        kf::Event completionEvent2(NotificationEvent, false);
-        std::pair firstContext{ &triggerEvent, &completionEvent1 };
-        std::pair secondContext{ &triggerEvent, &completionEvent2 };
-
-        thread1.start([](void* context) {
-            const auto data = static_cast<std::pair<kf::Event*, kf::Event*>*>(context);
-            data->first->wait();
-            data->second->set();
-            }, &firstContext);
-
-        thread2.start([](void* context) {
-            const auto data = static_cast<std::pair<kf::Event*, kf::Event*>*>(context);
-            data->first->wait();
-            data->second->set();
-            }, &secondContext);
-
-        THEN("Both threads are waiting")
+        WHEN("A wait is performed with 0 and the event is not set")
         {
-            REQUIRE(!completionEvent1.isSet());
-            REQUIRE(!completionEvent2.isSet());
+            THEN("Both waits are timed out")
+            {
+                REQUIRE(STATUS_TIMEOUT == event.wait(&kZeroTimeout));
+                REQUIRE(STATUS_TIMEOUT == event.wait(&kZeroTimeout));
+            }
+
+            event.set();
+
+            THEN("Only one wait is successed and event resets")
+            {
+                auto status1 = event.wait(&kZeroTimeout) == STATUS_SUCCESS ? 1 : 0;
+                auto status2 = event.wait(&kZeroTimeout) == STATUS_SUCCESS ? 1 : 0;
+                REQUIRE(status1 ^ status2);
+                REQUIRE(!event.isSet());
+            }
         }
-
-        triggerEvent.set();
-
-        THEN("Only one thread is released and event resets")
-        {
-            REQUIRE(completionEvent1.isSet() ^ completionEvent2.isSet()); // Exactly one is true
-            REQUIRE(!triggerEvent.isSet());
-        }
-
-        triggerEvent.set();
     }
 }
