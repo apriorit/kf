@@ -667,7 +667,6 @@ SCENARIO("USimpleString: all methods")
             THEN("it returns the index of the first occurrence")
             {
                 REQUIRE(index == 9); // "  Hello, World!  \U0001F60A\U0001F60A "
-                // TODO: Support Unicode characters in indexOf
             }
         }
 
