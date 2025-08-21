@@ -107,16 +107,6 @@ namespace kf
         bool matches(_In_ const USimpleString& expression) const;
         bool matchesIgnoreCase(_In_ const USimpleString& expression) const;
 
-        NTSTATUS concat(_In_ const USimpleString& str)
-        {
-            return ::RtlAppendUnicodeStringToString(&m_str, &str.string());
-        }
-
-        NTSTATUS concat(_In_ PCWSTR str)
-        {
-            return ::RtlAppendUnicodeToString(&m_str, str);
-        }
-
         template<size_t N>
         int copyTo(_Out_ WCHAR(&destination)[N]) const
         {
@@ -136,35 +126,13 @@ namespace kf
             return charsToCopy;
         }
 
-        NTSTATUS format(_In_ LPCWSTR fmt, ...)
-        {
-            va_list va;
-            va_start(va, fmt);
-            NTSTATUS status = format(fmt, va);
-            va_end(va);
-
-            return status;
-        }
-
-        NTSTATUS format(_In_ LPCWSTR fmt, _In_ va_list va)
-        {
-            const int charsWritten = _vsnwprintf(m_str.Buffer, maxCharLength(), fmt, va);
-            if (charsWritten < 0)
-            {
-                return STATUS_BUFFER_OVERFLOW;
-            }
-
-            setCharLength(charsWritten);
-            return STATUS_SUCCESS;
-        }
-
     public:
         struct LessIgnoreCase
         {
             bool operator()(_In_ const USimpleString& strLeft, _In_ const USimpleString& strRight) const;
         };
 
-    private:
+    protected:
         UNICODE_STRING m_str;
     };
 
@@ -559,16 +527,6 @@ namespace kf
     {
         int idx = charLength() - str.charLength();
         return idx >= 0 && substring(idx).equalsIgnoreCase(str);
-    }
-
-    inline NTSTATUS USimpleString::toUpperCase()
-    {
-        return isEmpty() ? STATUS_SUCCESS : RtlUpcaseUnicodeString(const_cast<PUNICODE_STRING>(&string()), &string(), FALSE);
-    }
-
-    inline NTSTATUS USimpleString::toLowerCase()
-    {
-        return isEmpty() ? STATUS_SUCCESS : RtlDowncaseUnicodeString(const_cast<PUNICODE_STRING>(&string()), &string(), FALSE);
     }
 
     inline bool USimpleString::matches(_In_ const USimpleString& expression) const
