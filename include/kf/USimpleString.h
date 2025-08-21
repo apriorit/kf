@@ -334,7 +334,11 @@ namespace kf
         return const_cast<USimpleString*>(this)->end();
     }
 
-    // Comparison
+    // Comparison return code meaning:
+    // Return code	Description
+    // 0: this equals str
+    // <0: this is less than str
+    // >0: this is greater than str
     inline int USimpleString::compareTo(_In_ const UNICODE_STRING& str) const
     {
         return ::RtlCompareUnicodeString(&m_str, &str, FALSE);
@@ -375,11 +379,13 @@ namespace kf
         return equalsIgnoreCase(str.string());
     }
 
+    // Case sensitive lexicographical comparison
     inline bool USimpleString::operator<(_In_ const USimpleString& another) const
     {
         return compareTo(another) < 0;
     }
 
+    // Case sensitive lexicographical comparison
     inline bool USimpleString::operator==(_In_ const USimpleString& another) const
     {
         return equals(another);
