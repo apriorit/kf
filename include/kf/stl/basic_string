@@ -1,0 +1,914 @@
+#pragma once
+#include <xstring>
+#include <type_traits>
+#include <optional>
+#include <string_view>
+#include <kf/Allocator.h>
+
+#if _KERNEL_MODE && _ITERATOR_DEBUG_LEVEL > 0
+#error "_ITERATOR_DEBUG_LEVEL must not be greater than 0"
+#endif
+
+namespace kf
+{
+    //////////////////////////////////////////////////////////////////////////
+    // string - the Wrapper for std::string that allows to use it in
+    // exception-free environments.
+
+    template<class T, POOL_TYPE PoolType, class Allocator = Allocator<T, PoolType>>
+    class basic_string
+    {
+    public:
+        using string_type = std::basic_string<T, std::char_traits<T>, Allocator>;
+        using traits_type = string_type::traits_type;
+        using allocator_type = string_type::allocator_type;
+
+        using value_type = string_type::value_type;
+        using size_type = string_type::size_type;
+        using difference_type = string_type::difference_type;
+        using pointer = string_type::pointer;
+        using const_pointer = string_type::const_pointer;
+        using reference = string_type::reference;
+        using const_reference = string_type::const_reference;
+
+        using iterator = string_type::iterator;
+        using const_iterator = string_type::const_iterator;
+
+        using reverse_iterator = string_type::reverse_iterator;
+        using const_reverse_iterator = string_type::const_reverse_iterator;
+
+        static constexpr size_type npos = string_type::npos;
+
+        //
+        // Construction and assignment
+        //
+
+        constexpr basic_string() noexcept = default;
+
+        basic_string(const basic_string&) = delete;
+        basic_string& operator=(const basic_string&) = delete;
+
+        constexpr basic_string(basic_string&& other) noexcept = default;
+        constexpr basic_string& operator=(basic_string&& other) noexcept = default;
+
+        constexpr [[nodiscard]] NTSTATUS assign(size_type count, const T& value) noexcept
+        {
+            if (auto status = reallocateGrowth(count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.assign(count, value);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS assign(const basic_string& other) noexcept
+        {
+            if (auto status = reallocateGrowth(other.size()); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.assign(other.m_string);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS assign(const basic_string& other, size_type pos, size_type count = npos) noexcept
+        {
+            if (pos > other.size())
+            {
+                return assign(0, T{});
+            }
+
+            const auto available = other.size() - pos;
+            const auto clamped = (count == npos || count > available) ? available : count;
+            if (auto status = reallocateGrowth(clamped); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.assign(other.m_string, pos, clamped);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS assign(const T* s, size_type count) noexcept
+        {
+            if (auto status = reallocateGrowth(count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.assign(s, count);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS assign(const T* s) noexcept
+        {
+            const auto len = traits_type::length(s);
+            return assign(s, len);
+        }
+
+        constexpr operator std::string_view() const noexcept
+        {
+            return std::string_view(m_string.data(), m_string.size());
+        }
+
+        constexpr void swap(basic_string& other) noexcept
+        {
+            m_string.swap(other.m_string);
+        }
+
+        //
+        // Element access
+        //
+
+        constexpr std::optional<std::reference_wrapper<T>> at(size_type pos) noexcept
+        {
+            return pos < size() ? std::optional(std::ref(m_string[pos])) : std::nullopt;
+        }
+
+        constexpr std::optional<std::reference_wrapper<const T>> at(size_type pos) const noexcept
+        {
+            return pos < size() ? std::optional(std::ref(m_string[pos])) : std::nullopt;
+        }
+
+        constexpr T& operator[](size_type pos) noexcept
+        {
+            return m_string[pos];
+        }
+
+        constexpr const T& operator[](size_type pos) const noexcept
+        {
+            return m_string[pos];
+        }
+
+        constexpr T& front() noexcept
+        {
+            return m_string.front();
+        }
+
+        constexpr const T& front() const noexcept
+        {
+            return m_string.front();
+        }
+
+        constexpr T& back() noexcept
+        {
+            return m_string.back();
+        }
+
+        constexpr const T& back() const noexcept
+        {
+            return m_string.back();
+        }
+
+        constexpr T* data()
+        {
+            return m_string.data();
+        }
+
+        constexpr const T* data() const noexcept
+        {
+            return m_string.data();
+        }
+
+        constexpr const T* c_str() const noexcept
+        {
+            return m_string.c_str();
+        }
+
+        //
+        // Iterators
+        //
+
+        constexpr iterator begin() noexcept
+        {
+            return m_string.begin();
+        }
+
+        constexpr const_iterator begin() const noexcept
+        {
+            return m_string.begin();
+        }
+
+        constexpr const_iterator cbegin() const noexcept
+        {
+            return m_string.cbegin();
+        }
+
+        constexpr iterator end() noexcept
+        {
+            return m_string.end();
+        }
+
+        constexpr const_iterator end() const noexcept
+        {
+            return m_string.end();
+        }
+
+        constexpr const_iterator cend() const noexcept
+        {
+            return m_string.cend();
+        }
+
+        constexpr reverse_iterator rbegin() noexcept
+        {
+            return m_string.rbegin();
+        }
+
+        constexpr const_reverse_iterator rbegin() const noexcept
+        {
+            return m_string.rbegin();
+        }
+
+        constexpr const_reverse_iterator crbegin() const noexcept
+        {
+            return m_string.crbegin();
+        }
+
+        constexpr reverse_iterator rend() noexcept
+        {
+            return m_string.rend();
+        }
+
+        constexpr const_reverse_iterator rend() const noexcept
+        {
+            return m_string.rend();
+        }
+
+        constexpr const_reverse_iterator crend() const noexcept
+        {
+            return m_string.crend();
+        }
+
+        //
+        // Size and capacity
+        //
+
+        constexpr bool empty() const noexcept
+        {
+            return m_string.empty();
+        }
+
+        constexpr size_type size() const noexcept
+        {
+            return m_string.size();
+        }
+
+        constexpr size_type length() const noexcept
+        {
+            return size();
+        }
+
+        constexpr size_type max_size() const noexcept
+        {
+            return m_string.max_size();
+        }
+
+        constexpr NTSTATUS reserve(size_type newCapacity) noexcept
+        {
+            if (newCapacity <= m_string.capacity())
+            {
+                return STATUS_SUCCESS;
+            }
+
+            return reallocateExactly(newCapacity);
+        }
+
+        constexpr size_type capacity() const noexcept
+        {
+            return m_string.capacity();
+        }
+
+        constexpr NTSTATUS shrink_to_fit() noexcept
+        {
+            if (m_string.size() == m_string.capacity())
+            {
+                return STATUS_SUCCESS;
+            }
+
+            if (auto status = reallocateExactly(m_string.size()); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.shrink_to_fit();
+            return STATUS_SUCCESS;
+        }
+
+        //
+        // Comparison
+        //
+
+        constexpr int compare(const basic_string& str) const noexcept
+        {
+            return m_string.compare(str.m_string);
+        }
+
+        constexpr int compare(size_type pos1, size_type count1, const basic_string& str) const noexcept
+        {
+            return m_string.compare(pos1, count1, str.m_string);
+        }
+
+        constexpr int compare(size_type pos1, size_type count1, const basic_string& str, size_type pos2, size_type count2 = npos) const noexcept
+        {
+            return m_string.compare(pos1, count1, str.m_string, pos2, count2);
+        }
+
+        constexpr int compare(const T* s) const noexcept
+        {
+            return m_string.compare(s);
+        }
+
+        constexpr int compare(size_type pos1, size_type count1, const T* s) const noexcept
+        {
+            return m_string.compare(pos1, count1, s);
+        }
+
+        constexpr int compare(size_type pos1, size_type count1, const T* s, size_type count2) const noexcept
+        {
+            return m_string.compare(pos1, count1, s, count2);
+        }
+
+        constexpr bool operator==(const basic_string& rhs) const noexcept
+        {
+            return compare(rhs) == 0;
+        }
+
+        constexpr bool operator!=(const basic_string& rhs) const noexcept
+        {
+            return !(*this == rhs);
+        }
+
+        constexpr bool operator<(const basic_string& rhs) const noexcept
+        {
+            return compare(rhs) < 0;
+        }
+
+        // Compare with C-style strings (const T*)
+        constexpr bool operator==(const T* rhs) const noexcept
+        {
+            return compare(rhs) == 0;
+        }
+
+        constexpr bool operator!=(const T* rhs) const noexcept
+        {
+            return !(*this == rhs);
+        }
+
+        constexpr bool operator<(const T* rhs) const noexcept
+        {
+            return compare(rhs) < 0;
+        }
+
+        //
+        // Modifiers
+        //
+
+        constexpr void clear() noexcept
+        {
+            m_string.clear();
+        }
+
+        // insert (iterator-based)
+        constexpr std::optional<iterator> insert(const_iterator pos, const T& value) noexcept
+        {
+            const auto idx = static_cast<size_type>(pos - m_string.begin());
+
+            if (auto status = reallocateGrowth(m_string.size() + 1); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_string.insert(m_string.begin() + idx, value);
+        }
+
+        constexpr std::optional<iterator> insert(const_iterator pos, T&& value) noexcept
+        {
+            const auto idx = static_cast<size_type>(pos - m_string.begin());
+
+            if (auto status = reallocateGrowth(m_string.size() + 1); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_string.insert(m_string.begin() + idx, std::move(value));
+        }
+
+        constexpr std::optional<iterator> insert(const_iterator pos, size_type count, const T& value) noexcept
+        {
+            const auto idx = static_cast<size_type>(pos - m_string.begin());
+
+            if (auto status = reallocateGrowth(m_string.size() + count); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_string.insert(m_string.begin() + idx, count, value);
+        }
+
+        template<class... Args>
+        constexpr std::optional<iterator> emplace(const_iterator pos, Args&&... args) noexcept
+        {
+            const auto idx = static_cast<size_type>(pos - m_string.begin());
+
+            if (auto status = reallocateGrowth(m_string.size() + 1); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_string.emplace(m_string.begin() + idx, std::forward<Args>(args)...);
+        }
+
+        // insert (index-based)
+        constexpr [[nodiscard]] NTSTATUS insert(size_type index, size_type count, T ch) noexcept
+        {
+            if (auto status = reallocateGrowth(m_string.size() + count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.insert(index, count, ch);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS insert(size_type index, const T* s, size_type count) noexcept
+        {
+            if (auto status = reallocateGrowth(m_string.size() + count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.insert(index, s, count);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS insert(size_type index, const T* s) noexcept
+        {
+            return insert(index, s, traits_type::length(s));
+        }
+
+        constexpr [[nodiscard]] NTSTATUS insert(size_type index, const basic_string& str) noexcept
+        {
+            if (auto status = reallocateGrowth(m_string.size() + str.size()); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.insert(index, str.m_string);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS insert(size_type index, const basic_string& str, size_type index_str, size_type count = npos) noexcept
+        {
+            if (index_str > str.size())
+            {
+                return STATUS_SUCCESS;
+            }
+
+            const auto available = str.size() - index_str;
+            const auto clamped = (count == npos || count > available) ? available : count;
+            if (auto status = reallocateGrowth(m_string.size() + clamped); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.insert(index, str.m_string, index_str, clamped);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS push_back(const T& value) noexcept
+        {
+            if (auto status = reallocateGrowth(m_string.size() + 1); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.push_back(value);
+
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS push_back(T&& value) noexcept
+        {
+            if (auto status = reallocateGrowth(m_string.size() + 1); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.push_back(std::move(value));
+
+            return STATUS_SUCCESS;
+        }
+
+        constexpr void pop_back() noexcept
+        {
+            m_string.pop_back();
+        }
+
+        template<class... Args>
+        constexpr std::optional<std::reference_wrapper<T>> emplace_back(Args&&... args) noexcept
+        {
+            if (auto status = reallocateGrowth(m_string.size() + 1); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_string.emplace_back(std::forward<Args>(args)...);
+        }
+
+        constexpr [[nodiscard]] NTSTATUS append(size_t count, T ch) noexcept
+        {
+            if (auto status = reallocateGrowth(m_string.size() + count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.append(count, ch);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS append(const basic_string& str) noexcept
+        {
+            if (auto status = reallocateGrowth(m_string.size() + str.size()); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.append(str.m_string);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS append(const basic_string& str, size_type pos, size_type count = npos) noexcept
+        {
+            if (pos > str.size())
+            {
+                return STATUS_SUCCESS;
+            }
+
+            const auto available = str.size() - pos;
+            const auto clamped = (count == npos || count > available) ? available : count;
+            if (auto status = reallocateGrowth(m_string.size() + clamped); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.append(str.m_string, pos, clamped);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS append(const T* s, size_t count) noexcept
+        {
+            if (auto status = reallocateGrowth(m_string.size() + count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.append(s, count);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS append(const T* s) noexcept
+        {
+            return append(s, traits_type::length(s));
+        }
+
+        // Proper usage: auto status = myString += "addition";
+        constexpr [[nodiscard]] NTSTATUS operator+=(const basic_string& str) noexcept
+        {
+            return append(str);
+        }
+
+        // Proper usage: auto status = myString += "addition";
+        constexpr [[nodiscard]] NTSTATUS operator+=(const T* s) noexcept
+        {
+            return append(s);
+        }
+
+        // Proper usage: auto status = myString += "addition";
+        constexpr [[nodiscard]] NTSTATUS operator+=(T ch) noexcept
+        {
+            return append(1, ch);
+        }
+
+        constexpr [[nodiscard]] NTSTATUS resize(size_type count) noexcept
+        {
+            if (auto status = reallocateGrowth(count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.resize(count);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS resize(size_type count, const T& value) noexcept
+        {
+            if (auto status = reallocateGrowth(count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.resize(count, value);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS erase(size_type index = 0, size_type count = npos) noexcept
+        {
+            m_string.erase(index, count);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr iterator erase(const_iterator pos) noexcept
+        {
+            return m_string.erase(pos);
+        }
+
+        constexpr iterator erase(const_iterator first, const_iterator last) noexcept
+        {
+            return m_string.erase(first, last);
+        }
+
+        constexpr [[nodiscard]] NTSTATUS replace(size_t pos, size_t count, const basic_string& str) noexcept
+        {
+            size_t removed = 0;
+            if (pos <= size())
+            {
+                const auto available = size() - pos;
+                removed = (count == npos || count > available) ? available : count;
+            }
+
+            const auto newSize = size() - removed + str.size();
+            if (auto status = reallocateGrowth(newSize); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.replace(pos, count, str.m_string);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS replace(size_type pos, size_type count, const T* s, size_type count2) noexcept
+        {
+            size_type removed = 0;
+            if (pos <= size())
+            {
+                const auto available = size() - pos;
+                removed = (count == npos || count > available) ? available : count;
+            }
+
+            const auto newSize = size() - removed + count2;
+            if (auto status = reallocateGrowth(newSize); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.replace(pos, count, s, count2);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS replace(size_type pos, size_type count, const T* s) noexcept
+        {
+            return replace(pos, count, s, traits_type::length(s));
+        }
+
+        constexpr [[nodiscard]] NTSTATUS replace(size_type pos1, size_type count1, const basic_string& str, size_t pos2, size_t count2 = npos) noexcept
+        {
+            if (pos2 > str.size())
+            {
+                return replace(pos1, count1, static_cast<const T*>(nullptr), size_type{0});
+            }
+
+            const auto available = str.size() - pos2;
+            const auto clamped = (count2 == npos || count2 > available) ? available : count2;
+            return replace(pos1, count1, str.m_string.data() + pos2, clamped);
+        }
+
+        constexpr [[nodiscard]] NTSTATUS replace(const_iterator first, const_iterator last, const basic_string& str) noexcept
+        {
+            const auto idx = static_cast<size_type>(first - m_string.begin());
+            const auto cnt = static_cast<size_type>(last - first);
+            return replace(idx, cnt, str);
+        }
+
+        constexpr [[nodiscard]] NTSTATUS replace(const_iterator first, const_iterator last, size_type count2, T ch) noexcept
+        {
+            const auto idx = static_cast<size_type>(first - m_string.begin());
+            const auto cnt = static_cast<size_type>(last - first);
+            if (auto status = reallocateGrowth(size() - cnt + count2); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_string.replace(first, last, count2, ch);
+            return STATUS_SUCCESS;
+        }
+
+        //
+        // String operations
+        //
+
+        constexpr size_type copy(T* dest, size_type count, size_type pos = 0) const noexcept
+        {
+            if (pos > size())
+            {
+                return 0;
+            }
+
+            const auto available = size() - pos;
+            const auto rcount = (count > available) ? available : count;
+            traits_type::copy(dest, m_string.data() + pos, rcount);
+            return rcount;
+        }
+
+        constexpr basic_string substr(size_type pos = 0, size_type count = npos) const noexcept
+        {
+            basic_string result;
+            if (pos > size())
+            {
+                return result;
+            }
+
+            const auto available = size() - pos;
+            const auto rcount = (count == npos || count > available) ? available : count;
+            if (!NT_SUCCESS(result.reserve(rcount)))
+            {
+                return result; // return empty on allocation failure
+            }
+
+            result.m_string.append(m_string.data() + pos, rcount);
+            return result;
+        }
+
+        // find/rfind and friends
+        constexpr size_type find(const basic_string& str, size_type pos = 0) const noexcept
+        {
+            return m_string.find(str.m_string, pos);
+        }
+
+        constexpr size_type find(const T* s, size_type pos, size_type count) const noexcept
+        {
+            return m_string.find(s, pos, count);
+        }
+
+        constexpr size_type find(const T* s, size_type pos = 0) const noexcept
+        {
+            return m_string.find(s, pos);
+        }
+
+        constexpr size_type find(T ch, size_type pos = 0) const noexcept
+        {
+            return m_string.find(ch, pos);
+        }
+
+        constexpr size_type rfind(const basic_string& str, size_type pos = npos) const noexcept
+        {
+            return m_string.rfind(str.m_string, pos);
+        }
+
+        constexpr size_type rfind(const T* s, size_type pos, size_type count) const noexcept
+        {
+            return m_string.rfind(s, pos, count);
+        }
+
+        constexpr size_type rfind(const T* s, size_type pos = npos) const noexcept
+        {
+            return m_string.rfind(s, pos);
+        }
+
+        constexpr size_type rfind(T ch, size_type pos = npos) const noexcept
+        {
+            return m_string.rfind(ch, pos);
+        }
+
+        constexpr size_type find_first_of(const basic_string& str, size_type pos = 0) const noexcept
+        {
+            return m_string.find_first_of(str.m_string, pos);
+        }
+
+        constexpr size_type find_first_of(const T* s, size_type pos, size_type count) const noexcept
+        {
+            return m_string.find_first_of(s, pos, count);
+        }
+
+        constexpr size_type find_first_of(const T* s, size_type pos = 0) const noexcept
+        {
+            return m_string.find_first_of(s, pos);
+        }
+
+        constexpr size_type find_first_of(T ch, size_type pos = 0) const noexcept
+        {
+            return m_string.find_first_of(ch, pos);
+        }
+
+        constexpr size_type find_first_not_of(const basic_string& str, size_type pos = 0) const noexcept
+        {
+            return m_string.find_first_not_of(str.m_string, pos);
+        }
+
+        constexpr size_type find_first_not_of(const T* s, size_type pos, size_type count) const noexcept
+        {
+            return m_string.find_first_not_of(s, pos, count);
+        }
+
+        constexpr size_type find_first_not_of(const T* s, size_type pos = 0) const noexcept
+        {
+            return m_string.find_first_not_of(s, pos);
+        }
+
+        constexpr size_type find_first_not_of(T ch, size_type pos = 0) const noexcept
+        {
+            return m_string.find_first_not_of(ch, pos);
+        }
+
+        constexpr size_type find_last_of(const basic_string& str, size_type pos = npos) const noexcept
+        {
+            return m_string.find_last_of(str.m_string, pos);
+        }
+
+        constexpr size_type find_last_of(const T* s, size_type pos, size_type count) const noexcept
+        {
+            return m_string.find_last_of(s, pos, count);
+        }
+
+        constexpr size_type find_last_of(const T* s, size_type pos = npos) const noexcept
+        {
+            return m_string.find_last_of(s, pos);
+        }
+
+        constexpr size_type find_last_of(T ch, size_type pos = npos) const noexcept
+        {
+            return m_string.find_last_of(ch, pos);
+        }
+
+        constexpr size_type find_last_not_of(const basic_string& str, size_type pos = npos) const noexcept
+        {
+            return m_string.find_last_not_of(str.m_string, pos);
+        }
+
+        constexpr size_type find_last_not_of(const T* s, size_type pos, size_type count) const noexcept
+        {
+            return m_string.find_last_not_of(s, pos, count);
+        }
+
+        constexpr size_type find_last_not_of(const T* s, size_type pos = npos) const noexcept
+        {
+            return m_string.find_last_not_of(s, pos);
+        }
+
+        constexpr size_type find_last_not_of(T ch, size_type pos = npos) const noexcept
+        {
+            return m_string.find_last_not_of(ch, pos);
+        }
+
+    private:
+        constexpr NTSTATUS reallocateGrowth(size_type newSize) noexcept
+        {
+            if (newSize <= m_string.capacity())
+            {
+                return STATUS_SUCCESS;
+            }
+
+            return moveInternal(calculateGrowth(newSize));
+        }
+
+        constexpr NTSTATUS reallocateExactly(size_type newSize) noexcept
+        {
+            return moveInternal(newSize);
+        }
+
+        constexpr NTSTATUS moveInternal(size_type newCapacity) noexcept
+        {
+            string_type newString;
+            newString.reserve(newCapacity);
+            if (newString.capacity() < newCapacity)
+            {
+                return STATUS_INSUFFICIENT_RESOURCES;
+            }
+
+            m_string.swap(newString);
+            return STATUS_SUCCESS;
+        }
+
+        constexpr size_type calculateGrowth(size_type required) noexcept
+        {
+            const auto oldCapacity = capacity();
+            const auto max = max_size();
+            if (oldCapacity > max - oldCapacity / 2)
+            {
+                return max; // geometric growth would overflow
+            }
+
+            const auto geometric = oldCapacity + oldCapacity / 2;
+            if (geometric < required)
+            {
+                return required; // geometric growth would be insufficient
+            }
+
+            return geometric; // geometric growth is sufficient
+        }
+
+    private:
+        string_type m_string;
+    };
+}
