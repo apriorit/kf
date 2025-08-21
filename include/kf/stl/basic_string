@@ -407,19 +407,6 @@ namespace kf
             return m_string.insert(m_string.begin() + idx, count, value);
         }
 
-        template<class... Args>
-        constexpr std::optional<iterator> emplace(const_iterator pos, Args&&... args) noexcept
-        {
-            const auto idx = static_cast<size_type>(pos - m_string.begin());
-
-            if (auto status = reallocateGrowth(m_string.size() + 1); !NT_SUCCESS(status))
-            {
-                return std::nullopt;
-            }
-
-            return m_string.emplace(m_string.begin() + idx, std::forward<Args>(args)...);
-        }
-
         // insert (index-based)
         constexpr [[nodiscard]] NTSTATUS insert(size_type index, size_type count, T ch) noexcept
         {
@@ -504,17 +491,6 @@ namespace kf
         constexpr void pop_back() noexcept
         {
             m_string.pop_back();
-        }
-
-        template<class... Args>
-        constexpr std::optional<std::reference_wrapper<T>> emplace_back(Args&&... args) noexcept
-        {
-            if (auto status = reallocateGrowth(m_string.size() + 1); !NT_SUCCESS(status))
-            {
-                return std::nullopt;
-            }
-
-            return m_string.emplace_back(std::forward<Args>(args)...);
         }
 
         constexpr [[nodiscard]] NTSTATUS append(size_t count, T ch) noexcept
@@ -686,14 +662,13 @@ namespace kf
 
         constexpr [[nodiscard]] NTSTATUS replace(const_iterator first, const_iterator last, const basic_string& str) noexcept
         {
-            const auto idx = static_cast<size_type>(first - m_string.begin());
-            const auto cnt = static_cast<size_type>(last - first);
+            const auto idx = static_cast<size_t>(first - m_string.begin());
+            const auto cnt = static_cast<size_t>(last - first);
             return replace(idx, cnt, str);
         }
 
         constexpr [[nodiscard]] NTSTATUS replace(const_iterator first, const_iterator last, size_type count2, T ch) noexcept
         {
-            const auto idx = static_cast<size_type>(first - m_string.begin());
             const auto cnt = static_cast<size_type>(last - first);
             if (auto status = reallocateGrowth(size() - cnt + count2); !NT_SUCCESS(status))
             {
@@ -909,6 +884,6 @@ namespace kf
         }
 
     private:
-        string_type m_string;
+        string_type m_string{};
     };
 }
