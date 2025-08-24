@@ -7,19 +7,19 @@
 namespace kf
 {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    // LinkedTreeMap - map container for NT kernel with predictable iteration order, inspired by https://docs.oracle.com/javase/8/docs/api/java/util/LinkedHashMap.html
+    // LinkedTreeMap - map container for NT kernel with predictable iteration order,
+    // inspired by https://docs.oracle.com/javase/8/docs/api/java/util/LinkedHashMap.html
 
     template<class K, class V, POOL_TYPE poolType, class LessComparer=std::less<K>>
     class LinkedTreeMap
     {
     public:
-        LinkedTreeMap()
-        {
-        }
+        LinkedTreeMap() = default;
+        LinkedTreeMap(_Inout_ LinkedTreeMap&& another) = default;
+        LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another) = default;
 
-        LinkedTreeMap(_Inout_ LinkedTreeMap&& another) : m_table(std::move(another.m_table))
-        {
-        }
+        LinkedTreeMap(const LinkedTreeMap&) = delete;
+        LinkedTreeMap& operator=(const LinkedTreeMap&) = delete;
 
         ~LinkedTreeMap()
         {
@@ -45,7 +45,6 @@ namespace kf
             NTSTATUS status = m_table.insertElement(std::move(node));
             if (!NT_SUCCESS(status))
             {
-                value = std::move(node.m_value);
                 return status;
             }
 
@@ -82,9 +81,10 @@ namespace kf
             auto it = m_links.iterator();
             while (it.hasNext())
             {
+                auto node = it.next();
                 if (currentIndex == index)
                 {
-                    return &it.next()->m_value;
+                    return &node->m_value;
                 }
 
                 ++currentIndex;
@@ -121,29 +121,15 @@ namespace kf
 
         bool remove(const K& key)
         {
-            auto value = get(key);
-            Node* node = CONTAINING_RECORD(value, Node, m_value);
-            m_links.remove(*node);
-            return m_table.deleteElement(Node::fromKey(key));
-        }
+            auto node = m_table.lookupElement(Node::fromKey(key));
+            if (node == nullptr)
+            {
+                return false;
+            }
 
-        bool removeByObject(const V* value)
-        {
-            Node* node = CONTAINING_RECORD(value, Node, m_value);
             m_links.remove(*node);
             return m_table.deleteElement(*node);
         }
-
-        LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another)
-        {
-            m_links = std::move(another.m_links);
-            m_table = std::move(another.m_table);
-            return *this;
-        }
-
-    private:
-        LinkedTreeMap(const LinkedTreeMap&);
-        LinkedTreeMap& operator=(const LinkedTreeMap&);
 
     private:
         struct Node
