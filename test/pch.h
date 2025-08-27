@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <kmtest/kmtest.h>
+#include <fltKernel.h>
 
 // TODO: move this default implementation to kf
 

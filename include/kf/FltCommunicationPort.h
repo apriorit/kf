@@ -2,6 +2,7 @@
 #include "ObjectAttributes.h"
 #include "ScopeExit.h"
 #include "VariableSizeStruct.h"
+#include "IWinApi.h"
 
 namespace kf
 {
@@ -69,7 +70,7 @@ namespace kf
     class FltCommunicationPort
     {
     public:
-        FltCommunicationPort() : m_filter(), m_port()
+        FltCommunicationPort(IWinApi& api) : m_api(api), m_filter(), m_port()
         {
         }
 
@@ -85,26 +86,26 @@ namespace kf
             m_filter = filter;
 
             PSECURITY_DESCRIPTOR securityDescriptor = nullptr;
-            NTSTATUS status = ::FltBuildDefaultSecurityDescriptor(&securityDescriptor, FLT_PORT_ALL_ACCESS);
+            NTSTATUS status = m_api.FltBuildDefaultSecurityDescriptor(&securityDescriptor, FLT_PORT_ALL_ACCESS);
 
             if (!NT_SUCCESS(status))
             {
                 return status;
             }
 
-            SCOPE_EXIT{ ::FltFreeSecurityDescriptor(securityDescriptor); };
+            SCOPE_EXIT{ m_api.FltFreeSecurityDescriptor(securityDescriptor); };
 
             VariableSizeStruct<SYSTEM_MANDATORY_LABEL_ACE, PagedPool> lowIntegrityAce;
             VariableSizeStruct<ACL, PagedPool> sacl;
             if (allowNonAdmins)
             {
-                status = RtlSetDaclSecurityDescriptor(securityDescriptor, true, nullptr, false);
+                status = m_api.RtlSetDaclSecurityDescriptor(securityDescriptor, true, nullptr, false);
                 if (!NT_SUCCESS(status))
                 {
                     return status;
                 }
 
-                const auto lowMandatorySidLength = RtlLengthSid(SeExports->SeLowMandatorySid);
+                const auto lowMandatorySidLength = m_api.RtlLengthSid(SeExports->SeLowMandatorySid);
                 status = lowIntegrityAce.emplace(FIELD_OFFSET(SYSTEM_MANDATORY_LABEL_ACE, SidStart) + lowMandatorySidLength);
                 if (!NT_SUCCESS(status))
                 {
@@ -114,7 +115,7 @@ namespace kf
                 lowIntegrityAce->Header.AceType = SYSTEM_MANDATORY_LABEL_ACE_TYPE;
                 lowIntegrityAce->Header.AceSize = static_cast<USHORT>(FIELD_OFFSET(SYSTEM_MANDATORY_LABEL_ACE, SidStart) + lowMandatorySidLength);
                 lowIntegrityAce->Mask = 0;
-                status = RtlCopySid(lowMandatorySidLength, &lowIntegrityAce->SidStart, SeExports->SeLowMandatorySid);
+                status = m_api.RtlCopySid(lowMandatorySidLength, &lowIntegrityAce->SidStart, SeExports->SeLowMandatorySid);
                 if (!NT_SUCCESS(status))
                 {
                     return status;
@@ -126,19 +127,19 @@ namespace kf
                 {
                     return status;
                 }
-                status = RtlCreateAcl(sacl.get(), saclSize, ACL_REVISION);
+                status = m_api.RtlCreateAcl(sacl.get(), saclSize, ACL_REVISION);
                 if (!NT_SUCCESS(status))
                 {
                     return status;
                 }
 
-                status = RtlAddAce(sacl.get(), ACL_REVISION, 0, static_cast<PVOID>(lowIntegrityAce.get()), lowIntegrityAce->Header.AceSize);
+                status = m_api.RtlAddAce(sacl.get(), ACL_REVISION, 0, static_cast<PVOID>(lowIntegrityAce.get()), lowIntegrityAce->Header.AceSize);
                 if (!NT_SUCCESS(status))
                 {
                     return status;
                 }
 
-                status = RtlSetSaclSecurityDescriptor(securityDescriptor, true, sacl.get(), false);
+                status = m_api.RtlSetSaclSecurityDescriptor(securityDescriptor, true, sacl.get(), false);
                 if (!NT_SUCCESS(status))
                 {
                     return status;
@@ -147,14 +148,14 @@ namespace kf
 
             ObjectAttributes oa(&name, securityDescriptor);
 
-            return ::FltCreateCommunicationPort(filter, &m_port, &oa, this, connectNotify, disconnectNotify, messageNotify, maxConnections);
+            return m_api.FltCreateCommunicationPort(filter, &m_port, &oa, this, connectNotify, disconnectNotify, messageNotify, maxConnections);
         }
 
         void close()
         {
             if (m_port)
             {
-                ::FltCloseCommunicationPort(m_port);
+                m_api.FltCloseCommunicationPort(m_port);
                 m_port = nullptr;
             }
 
@@ -175,7 +176,7 @@ namespace kf
         {
             ASSERT(serverPortCookie);
             auto self = static_cast<FltCommunicationPort*>(serverPortCookie);
-            return Handler::onConnect(self->m_filter, clientPort, connectionContext, connectionContextLength, reinterpret_cast<Handler**>(connectionCookie));
+            return Handler::onConnect(self->m_filter, clientPort, connectionContext, connectionContextLength, reinterpret_cast<Handler**>(connectionCookie), self->m_api);
         }
 
         static VOID FLTAPI disconnectNotify(
@@ -214,15 +215,15 @@ namespace kf
                 {
                     if (inputBufferLength)
                     {
-                        inputMdl = IoAllocateMdl(inputBuffer, inputBufferLength, false, false, nullptr);
+                        inputMdl = handler->m_api.IoAllocateMdl(inputBuffer, inputBufferLength, false, false, nullptr);
                         if (!inputMdl)
                         {
                             return STATUS_INSUFFICIENT_RESOURCES;
                         }
 
-                        MmProbeAndLockPages(inputMdl, KernelMode, IoReadAccess);
+                        handler->m_api.MmProbeAndLockPages(inputMdl, KernelMode, IoReadAccess);
 
-                        inputBuffer = MmGetSystemAddressForMdlSafe(inputMdl, NormalPagePriority | MdlMappingNoExecute | MdlMappingNoWrite);
+                        inputBuffer = handler->m_api.MmGetSystemAddressForMdlSafe(inputMdl, NormalPagePriority | MdlMappingNoExecute | MdlMappingNoWrite);
                         if (!inputBuffer)
                         {
                             return STATUS_INSUFFICIENT_RESOURCES;
@@ -231,15 +232,15 @@ namespace kf
 
                     if (outputBufferLength)
                     {
-                        outputMdl = IoAllocateMdl(outputBuffer, outputBufferLength, false, false, nullptr);
+                        outputMdl = handler->m_api.IoAllocateMdl(outputBuffer, outputBufferLength, false, false, nullptr);
                         if (!outputMdl)
                         {
                             return STATUS_INSUFFICIENT_RESOURCES;
                         }
 
-                        MmProbeAndLockPages(outputMdl, KernelMode, IoWriteAccess);
+                        handler->m_api.MmProbeAndLockPages(outputMdl, KernelMode, IoWriteAccess);
 
-                        outputBuffer = MmGetSystemAddressForMdlSafe(outputMdl, NormalPagePriority | MdlMappingNoExecute);
+                        outputBuffer = handler->m_api.MmGetSystemAddressForMdlSafe(outputMdl, NormalPagePriority | MdlMappingNoExecute);
                         if (!outputBuffer)
                         {
                             return STATUS_INSUFFICIENT_RESOURCES;
@@ -258,16 +259,16 @@ namespace kf
             // Cleanup
             //
 
-            auto freeMdl = [](PMDL& mdl)
+            auto freeMdl = [&handler](PMDL& mdl)
             {
                 if (mdl)
                 {
                     if (FlagOn(mdl->MdlFlags, MDL_PAGES_LOCKED))
                     {
-                        MmUnlockPages(mdl);
+                        handler->m_api.MmUnlockPages(mdl);
                     }
 
-                    IoFreeMdl(mdl);
+                    handler->m_api.IoFreeMdl(mdl);
                     mdl = nullptr;
                 }
             };
@@ -281,5 +282,6 @@ namespace kf
     private:
         PFLT_FILTER m_filter;
         PFLT_PORT   m_port;
+        IWinApi& m_api;
     };
 } // namespace
