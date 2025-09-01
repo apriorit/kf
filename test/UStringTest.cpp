@@ -192,7 +192,7 @@ SCENARIO("UString: movement and assigning")
     }
 }
 
-SCENARIO("Ustring: all methods")
+SCENARIO("UString: all methods")
 {
     GIVEN("A UString with initial content")
     {
