@@ -152,7 +152,7 @@ SCENARIO("UString: allocation and deallocation")
     }
 }
 
-SCENARIO("Ustring: movement and assigning")
+SCENARIO("UString: movement and assigning")
 {
     GIVEN("A string with initial content")
     {
