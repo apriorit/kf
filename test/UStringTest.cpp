@@ -57,7 +57,7 @@ SCENARIO("UString: allocation and deallocation")
                 REQUIRE(ustr.equals(L"Static String"));
             }
 
-            THEN("it should have owhership on the copy of the original string")
+            THEN("it should have ownership on the copy of the original string")
             {
                 REQUIRE(ustr.string().Buffer != simpleStr.string().Buffer);
             }
