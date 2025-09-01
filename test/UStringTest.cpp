@@ -107,7 +107,7 @@ SCENARIO("UString: allocation and deallocation")
                 REQUIRE(ustr.equals(L"Hello, World!"));
             }
 
-            THEN("it should have proper byteLegth")
+            THEN("it should have proper byteLength")
             {
                 REQUIRE(ustr.byteLength() == 26);
             }
