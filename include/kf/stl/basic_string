@@ -282,7 +282,7 @@ namespace kf
 
         constexpr NTSTATUS shrink_to_fit() noexcept
         {
-            if (m_string.size() == m_string.capacity())
+            if (m_string.size() == 0 || m_string.size() == m_string.capacity())
             {
                 return STATUS_SUCCESS;
             }
@@ -327,7 +327,8 @@ namespace kf
 
         constexpr int compare(size_type pos1, size_type count1, const T* s, size_type count2) const noexcept
         {
-            return m_string.compare(pos1, count1, s, count2);
+            auto tempCount2 = strlen(s) < count2 ? strlen(s) : count2;
+            return m_string.compare(pos1, count1, s, tempCount2);
         }
 
         constexpr bool operator==(const basic_string& rhs) const noexcept
@@ -591,6 +592,11 @@ namespace kf
 
         constexpr [[nodiscard]] NTSTATUS erase(size_type index = 0, size_type count = npos) noexcept
         {
+            if (index > size())
+            {
+                return STATUS_INVALID_PARAMETER;
+            }
+
             m_string.erase(index, count);
             return STATUS_SUCCESS;
         }
@@ -855,12 +861,14 @@ namespace kf
         constexpr NTSTATUS moveInternal(size_type newCapacity) noexcept
         {
             string_type newString;
+            // If newCapacity is less than or equal to the current capacity(), there is no effect.
             newString.reserve(newCapacity);
             if (newString.capacity() < newCapacity)
             {
                 return STATUS_INSUFFICIENT_RESOURCES;
             }
 
+            newString.insert(0, m_string);
             m_string.swap(newString);
             return STATUS_SUCCESS;
         }
