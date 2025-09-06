@@ -21,6 +21,19 @@ extern "C" inline int _CrtDbgReport(
     KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
 }
 
+inline void __ehvec_dtor(
+    void* ptr,
+    unsigned __int64 size,
+    unsigned __int64 count,
+    void(__cdecl* dtor)(void*)
+)
+{
+    UNREFERENCED_PARAMETER(ptr);
+    UNREFERENCED_PARAMETER(size);
+    UNREFERENCED_PARAMETER(count);
+    UNREFERENCED_PARAMETER(dtor);
+}
+
 namespace std
 {
     [[noreturn]] inline void __cdecl _Xinvalid_argument(_In_z_ const char* /*What*/)
