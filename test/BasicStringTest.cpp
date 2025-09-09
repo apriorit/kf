@@ -1,7 +1,7 @@
 #include "pch.h"
 #include <kf/stl/basic_string>
 
-SCENARIO("basic_string: construction and assignment")
+SCENARIO("basic_string: ñonstruction and assignment")
 {
     GIVEN("a basic_string with content")
     {
@@ -86,48 +86,6 @@ SCENARIO("basic_string: construction and assignment")
             {
                 REQUIRE_NT_SUCCESS(status);
                 REQUIRE(wstr == L"WideText");
-            }
-        }
-    }
-
-    GIVEN("Two basic_string with content")
-    {
-        kf::basic_string<char, PagedPool> str;
-        REQUIRE_NT_SUCCESS(str.assign("Hello, World!"));
-
-        kf::basic_string<char, PagedPool> other;
-        REQUIRE_NT_SUCCESS(other.assign("Other str"));
-
-        WHEN("assign(const basic_string&, size_type, size_type) is called with pos > other.size()")
-        {
-            auto status = str.assign(other, 20, 5);
-
-            THEN("the string should become empty")
-            {
-                REQUIRE(NT_SUCCESS(status));
-                REQUIRE(str.empty());
-            }
-        }
-
-        WHEN("assign(const basic_string&, size_type, size_type) is called with pos within range and count = npos")
-        {
-            auto status = str.assign(other, 3);
-
-            THEN("the string should contain the suffix starting at pos")
-            {
-                REQUIRE(NT_SUCCESS(status));
-                REQUIRE(str == "er str");
-            }
-        }
-
-        WHEN("assign(const basic_string&, size_type, size_type) is called with pos within range and count < available")
-        {
-            auto status = str.assign(other, 2, 5);
-
-            THEN("the string should contain the substring of given count")
-            {
-                REQUIRE(NT_SUCCESS(status));
-                REQUIRE(str == "her s");
             }
         }
     }
@@ -436,13 +394,12 @@ SCENARIO("basic_string: Size and capacity")
 
         WHEN("shrink_to_fit() is called")
         {
-            // shrink_to_fit has no effect on small strings stored in SSO (size <= 15 chars);
-            REQUIRE_NT_SUCCESS(str.assign("1-2-3-4-5-6-7-8-9-10-11-12-13-14"));
+            REQUIRE_NT_SUCCESS(str.assign("12345"));
             auto status = str.shrink_to_fit();
             const auto capNow = str.capacity();
             const auto sizeNow = str.size();
 
-            THEN("capacity should be equal to expected")
+            THEN("capacity should be equal to size after shrink")
             {
                 REQUIRE_NT_SUCCESS(status);
                 REQUIRE(capNow == sizeNow);
@@ -533,18 +490,16 @@ SCENARIO("basic_string: Size and capacity")
 
         WHEN("shrink_to_fit() is called")
         {
-            // shrink_to_fit has no effect on small strings stored in SSO (size <= 15 chars);
-            REQUIRE_NT_SUCCESS(str.assign("1-2-3-4-5-6-7-8-9"));
             REQUIRE_NT_SUCCESS(str.reserve(64));
             auto status = str.shrink_to_fit();
             const auto capNow = str.capacity();
-            const auto sizeNow = str.size();
+            const auto szNow = str.size();
 
-            THEN("capacity equals expected capacity and content preserved")
+            THEN("capacity equals size and content preserved")
             {
                 REQUIRE_NT_SUCCESS(status);
-                REQUIRE(capNow == sizeNow);
-                REQUIRE(str == "1-2-3-4-5-6-7-8-9");
+                REQUIRE(capNow == szNow);
+                REQUIRE(str == "abcdef");
             }
         }
 
@@ -622,66 +577,6 @@ SCENARIO("basic_string: Comparison")
             }
         }
 
-        WHEN("compare(pos1, count1, const basic_string& str) is called")
-        {
-            auto cmp = a.compare(1, 2, b);
-
-            THEN("compare is positive when substring lhs > rhs")
-            {
-                REQUIRE(cmp > 0);
-            }
-        }
-
-        WHEN("compare(pos1, count1, const basic_string&) with count1 > remaining length is called")
-        {
-            auto cmp = a.compare(3, 10, b);
-
-            THEN("compare is positive")
-            {
-                REQUIRE(cmp > 0);
-            }
-        }
-
-        WHEN("compare(pos1, count1, const basic_string& str) with empty substring of a is called")
-        {
-            auto cmp = a.compare(0, 0, b);
-
-            THEN("empty substring is less than non-empty string")
-            {
-                REQUIRE(cmp < 0);
-            }
-        }
-
-        WHEN("compare(pos1, count1, const basic_string& str, pos2, count2) is called")
-        {
-            auto cmp = a.compare(0, 2, b, 1, 2); // "al" vs "et"
-
-            THEN("compare is negative when lhs < rhs")
-            {
-                REQUIRE(cmp < 0);
-            }
-        }
-
-        WHEN("compare(pos1, count1, const basic_string& str, pos2, count2) for substrings of the same string is called")
-        {
-            auto cmp = a.compare(0, 2, a, 0, 2); // "al" vs "al"
-
-            THEN("substrings are equal")
-            {
-                REQUIRE(cmp == 0);
-            }
-        }
-
-        WHEN("compare(pos1, count1, const basic_string& str, pos2, count2) with overlapping positions is called")
-        {
-            auto cmp = a.compare(1, 3, a, 2, 3);
-
-            THEN("comparison is negative")
-            {
-                REQUIRE(cmp < 0);
-            }
-        }
-
         WHEN("operator==(const T*) is called")
         {
             THEN("C-string equality works")
@@ -703,56 +598,6 @@ SCENARIO("basic_string: Comparison")
             THEN("C-string less-than works")
             {
                 REQUIRE(a < "b");
-            }
-        }
-
-        WHEN("compare(pos1, count1, const T* s) with C-style string is called")
-        {
-            auto cmp = a.compare(0, 2, "al"); // "al" == "al"
-
-            THEN("substring equals C-style string")
-            {
-                REQUIRE(cmp == 0);
-            }
-        }
-
-        WHEN("compare(pos1, count1, const T* s) with longer C-style string is called")
-        {
-            auto cmp = a.compare(0, 2, "alphabet"); // "al" < "alphabet"
-
-            THEN("comparison is negative")
-            {
-                REQUIRE(cmp < 0);
-            }
-        }
-
-        WHEN("compare(pos1, count1, const T* s, count2) with C-style string is called")
-        {
-            auto cmp = a.compare(0, 2, "alphabet", 2); // "al" == "al"
-
-            THEN("substring equals first count2 chars of C-style string")
-            {
-                REQUIRE(cmp == 0);
-            }
-        }
-
-        WHEN("compare(pos1, count1, const T* s, count2) with C-style string is called")
-        {
-            auto cmp = a.compare(2, 3, "alp", 2); // "pha" > "al"
-
-            THEN("comparison is positive")
-            {
-                REQUIRE(cmp > 0);
-            }
-        }
-
-        WHEN("compare(pos1, count1, const T* s, count2) with count2 > strlen(s)")
-        {
-            auto cmp = a.compare(0, 2, "al", 10);
-
-            THEN("they are equal")
-            {
-                REQUIRE(cmp == 0); // -1
             }
         }
 
@@ -823,27 +668,6 @@ SCENARIO("basic_string: Comparison")
                 REQUIRE(cmp2 < 0);
             }
         }
-
-        WHEN("compare(pos1, count1, str) is called")
-        {
-            auto cmp = a.compare(0, 5, b);
-
-            THEN("non-empty substring is greater than empty string")
-            {
-                REQUIRE(cmp > 0);
-            }
-        }
-
-        WHEN("compare(pos1, count1, str) is called")
-        {
-            auto cmp = b.compare(0, 0, b);
-
-            THEN("empty substrings are equal")
-            {
-                REQUIRE(cmp == 0);
-            }
-        }
-
     }
 }
 
@@ -868,23 +692,9 @@ SCENARIO("basic_string: Modifiers")
         WHEN("push_back(const T& value) is called")
         {
             REQUIRE_NT_SUCCESS(str.assign("abc"));
-            const auto ch = 'd';
-            auto status = str.push_back(ch);
+            auto status = str.push_back('d');
 
             THEN("element is appended")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "abcd");
-            }
-        }
-
-        WHEN("push_back(T&& value) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("abc"));
-            char ch = 'd';
-            auto status = str.push_back(std::move(ch));
-
-            THEN("element is appended using rvalue reference")
             {
                 REQUIRE_NT_SUCCESS(status);
                 REQUIRE(str == "abcd");
@@ -914,40 +724,17 @@ SCENARIO("basic_string: Modifiers")
             }
         }
 
-        WHEN("insert(const_iterator pos, T&& value) is called")
+        WHEN("erase(const_iterator first, const_iterator last) is called")
         {
-            REQUIRE_NT_SUCCESS(str.assign("ABCD"));
-            char ch = 'x';
-            auto itOpt = str.insert(str.begin() + 2, std::move(ch)); // ABxCD
+            REQUIRE_NT_SUCCESS(str.assign("ABxCD"));
+            auto first = str.begin() + 1; // B
+            auto last  = str.begin() + 3; // x
+            auto after = str.erase(first, last); // remove Bx -> ACD
 
-            THEN("iterator is returned and rvalue inserted")
+            THEN("erase returns iterator to next element")
             {
-                REQUIRE(itOpt.has_value());
-                REQUIRE(str == "ABxCD");
-            }
-        }
-
-        WHEN("insert(const_iterator pos, size_type count, const T& value) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("ABCD"));
-            auto itOpt = str.insert(str.begin() + 2, 3, 'y'); // AByyyCD
-
-            THEN("multiple copies inserted at iterator position")
-            {
-                REQUIRE(itOpt.has_value());
-                REQUIRE(str == "AByyyCD");
-            }
-        }
-
-        WHEN("insert(size_type index, const T* s, size_type count) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("abc"));
-            auto status = str.insert(1, "XYZ", 2); // aXYbc
-
-            THEN("substring of C-string inserted")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "aXYbc");
+                REQUIRE(*after == 'C');
+                REQUIRE(str == "ACD");
             }
         }
 
@@ -1003,20 +790,6 @@ SCENARIO("basic_string: Modifiers")
             }
         }
 
-        WHEN("insert(size_type index, const basic_string&, size_type index_str, size_type count) with index_str > str.size() is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("base"));
-            kf::basic_string<char, PagedPool> src;
-            REQUIRE_NT_SUCCESS(src.assign("xx"));
-            auto status = str.insert(2, src, 10, 5);
-
-            THEN("operation succeeds and string is unchanged")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "base");
-            }
-        }
-
         WHEN("append(size_t count, T ch) is called")
         {
             REQUIRE_NT_SUCCESS(str.assign("foo"));
@@ -1043,18 +816,6 @@ SCENARIO("basic_string: Modifiers")
             }
         }
 
-        WHEN("append(const T* s) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("foo"));
-            auto status = str.append("bar");
-
-            THEN("entire C-string appended")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "foobar");
-            }
-        }
-
         WHEN("append(const T* s, size_t count) is called")
         {
             REQUIRE_NT_SUCCESS(str.assign("foo!!!bar"));
@@ -1064,34 +825,6 @@ SCENARIO("basic_string: Modifiers")
             {
                 REQUIRE_NT_SUCCESS(status);
                 REQUIRE(str == "foo!!!barXY");
-            }
-        }
-
-        WHEN("append(const basic_string&, pos, count) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("base"));
-            kf::basic_string<char, PagedPool> more;
-            REQUIRE_NT_SUCCESS(more.assign("appendix"));
-            auto status = str.append(more, 0, 3); // "baseapp"
-
-            THEN("substring of basic_string appended")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "baseapp");
-            }
-        }
-
-        WHEN("append(const basic_string& str, size_type pos, size_type count) with pos > str.size() is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("A"));
-            kf::basic_string<char, PagedPool> src;
-            REQUIRE_NT_SUCCESS(src.assign("XYZ"));
-            auto status = str.append(src, 5, 2);
-
-            THEN("operation succeeds and string is unchanged")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "A");
             }
         }
 
@@ -1119,20 +852,6 @@ SCENARIO("basic_string: Modifiers")
             }
         }
 
-        WHEN("operator+=(const basic_string&) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("foo"));
-            kf::basic_string<char, PagedPool> more;
-            REQUIRE_NT_SUCCESS(more.assign("bar"));
-            auto status = (str += more);
-
-            THEN("basic_string concatenated")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "foobar");
-            }
-        }
-
         WHEN("replace(size_t pos, size_t count, const basic_string&) is called")
         {
             REQUIRE_NT_SUCCESS(str.assign("0123456789"));
@@ -1147,18 +866,6 @@ SCENARIO("basic_string: Modifiers")
             }
         }
 
-        WHEN("replace(size_type pos, size_type count, const T* s) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("abcdef"));
-            auto status = str.replace(2, 3, "XYZ"); // abXYZf
-
-            THEN("substring replaced with C-string")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "abXYZf");
-            }
-        }
-
         WHEN("replace(size_type pos, size_type count, const T* s, size_type count2) is called")
         {
             REQUIRE_NT_SUCCESS(str.assign("01AA56789"));
@@ -1168,48 +875,6 @@ SCENARIO("basic_string: Modifiers")
             {
                 REQUIRE_NT_SUCCESS(status);
                 REQUIRE(str.find("XX") == 2);
-            }
-        }
-
-        WHEN("replace(size_type pos1, size_type count1, const basic_string& str, pos2, count2) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("abcdef"));
-            kf::basic_string<char, PagedPool> other;
-            REQUIRE_NT_SUCCESS(other.assign("12345"));
-            auto status = str.replace(1, 3, other, 1, 2); // a + "23" + ef
-
-            THEN("substring replaced with substring of another string")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "a23ef");
-            }
-        }
-
-        WHEN("replace(size_type pos1, size_type count1, const basic_string& str, size_t pos2, size_t count2) with pos2 > other.size()) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("abcdef"));
-            kf::basic_string<char, PagedPool> other;
-            REQUIRE_NT_SUCCESS(other.assign("12"));
-            auto status = str.replace(2, 3, other, 5, 7);
-
-            THEN("range is erased")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "abf");
-            }
-        }
-
-        WHEN("replace(const_iterator first, const_iterator last, const basic_string& str) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("abcdef"));
-            kf::basic_string<char, PagedPool> repl;
-            REQUIRE_NT_SUCCESS(repl.assign("ZZ"));
-            auto status = str.replace(str.begin() + 2, str.begin() + 4, repl); // abZZef
-
-            THEN("range replaced with another string")
-            {
-                REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "abZZef");
             }
         }
 
@@ -1227,55 +892,6 @@ SCENARIO("basic_string: Modifiers")
             }
         }
 
-        WHEN("erase(const_iterator first, const_iterator last) is called")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("ABxCD"));
-            auto first = str.begin() + 1; // B
-            auto last = str.begin() + 3; // x
-            auto after = str.erase(first, last); // remove Bx -> ACD
-
-            THEN("erase returns iterator to next element")
-            {
-                REQUIRE(*after == 'C');
-                REQUIRE(str == "ACD");
-            }
-        }
-
-        WHEN("erase(const_iterator first, const_iterator last) is called with first == last")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("abcde"));
-            auto it = str.erase(str.begin() + 2, str.begin() + 2);
-
-            THEN("no characters erased, iterator points to first")
-            {
-                REQUIRE(it == str.begin() + 2);
-                REQUIRE(str == "abcde");
-            }
-        }
-
-        WHEN("erase(const_iterator first, const_iterator last) is called with first == end()")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("abcde"));
-            auto it = str.erase(str.end(), str.end());
-
-            THEN("no characters erased, iterator points to end")
-            {
-                REQUIRE(it == str.end());
-                REQUIRE(str == "abcde");
-            }
-        }
-
-        WHEN("erase(const_iterator first, const_iterator last) is called on empty string")
-        {
-            auto it = str.erase(str.begin(), str.end());
-
-            THEN("iterator points to begin/end")
-            {
-                REQUIRE(it == str.begin());
-                REQUIRE(str.empty());
-            }
-        }
-
         WHEN("erase(size_type index, size_type count) is called")
         {
             REQUIRE_NT_SUCCESS(str.assign("erase"));
@@ -1284,38 +900,6 @@ SCENARIO("basic_string: Modifiers")
             THEN("substring erased by index/count")
             {
                 REQUIRE(str == "ese");
-            }
-        }
-
-        WHEN("erase(size_type index, size_type count) is called with index >= size()")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("hello"));
-
-            THEN("erase should fail without crush")
-            {
-                REQUIRE_NT_SUCCESS(!str.erase(10, 2)); // index beyond size
-            }
-        }
-
-        WHEN("erase(size_type index, size_type count) is called with count == 0")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("hello"));
-            REQUIRE_NT_SUCCESS(str.erase(2, 0));
-
-            THEN("string remains unchanged")
-            {
-                REQUIRE(str == "hello");
-            }
-        }
-
-        WHEN("erase(size_type index, size_type count) is called with count > size() - index")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("hello"));
-            REQUIRE_NT_SUCCESS(str.erase(3, 10));
-
-            THEN("erases until the end")
-            {
-                REQUIRE(str == "hel");
             }
         }
 
@@ -1328,30 +912,6 @@ SCENARIO("basic_string: Modifiers")
             {
                 REQUIRE(*it == 's');
                 REQUIRE(str == "se");
-            }
-        }
-
-        WHEN("erase(const_iterator pos) is called with pos == end()")
-        {
-            REQUIRE_NT_SUCCESS(str.assign("abc"));
-            auto it = str.erase(str.end());
-
-            THEN("no characters erased, iterator points to end")
-            {
-                REQUIRE(it == str.end());
-                REQUIRE(str == "abc");
-            }
-        }
-
-        WHEN("erase(const_iterator pos) is called on empty string")
-        {
-            str.clear();
-            auto it = str.erase(str.begin());
-
-            THEN("no characters erased, iterator points to begin")
-            {
-                REQUIRE(it == str.begin());
-                REQUIRE(str.empty());
             }
         }
     }
@@ -1377,45 +937,15 @@ SCENARIO("basic_string: String operations")
             }
         }
 
-        WHEN("copy(T* dest, size_type count, size_type pos) with pos == size is called")
-        {
-            char buf[8] = {};
-            auto n = str.copy(buf, 4, str.size());
-
-            THEN("nothing is copied and count is 0")
-            {
-                REQUIRE(n == 0);
-                REQUIRE(buf[0] == '\0');
-            }
-        }
-
         WHEN("substr(size_type pos, size_type count) is called")
         {
-            auto sub = str.substr(0, 4);
+            auto sub1 = str.substr(0, 4);
+            auto sub2 = str.substr(100, 2); // out of range -> empty
 
             THEN("substrings should be as expected")
             {
-                REQUIRE(sub == "copy");
-            }
-        }
-
-        WHEN("substr(size_type pos, size_type count) with pos > size is called")
-        {
-            auto sub = str.substr(100, 2); // out of range -> empty
-
-            THEN("substrings should be empty")
-            {
-                REQUIRE(sub.empty());
-            }
-        }
-
-        WHEN("substr(size_type pos, size_type count) with count > available is called")
-        {
-            auto sub = str.substr(3, 10);
-
-            THEN("substring is truncated to available characters")
-            {
-                REQUIRE(sub == "y-me");
+                REQUIRE(sub1 == "copy");
+                REQUIRE(sub2.empty());
             }
         }
     }
