@@ -8,7 +8,7 @@ namespace kf
     class Semaphore
     {
     public:
-        Semaphore(LONG count, LONG limit)
+        Semaphore(LONG count, LONG limit) : m_limit(limit)
         {
             KeInitializeSemaphore(&m_semaphore, count, limit);
         }
@@ -29,10 +29,16 @@ namespace kf
 
         void release(LONG adjustment = 1)
         {
+            LONG currentCount = KeReadStateSemaphore(&m_semaphore);
+            if (currentCount + adjustment > m_limit)
+            {
+                return;
+            }
             KeReleaseSemaphore(&m_semaphore, IO_NO_INCREMENT, adjustment, false);
         }
 
     private:
+        LONG m_limit = 0;
         KSEMAPHORE m_semaphore;
     };
 }
