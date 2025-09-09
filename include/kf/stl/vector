@@ -25,6 +25,7 @@ namespace kf
     class vector
     {
     public:
+        using value_type = T;
         using vector_type = std::vector<T, Allocator>;
         using size_type = vector_type::size_type;
         using iterator = vector_type::iterator;
