@@ -25,13 +25,13 @@ namespace kf
     class vector
     {
     public:
-        using value_type = T;
         using vector_type = std::vector<T, Allocator>;
         using size_type = vector_type::size_type;
         using iterator = vector_type::iterator;
         using const_iterator = vector_type::const_iterator;
         using reverse_iterator = vector_type::reverse_iterator;
         using const_reverse_iterator = vector_type::const_reverse_iterator;
+        using value_type = vector_type::value_type;
 
         //
         // Member functions
