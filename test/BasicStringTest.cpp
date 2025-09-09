@@ -434,6 +434,21 @@ SCENARIO("basic_string: Size and capacity")
             }
         }
 
+        WHEN("shrink_to_fit() is called")
+        {
+            // shrink_to_fit has no effect on small strings stored in SSO (size <= 15 chars);
+            REQUIRE_NT_SUCCESS(str.assign("1-2-3-4-5-6-7-8-9-10-11-12-13-14"));
+            auto status = str.shrink_to_fit();
+            const auto capNow = str.capacity();
+            const auto sizeNow = str.size();
+
+            THEN("capacity should be equal to expected")
+            {
+                REQUIRE_NT_SUCCESS(status);
+                REQUIRE(capNow == sizeNow);
+            }
+        }
+
         WHEN("length() is called")
         {
             REQUIRE_NT_SUCCESS(str.assign("xx"));
@@ -519,16 +534,16 @@ SCENARIO("basic_string: Size and capacity")
         WHEN("shrink_to_fit() is called")
         {
             // shrink_to_fit has no effect on small strings stored in SSO (size <= 15 chars);
-            constexpr size_t newCap = 64;
             REQUIRE_NT_SUCCESS(str.assign("1-2-3-4-5-6-7-8-9"));
-            REQUIRE_NT_SUCCESS(str.reserve(newCap));
+            REQUIRE_NT_SUCCESS(str.reserve(64));
             auto status = str.shrink_to_fit();
             const auto capNow = str.capacity();
+            const auto sizeNow = str.size();
 
-            THEN("capacity reduced")
+            THEN("capacity equals expected capacity and content preserved")
             {
                 REQUIRE_NT_SUCCESS(status);
-                REQUIRE(capNow < newCap);
+                REQUIRE(capNow == sizeNow);
                 REQUIRE(str == "1-2-3-4-5-6-7-8-9");
             }
         }
