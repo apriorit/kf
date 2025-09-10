@@ -73,6 +73,16 @@ namespace kf
             return STATUS_SUCCESS;
         }
 
+        constexpr [[nodiscard]] NTSTATUS assign(basic_string&& other) noexcept
+        {
+            if (auto status = reallocateGrowth(other.size()); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+            m_string = std::move(other.m_string);
+            return STATUS_SUCCESS;
+        }
+
         constexpr [[nodiscard]] NTSTATUS assign(const basic_string& other, size_type pos, size_type count = npos) noexcept
         {
             if (pos > other.size())
@@ -327,7 +337,7 @@ namespace kf
 
         constexpr int compare(size_type pos1, size_type count1, const T* s, size_type count2) const noexcept
         {
-            auto tempCount2 = strlen(s) < count2 ? strlen(s) : count2;
+            auto tempCount2 = traits_type::length(s) < count2 ? traits_type::length(s) : count2;
             return m_string.compare(pos1, count1, s, tempCount2);
         }
 
@@ -374,14 +384,7 @@ namespace kf
         // insert (iterator-based)
         constexpr std::optional<iterator> insert(const_iterator pos, const T& value) noexcept
         {
-            const auto idx = static_cast<size_type>(pos - m_string.begin());
-
-            if (auto status = reallocateGrowth(m_string.size() + 1); !NT_SUCCESS(status))
-            {
-                return std::nullopt;
-            }
-
-            return m_string.insert(m_string.begin() + idx, value);
+            return insert(pos, 1, value);
         }
 
         constexpr std::optional<iterator> insert(const_iterator pos, T&& value) noexcept
@@ -702,7 +705,19 @@ namespace kf
             return rcount;
         }
 
-        constexpr basic_string substr(size_type pos = 0, size_type count = npos) const noexcept
+        constexpr std::string_view substr(size_type pos = 0, size_type count = npos) const noexcept
+        {
+            if (pos > size())
+            {
+                return {};
+            }
+
+            const auto available = size() - pos;
+            const auto rcount = (count == npos || count > available) ? available : count;
+            return std::string_view(m_string.data() + pos, rcount);
+        }
+
+        constexpr basic_string substr_copy(size_type pos = 0, size_type count = npos) const noexcept
         {
             basic_string result;
             if (pos > size())
