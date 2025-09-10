@@ -1,0 +1,368 @@
+#pragma once
+#include <kf/stl/basic_string>
+#include <ntstrsafe.h>
+
+namespace kf
+{
+    template <POOL_TYPE PoolType>
+    using string = kf::basic_string<char, PoolType>;
+
+    template <POOL_TYPE PoolType>
+    using wstring = kf::basic_string<wchar_t, PoolType>;
+
+#ifdef __cpp_lib_char8_t
+    template <POOL_TYPE PoolType>
+    using u8string = kf::basic_string<char8_t, PoolType>;
+#endif // defined(__cpp_lib_char8_t)
+
+    template <POOL_TYPE PoolType>
+    using u16string = kf::basic_string<char16_t, PoolType>;
+
+    template <POOL_TYPE PoolType>
+    using u32string = kf::basic_string<char32_t, PoolType>;
+
+    namespace utils
+    {
+        template <typename It, typename CharT>
+        void skipWhitespace(It& it, It end)
+        {
+            while (it != end && (*it == CharT(' ') || *it == CharT('\t')))
+            {
+                ++it;
+            }
+        }
+
+        template <typename It, typename CharT>
+        bool isNegative(It& it, It end)
+        {
+            bool isNegative = false;
+
+            if (it != end && (*it == CharT('+') || *it == CharT('-')))
+            {
+                if (*it == CharT('-'))
+                {
+                    isNegative = true;
+                }
+
+                it++;
+            }
+
+            return isNegative;
+        }
+
+        template <typename It, typename CharT>
+        void skipPrefix(It& it, It end, int base)
+        {
+            if (base == 16)
+            {
+                if ((it + 1 != end) && *it == CharT('0') && (*(it + 1) == CharT('x') || *(it + 1) == CharT('X')))
+                {
+                    it += 2;
+                }
+            }
+
+            if (base == 8)
+            {
+                if (it != end && *it == CharT('0'))
+                {
+                    ++it;
+                }
+            }
+        }
+
+        template <typename It, typename CharT>
+        int detectBase(It& it, It end)
+        {
+            if (it != end && *it == CharT('0'))
+            {
+                ++it;
+
+                if (it != end && (*it == CharT('x') || *it == CharT('X')))
+                {
+                    ++it;
+                    return 16;
+                }
+
+                return 8;
+            }
+
+            return 10;
+        }
+
+        template <typename CharT>
+        int charToDigit(CharT c)
+        {
+            if (c >= CharT('0') && c <= CharT('9'))
+            {
+                return c - CharT('0');
+            }
+
+            if (c >= CharT('a') && c <= CharT('z'))
+            {
+                return c - CharT('a') + 10;
+            }
+
+            if (c >= CharT('A') && c <= CharT('Z'))
+            {
+                return c - CharT('A') + 10;
+            }
+
+            return -1;
+        }
+
+    }
+
+    //
+    // string to numeric
+    //
+
+    template <typename CharT, POOL_TYPE PoolType, typename T>
+    [[nodiscard]] NTSTATUS string_to_numeric(
+        _In_ const basic_string<CharT, PoolType>& str,
+        _Out_ T& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+        requires (std::is_integral_v<T>)
+    {
+        if (base != 0 && (base < 2 || base > 36))
+        {
+            return STATUS_INVALID_PARAMETER;
+        }
+
+        auto it = str.cbegin();
+        auto end = str.cend();
+
+        utils::skipWhitespace<decltype(it), CharT>(it, end);
+
+        bool negative = utils::isNegative<decltype(it), CharT>(it, end);
+
+        if constexpr (!std::is_signed_v<T>)
+        {
+            if (negative)
+            {
+                return STATUS_INTEGER_OVERFLOW;
+            }
+        }
+
+        utils::skipPrefix<decltype(it), CharT>(it, end, base);
+
+        if (base == 0)
+        {
+            base = utils::detectBase<decltype(it), CharT>(it, end);
+        }
+
+        T temp = 0;
+        bool anyDigit = false;
+
+        for (; it != end; ++it)
+        {
+            int digit = utils::charToDigit(*it);
+
+            if (digit < 0 || digit >= base)
+            {
+                break;
+            }
+
+            anyDigit = true;
+
+            if (negative)
+            {
+                if (temp < ((std::numeric_limits<T>::min)() + digit) / base)
+                {
+                    return STATUS_INTEGER_OVERFLOW;
+                }
+                temp = temp * base - digit;
+            }
+            else
+            {
+                if (temp > ((std::numeric_limits<T>::max)() - digit) / base)
+                {
+                    return STATUS_INTEGER_OVERFLOW;
+                }
+                temp = temp * base + digit;
+            }
+        }
+
+        if (!anyDigit)
+        {
+            return STATUS_INVALID_PARAMETER;
+        }
+
+        if (idx)
+        {
+            *idx = static_cast<size_t>(it - str.cbegin());
+        }
+
+        result = temp;
+
+        return STATUS_SUCCESS;
+    }
+
+    // ===== string =====
+
+    template <POOL_TYPE PoolType>
+    [[nodiscard]] NTSTATUS stoi(
+        _In_ const string<PoolType>& str,
+        _Out_ int& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+    {
+        return string_to_numeric(str, result, idx, base);
+    }
+
+    template <POOL_TYPE PoolType>
+    [[nodiscard]] NTSTATUS stol(
+        _In_ const string<PoolType>& str,
+        _Out_ long& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+    {
+        return string_to_numeric(str, result, idx, base);
+    }
+
+    template <POOL_TYPE PoolType>
+    [[nodiscard]] NTSTATUS stoul(
+        _In_ const string<PoolType>& str,
+        _Out_ unsigned long& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+    {
+        return string_to_numeric(str, result, idx, base);
+    }
+
+    template <POOL_TYPE PoolType>
+    [[nodiscard]] NTSTATUS stoll(
+        _In_ const string<PoolType>& str,
+        _Out_ long long& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+    {
+        return string_to_numeric(str, result, idx, base);
+    }
+
+    template <POOL_TYPE PoolType>
+    [[nodiscard]] NTSTATUS stoull(
+        _In_ const string<PoolType>& str,
+        _Out_ unsigned long long& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+    {
+        return string_to_numeric(str, result, idx, base);
+    }
+
+    // ===== wstring =====
+
+    template <POOL_TYPE PoolType>
+    [[nodiscard]] NTSTATUS stoi(
+        _In_ const wstring<PoolType>& str,
+        _Out_ int& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+    {
+        return string_to_numeric(str, result, idx, base);
+    }
+
+    template <POOL_TYPE PoolType>
+    [[nodiscard]] NTSTATUS stol(
+        _In_ const wstring<PoolType>& str,
+        _Out_ long& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+    {
+        return string_to_numeric(str, result, idx, base);
+    }
+
+    template <POOL_TYPE PoolType>
+    [[nodiscard]] NTSTATUS stoul(
+        _In_ const wstring<PoolType>& str,
+        _Out_ unsigned long& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+    {
+        return string_to_numeric(str, result, idx, base);
+    }
+
+    template <POOL_TYPE PoolType>
+    [[nodiscard]] NTSTATUS stoll(
+        _In_ const wstring<PoolType>& str,
+        _Out_ long long& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+    {
+        return string_to_numeric(str, result, idx, base);
+    }
+
+    template <POOL_TYPE PoolType>
+    [[nodiscard]] NTSTATUS stoull(
+        _In_ const wstring<PoolType>& str,
+        _Out_ unsigned long long& result,
+        _Out_opt_ size_t* idx = nullptr,
+        _In_ int base = 10
+    )
+    {
+        return string_to_numeric(str, result, idx, base);
+    }
+
+    //
+    // numeric to string
+    //
+
+    // Max 20 digits (unsigned long long) or 19 digits + sign (signed long long), plus null terminator
+    constexpr size_t kMaxLongLongStrLength = 21;
+
+    template <POOL_TYPE PoolType, typename T>
+    [[nodiscard]] NTSTATUS to_string(T value, _Out_ kf::string<PoolType>& str)
+        requires (std::is_integral_v<T>)
+    {
+        char buffer[kMaxLongLongStrLength]{};
+        NTSTATUS status;
+
+        if constexpr (std::is_signed_v<T>)
+        {
+            status = RtlStringCbPrintfA(buffer, kMaxLongLongStrLength, "%lld", static_cast<long long>(value));
+        }
+        else
+        {
+            status = RtlStringCbPrintfA(buffer, kMaxLongLongStrLength, "%llu", static_cast<unsigned long long>(value));
+        }
+        if (!NT_SUCCESS(status))
+        {
+            return status;
+        }
+
+        return str.assign(buffer);
+    }
+
+    template <POOL_TYPE PoolType, typename T>
+    [[nodiscard]] NTSTATUS to_wstring(T value, _Out_ kf::wstring<PoolType>& str)
+        requires (std::is_integral_v<T>)
+    {
+        wchar_t buffer[kMaxLongLongStrLength]{};
+        NTSTATUS status;
+
+        if constexpr (std::is_signed_v<T>)
+        {
+            status = RtlStringCbPrintfW(buffer, kMaxLongLongStrLength * sizeof(wchar_t), L"%lld", static_cast<long long>(value));
+        }
+        else
+        {
+            status = RtlStringCbPrintfW(buffer, kMaxLongLongStrLength * sizeof(wchar_t), L"%llu", static_cast<unsigned long long>(value));
+        }
+        if (!NT_SUCCESS(status))
+        {
+            return status;
+        }
+
+        return str.assign(buffer);
+    }
+}
