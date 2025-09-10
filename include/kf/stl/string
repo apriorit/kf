@@ -21,6 +21,97 @@ namespace kf
     template <POOL_TYPE PoolType>
     using u32string = kf::basic_string<char32_t, PoolType>;
 
+    namespace utils
+    {
+        template <typename It, typename CharT>
+        void skipWhitespace(It& it, It end)
+        {
+            while (it != end && (*it == CharT(' ') || *it == CharT('\t')))
+            {
+                ++it;
+            }
+        }
+
+        template <typename It, typename CharT>
+        bool isNegative(It& it, It end)
+        {
+            bool isNegative = false;
+
+            if (it != end && (*it == CharT('+') || *it == CharT('-')))
+            {
+                if (*it == CharT('-'))
+                {
+                    isNegative = true;
+                }
+
+                it++;
+            }
+
+            return isNegative;
+        }
+
+        template <typename It, typename CharT>
+        void skipPrefix(It& it, It end, int base)
+        {
+            if (base == 16)
+            {
+                if ((it + 1 != end) && *it == CharT('0') && (*(it + 1) == CharT('x') || *(it + 1) == CharT('X')))
+                {
+                    it += 2;
+                }
+            }
+
+            if (base == 8)
+            {
+                if (it != end && *it == CharT('0'))
+                {
+                    ++it;
+                }
+            }
+        }
+
+        template <typename It, typename CharT>
+        int detectBase(It& it, It end)
+        {
+            if (it != end && *it == CharT('0'))
+            {
+                ++it;
+
+                if (it != end && (*it == CharT('x') || *it == CharT('X')))
+                {
+                    ++it;
+                    return 16;
+                }
+
+                return 8;
+            }
+
+            return 10;
+        }
+
+        template <typename CharT>
+        int charToDigit(CharT c)
+        {
+            if (c >= CharT('0') && c <= CharT('9'))
+            {
+                return c - CharT('0');
+            }
+
+            if (c >= CharT('a') && c <= CharT('z'))
+            {
+                return c - CharT('a') + 10;
+            }
+
+            if (c >= CharT('A') && c <= CharT('Z'))
+            {
+                return c - CharT('A') + 10;
+            }
+
+            return -1;
+        }
+
+    }
+
     //
     // string to numeric
     //
@@ -32,25 +123,19 @@ namespace kf
         _Out_opt_ size_t* idx = nullptr,
         _In_ int base = 10
     )
+        requires (std::is_integral_v<T>)
     {
+        if (base != 0 && (base < 2 || base > 36))
+        {
+            return STATUS_INVALID_PARAMETER;
+        }
+
         auto it = str.cbegin();
         auto end = str.cend();
-        auto start = it;
 
-        while (it != end && (*it == CharT(' ') || *it == CharT('\t')))
-        {
-            ++it;
-        }
+        utils::skipWhitespace<decltype(it), CharT>(it, end);
 
-        bool negative = false;
-        if (it != end && (*it == CharT('+') || *it == CharT('-')))
-        {
-            if (*it == CharT('-'))
-            {
-                negative = true;
-            }
-            ++it;
-        }
+        bool negative = utils::isNegative<decltype(it), CharT>(it, end);
 
         if constexpr (!std::is_signed_v<T>)
         {
@@ -60,35 +145,11 @@ namespace kf
             }
         }
 
-        if (base == 16)
-        {
-            it += 2;
-        }
+        utils::skipPrefix<decltype(it), CharT>(it, end, base);
 
         if (base == 0)
         {
-            if (it != end && *it == CharT('0'))
-            {
-                ++it;
-                if (it != end && (*it == CharT('x') || *it == CharT('X')))
-                {
-                    base = 16;
-                    ++it;
-                }
-                else
-                {
-                    base = 8;
-                }
-            }
-            else
-            {
-                base = 10;
-            }
-        }
-
-        if (base < 2 || base > 36)
-        {
-            return STATUS_INVALID_PARAMETER;
+            base = utils::detectBase<decltype(it), CharT>(it, end);
         }
 
         T temp = 0;
@@ -96,20 +157,7 @@ namespace kf
 
         for (; it != end; ++it)
         {
-            int digit = -1;
-
-            if (*it >= CharT('0') && *it <= CharT('9'))
-            {
-                digit = *it - CharT('0');
-            }
-            else if (*it >= CharT('a') && *it <= CharT('z'))
-            {
-                digit = *it - CharT('a') + 10;
-            }
-            else if (*it >= CharT('A') && *it <= CharT('Z'))
-            {
-                digit = *it - CharT('A') + 10;
-            }
+            int digit = utils::charToDigit(*it);
 
             if (digit < 0 || digit >= base)
             {
@@ -143,7 +191,7 @@ namespace kf
 
         if (idx)
         {
-            *idx = static_cast<size_t>(it - start);
+            *idx = static_cast<size_t>(it - str.cbegin());
         }
 
         result = temp;
@@ -152,6 +200,7 @@ namespace kf
     }
 
     // ===== string =====
+
     template <POOL_TYPE PoolType>
     [[nodiscard]] NTSTATUS stoi(
         _In_ const string<PoolType>& str,
@@ -208,6 +257,7 @@ namespace kf
     }
 
     // ===== wstring =====
+
     template <POOL_TYPE PoolType>
     [[nodiscard]] NTSTATUS stoi(
         _In_ const wstring<PoolType>& str,
@@ -267,7 +317,8 @@ namespace kf
     // numeric to string
     //
 
-    constexpr  size_t kMaxLongLongStrLength = 21;
+    // Max 20 digits (unsigned long long) or 19 digits + sign (signed long long), plus null terminator
+    constexpr size_t kMaxLongLongStrLength = 21;
 
     template <POOL_TYPE PoolType, typename T>
     [[nodiscard]] NTSTATUS to_string(T value, _Out_ kf::string<PoolType>& str)
