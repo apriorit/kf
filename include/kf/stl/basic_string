@@ -75,10 +75,6 @@ namespace kf
 
         constexpr [[nodiscard]] NTSTATUS assign(basic_string&& other) noexcept
         {
-            if (auto status = reallocateGrowth(other.size()); !NT_SUCCESS(status))
-            {
-                return status;
-            }
             m_string = std::move(other.m_string);
             return STATUS_SUCCESS;
         }

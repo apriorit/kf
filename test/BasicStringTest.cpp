@@ -296,7 +296,7 @@ SCENARIO("basic_string: Element access")
             THEN("data should not be null")
             {
                 REQUIRE(ptr != nullptr);
-                REQUIRE(std::string_view(ptr, str.size()) == kExpected);
+                REQUIRE(std::string_view(ptr) == kExpected);
             }
         }
 
@@ -319,20 +319,17 @@ SCENARIO("basic_string: Element access")
 
             THEN("wide element should be accessible")
             {
-                THEN("wide elements should be accessible")
-                {
-                    REQUIRE(refOpt1.has_value());
-                    REQUIRE(refOpt1->get() == L'o');
+                REQUIRE(refOpt1.has_value());
+                REQUIRE(refOpt1->get() == L'o');
 
-                    REQUIRE(refOpt2.has_value());
-                    REQUIRE(refOpt2->get() == L't');
+                REQUIRE(refOpt2.has_value());
+                REQUIRE(refOpt2->get() == L't');
 
-                    REQUIRE(refOpt3.has_value());
-                    REQUIRE(refOpt3->get() == L'n');
+                REQUIRE(refOpt3.has_value());
+                REQUIRE(refOpt3->get() == L'n');
 
-                    REQUIRE(refOpt4.has_value());
-                    REQUIRE(refOpt4->get() == L's');
-                }
+                REQUIRE(refOpt4.has_value());
+                REQUIRE(refOpt4->get() == L's');
             }
         }
     }
@@ -424,7 +421,7 @@ SCENARIO("basic_string: Iterators")
                 acc[i++] = *it;
             }
 
-            THEN("accumulated sequence matches reverse")
+            THEN("accumulated sequence matches")
             {
                 REQUIRE(acc[0] == 'a');
                 REQUIRE(acc[1] == 'b');
@@ -777,7 +774,7 @@ SCENARIO("basic_string: Comparison")
 
             THEN("they are equal")
             {
-                REQUIRE(cmp == 0); // -1
+                REQUIRE(cmp == 0);
             }
         }
     }
@@ -1243,7 +1240,7 @@ SCENARIO("basic_string: Modifiers")
             THEN("range replaced with another string")
             {
                 REQUIRE_NT_SUCCESS(status);
-                REQUIRE(str == "exZZple")
+                REQUIRE(str == "exZZple");
             }
         }
 
