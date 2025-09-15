@@ -147,7 +147,7 @@ SCENARIO("kf::Event")
         }
     }
 
-    GIVEN("NotificationEvent with multiple wait() calls")
+    GIVEN("SynchronizationEvent with multiple wait() calls")
     {
         kf::Event event(SynchronizationEvent, false);
 
