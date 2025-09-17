@@ -163,9 +163,10 @@ SCENARIO("kf::Event")
 
             THEN("Only one wait is successed and event resets")
             {
-                auto status1 = event.wait(&kZeroTimeout) == STATUS_SUCCESS ? 1 : 0;
-                auto status2 = event.wait(&kZeroTimeout) == STATUS_SUCCESS ? 1 : 0;
-                REQUIRE(status1 ^ status2);
+                auto status1 = event.wait(&kZeroTimeout);
+                auto status2 = event.wait(&kZeroTimeout);
+                REQUIRE_NT_SUCCESS(status1);
+                REQUIRE(status2 == STATUS_TIMEOUT);
                 REQUIRE(!event.isSet());
             }
         }
