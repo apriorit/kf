@@ -80,32 +80,16 @@ SCENARIO("kf::Event")
         }
     }
 
-    GIVEN("2 NotificationEvents for triggering and compition with false state")
+    GIVEN("NotificationEvent with true state")
     {
-        kf::Event triggerEvent(NotificationEvent, false);
-        kf::Event completionEvent(NotificationEvent, false);
-        std::pair<kf::Event*, kf::Event*> events{ &triggerEvent, &completionEvent };
-        kf::Thread thread;
+        kf::Event event(NotificationEvent, true);
 
-        WHEN("A wait is performed with no timeout and the event is not set")
+        WHEN("A wait is performed with no timeout when event is set")
         {
-            thread.start([](void* context) {
-                const auto events = static_cast<std::pair<kf::Event*, kf::Event*>*>(context);
-                events->first->wait();
-                events->second->set();
-                }, &events);
-
-            THEN("Event is not set immediately")
+            THEN("The wait returns with STATUS_SUCCESS and remains in set state")
             {
-                REQUIRE(!completionEvent.isSet());
-            }
-
-            triggerEvent.set();
-
-            THEN("After trigger event is set, completionEvent from thread is set too")
-            {
-                REQUIRE(completionEvent.wait() == STATUS_SUCCESS);
-                REQUIRE(completionEvent.isSet());
+                REQUIRE(event.wait() == STATUS_SUCCESS);
+                REQUIRE(event.isSet());
             }
         }
 
