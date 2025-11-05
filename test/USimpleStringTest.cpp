@@ -843,3 +843,158 @@ SCENARIO("USimpleString: all methods")
         }
     }
 }
+
+SCENARIO("USimpleString: toLong")
+{
+    GIVEN("Empty string")
+    {
+        kf::USimpleString empty;
+
+        WHEN("toLong() is called with base 10")
+        {
+            THEN("it returns 0")
+            {
+                REQUIRE(empty.toLong(10) == 0);
+            }
+        }
+
+        WHEN("toLong() is called with base 0 (auto-detect)")
+        {
+            THEN("it returns 0")
+            {
+                REQUIRE(empty.toLong(0) == 0);
+            }
+        }
+    }
+
+    GIVEN("Auto-detected base (base 0)")
+    {
+        THEN("parses hex with 0x prefix")
+        {
+            kf::USimpleString s(L"0xFF");
+            REQUIRE(s.toLong(0) == 255);
+        }
+
+        THEN("parses octal with 0o prefix")
+        {
+            kf::USimpleString s(L"0o77");
+            REQUIRE(s.toLong(0) == 63);
+        }
+
+        THEN("parses binary with 0b prefix")
+        {
+            kf::USimpleString s(L"0b1011");
+            REQUIRE(s.toLong(0) == 11);
+        }
+
+        THEN("parses decimal with no prefix")
+        {
+            kf::USimpleString s(L"123");
+            REQUIRE(s.toLong(0) == 123);
+        }
+    }
+
+    GIVEN("Explicit base")
+    {
+        THEN("parses binary when base is 2")
+        {
+            kf::USimpleString s(L"1010");
+            REQUIRE(s.toLong(2) == 10);
+        }
+
+        THEN("parses octal when base is 8")
+        {
+            kf::USimpleString s(L"77");
+            REQUIRE(s.toLong(8) == 63);
+        }
+
+        THEN("parses decimal when base is 10")
+        {
+            kf::USimpleString s(L"42");
+            REQUIRE(s.toLong(10) == 42);
+        }
+
+        THEN("parses hex when base is 16")
+        {
+            kf::USimpleString s(L"FF");
+            REQUIRE(s.toLong(16) == 255);
+        }
+    }
+
+    GIVEN("Signs and whitespace")
+    {
+        THEN("skips leading whitespace")
+        {
+            kf::USimpleString s(L" 17");
+            REQUIRE(s.toLong(10) == 17);
+        }
+
+        THEN("parses plus sign")
+        {
+            kf::USimpleString s(L"+7");
+            REQUIRE(s.toLong(10) == 7);
+        }
+
+        THEN("parses minus sign and returns negative value")
+        {
+            kf::USimpleString s(L"-42");
+            REQUIRE(s.toLong(10) == -42);
+        }
+    }
+
+    GIVEN("Invalid or partial input")
+    {
+        THEN("non-numeric returns 0")
+        {
+            kf::USimpleString s(L"abc");
+            REQUIRE(s.toLong(10) == 0);
+        }
+
+        THEN("only sign returns 0")
+        {
+            kf::USimpleString s1(L"+");
+            kf::USimpleString s2(L"-");
+            REQUIRE(s1.toLong(10) == 0);
+            REQUIRE(s2.toLong(10) == 0);
+        }
+
+        THEN("parses numeric prefix before trailing junk")
+        {
+            kf::USimpleString s(L"123abc");
+            REQUIRE(s.toLong(10) == 123);
+        }
+    }
+
+    GIVEN("Overflow boundaries")
+    {
+        THEN("LONG_MAX parses correctly")
+        {
+            kf::USimpleString s(L"2147483647");
+            REQUIRE(s.toLong(10) == LONG_MAX);
+        }
+
+        THEN("LONG_MIN parses correctly")
+        {
+            kf::USimpleString s(L"-2147483648");
+            REQUIRE(s.toLong(10) == LONG_MIN);
+        }
+
+        THEN("positive overflow LONG_MAX + 1 returns LONG_MIN")
+        {
+            kf::USimpleString s(L"2147483648");
+            REQUIRE(s.toLong(10) == LONG_MIN);
+        }
+
+        THEN("negative overflow LONG_MIN - 1 returns LONG_MAX")
+        {
+            kf::USimpleString s(L"-2147483649");
+            REQUIRE(s.toLong(10) == LONG_MAX);
+        }
+
+        THEN("hex overflow 0x80000000 returns 0x80000000")
+        {
+            kf::USimpleString s(L"0x80000000"); // 2^31, which is LONG_MIN but unsigned
+            REQUIRE(s.toLong(0) == 0x80000000);
+        }
+    }
+}
