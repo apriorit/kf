@@ -896,7 +896,7 @@ SCENARIO("USimpleString: toLong")
 
     GIVEN("Explicit base")
     {
-        THEN("parses hex when base is 2")
+        THEN("parses binary when base is 2")
         {
             kf::USimpleString s(L"1010"); // base2: '2' invalid, so1010b =10
             REQUIRE(s.toLong(2) == 10);
