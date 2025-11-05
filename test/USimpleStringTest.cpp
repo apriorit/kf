@@ -898,13 +898,13 @@ SCENARIO("USimpleString: toLong")
     {
         THEN("parses binary when base is 2")
         {
-            kf::USimpleString s(L"1010"); // base2: '2' invalid, so1010b =10
+            kf::USimpleString s(L"1010");
             REQUIRE(s.toLong(2) == 10);
         }
 
         THEN("parses octal when base is 8")
         {
-            kf::USimpleString s(L"77"); // base10: parses initial '0' then stops at 'x'
+            kf::USimpleString s(L"77");
             REQUIRE(s.toLong(8) == 63);
         }
 
@@ -994,7 +994,7 @@ SCENARIO("USimpleString: toLong")
         THEN("hex overflow 0x80000000 returns 0x80000000")
         {
             kf::USimpleString s(L"0x80000000"); // 2^31, which is LONG_MIN but unsigned
-            REQUIRE(s.toLong(0) == 0x80000000); // assuming overflow to 0
+            REQUIRE(s.toLong(0) == 0x80000000);
         }
     }
 }
