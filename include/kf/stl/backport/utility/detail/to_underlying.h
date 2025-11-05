@@ -8,7 +8,7 @@ namespace kf
     template<typename Enum>
     constexpr auto to_underlying(Enum e) noexcept
     {
-        return static_cast<typename std::underlying_type_t<Enum>>(e);
+        return static_cast<std::underlying_type_t<Enum>>(e);
     }
 }
 
