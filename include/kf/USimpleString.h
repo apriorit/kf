@@ -106,6 +106,7 @@ namespace kf
 
         bool matches(_In_ const USimpleString& expression) const;
         bool matchesIgnoreCase(_In_ const USimpleString& expression) const;
+        LONG toLong(_In_ ULONG base) const;
 
         NTSTATUS concat(_In_ const USimpleString& str)
         {
@@ -590,5 +591,13 @@ namespace kf
     inline bool USimpleString::LessIgnoreCase::operator()(_In_ const USimpleString& strLeft, _In_ const USimpleString& strRight) const
     {
         return strLeft.compareToIgnoreCase(strRight) < 0;
+    }
+
+    inline LONG USimpleString::toLong(_In_ ULONG base) const
+    {
+        ULONG value = 0;
+        ::RtlUnicodeStringToInteger(&m_str, base, reinterpret_cast<PULONG>(&value));
+
+        return value;
     }
 }
