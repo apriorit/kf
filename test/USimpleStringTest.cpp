@@ -902,7 +902,7 @@ SCENARIO("USimpleString: toLong")
             REQUIRE(s.toLong(2) == 10);
         }
 
-        THEN("parses hex when base is 8")
+        THEN("parses octal when base is 8")
         {
             kf::USimpleString s(L"77"); // base10: parses initial '0' then stops at 'x'
             REQUIRE(s.toLong(8) == 63);
