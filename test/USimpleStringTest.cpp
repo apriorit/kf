@@ -908,7 +908,7 @@ SCENARIO("USimpleString: toLong")
             REQUIRE(s.toLong(8) == 63);
         }
 
-        THEN("parses hex when base is 10")
+        THEN("parses decimal when base is 10")
         {
             kf::USimpleString s(L"42");
             REQUIRE(s.toLong(10) == 42);
