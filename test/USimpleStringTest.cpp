@@ -77,7 +77,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns 0")
             {
-                REQUIRE(str.compareTo(emptyStr.string()) == 0);
+                REQUIRE(str.compareTo(emptyStr) == 0);
             }
         }
 
@@ -86,7 +86,7 @@ SCENARIO("USimpleString: all methods")
             kf::USimpleString nonEmptyStr(L"Hello");
             THEN("it returns a negative value")
             {
-                REQUIRE(str.compareTo(nonEmptyStr.string()) < 0);
+                REQUIRE(str.compareTo(nonEmptyStr) < 0);
             }
         }
 
@@ -96,7 +96,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns 0")
             {
-                REQUIRE(str.compareToIgnoreCase(emptyStr.string()) == 0);
+                REQUIRE(str.compareToIgnoreCase(emptyStr) == 0);
             }
         }
         
@@ -106,7 +106,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns a negative value")
             {
-                REQUIRE(str.compareToIgnoreCase(nonEmptyStr.string()) < 0);
+                REQUIRE(str.compareToIgnoreCase(nonEmptyStr) < 0);
             }
         }
 
@@ -116,7 +116,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns true")
             {
-                REQUIRE(str.equals(emptyStr.string()));
+                REQUIRE(str.equals(emptyStr));
             }
         }
 
@@ -126,7 +126,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns false")
             {
-                REQUIRE(!str.equals(nonEmptyStr.string()));
+                REQUIRE(!str.equals(nonEmptyStr));
             }
         }
 
@@ -136,7 +136,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns true")
             {
-                REQUIRE(str.equalsIgnoreCase(emptyStr.string()));
+                REQUIRE(str.equalsIgnoreCase(emptyStr));
             }
         }
 
@@ -146,7 +146,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns false")
             {
-                REQUIRE(!str.equalsIgnoreCase(nonEmptyStr.string()));
+                REQUIRE(!str.equalsIgnoreCase(nonEmptyStr));
             }
         }
 
@@ -446,7 +446,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("string() now holds new pointer")
             {
-                REQUIRE(str.string().Buffer == newStr);
+                REQUIRE(str.buffer() == newStr);
             }
 
             THEN("charLength() returns the new character length")
@@ -498,7 +498,7 @@ SCENARIO("USimpleString: all methods")
         WHEN("compareTo() is called with same string")
         {
             kf::USimpleString sameStr(L"  Hello, World!  \U0001F60A\U0001F60A ");
-            auto compareResult = str.compareTo(sameStr.string());
+            auto compareResult = str.compareTo(sameStr);
 
             THEN("it returns 0")
             {
@@ -509,7 +509,7 @@ SCENARIO("USimpleString: all methods")
         WHEN("compareTo() is called with lexicographically greater string")
         {
             kf::USimpleString diffStr(L"zzz");
-            auto compareResult = str.compareTo(diffStr.string());
+            auto compareResult = str.compareTo(diffStr);
 
             THEN("it returns a negative value")
             {
@@ -520,7 +520,7 @@ SCENARIO("USimpleString: all methods")
         WHEN("compareTo() is called with lexicographically smaller string")
         {
             kf::USimpleString diffStr(L"   abc");
-            auto compareResult = str.compareTo(diffStr.string());
+            auto compareResult = str.compareTo(diffStr);
 
             THEN("it returns a positive value")
             {
@@ -534,7 +534,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns 0")
             {
-                REQUIRE(str.compareToIgnoreCase(sameStr.string()) == 0);
+                REQUIRE(str.compareToIgnoreCase(sameStr) == 0);
             }
         }
 
@@ -544,7 +544,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns true")
             {
-                REQUIRE(str.equals(sameStr.string()));
+                REQUIRE(str.equals(sameStr));
             }
         }
 
@@ -554,7 +554,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns false")
             {
-                REQUIRE(!str.equals(diffStr.string()));
+                REQUIRE(!str.equals(diffStr));
             }
         }
 
@@ -564,7 +564,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns true")
             {
-                REQUIRE(str.equalsIgnoreCase(sameStr.string()));
+                REQUIRE(str.equalsIgnoreCase(sameStr));
             }
         }
 
