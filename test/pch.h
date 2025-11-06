@@ -21,31 +21,23 @@ extern "C" inline int _CrtDbgReport(
     KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
 }
 
-inline __declspec(noreturn)
-_ACRTIMP void __cdecl _invoke_watson(
-    _In_opt_z_ wchar_t const* _Expression,
-    _In_opt_z_ wchar_t const* _FunctionName,
-    _In_opt_z_ wchar_t const* _FileName,
-    _In_       unsigned int _LineNo,
-    _In_       uintptr_t _Reserved)
+__declspec(noreturn) inline void __cdecl _invoke_watson(
+    _In_opt_z_ wchar_t const* const /*expression*/,
+    _In_opt_z_ wchar_t const* const /*function_name*/,
+    _In_opt_z_ wchar_t const* const /*file_name*/,
+    _In_       unsigned int   const /*line_number*/,
+    _In_       uintptr_t      const /*reserved*/)
 {
-    UNREFERENCED_PARAMETER(_Expression);
-    UNREFERENCED_PARAMETER(_FunctionName);
-    UNREFERENCED_PARAMETER(_FileName);
-    UNREFERENCED_PARAMETER(_LineNo);
-    UNREFERENCED_PARAMETER(_Reserved);
-
 #pragma warning(suppress: 28159) // Consider using 'error logging or driver shutdown' instead of 'KeBugCheckEx'
     KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
 }
 
 namespace std
 {
-    extern size_t g_Xinvalid_argument_call_count;
-
     [[noreturn]] inline void __cdecl _Xinvalid_argument(_In_z_ const char* /*What*/)
     {
-        g_Xinvalid_argument_call_count += 1;
+#pragma warning(suppress: 28159) // Consider using 'error logging or driver shutdown' instead of 'KeBugCheckEx'
+        KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
     }
 
     [[noreturn]] inline void __cdecl _Xlength_error(_In_z_ const char* /*What*/)
