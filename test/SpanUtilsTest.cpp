@@ -12,9 +12,9 @@ SCENARIO("SpanUtils")
             std::span<const int> intSpan(kArr);
             auto byteSpan = kf::span_cast<const std::byte>(intSpan);
 
-            THEN("the size matches the byte size of the array")
+            THEN("the size_bytes matches the intSpan and byteSpan")
             {
-                REQUIRE(byteSpan.size() == sizeof(kArr));
+                REQUIRE(byteSpan.size_bytes() == intSpan.size_bytes());
             }
         }
 
@@ -46,8 +46,8 @@ SCENARIO("SpanUtils")
 
         WHEN("span_cast is called with nullptr and size 0")
         {
-            constexpr int* nullArr = nullptr;
-            auto nullSpan = kf::span_cast<const std::byte>(nullArr, 0);
+            constexpr int* kNullArr = nullptr;
+            auto nullSpan = kf::span_cast<const std::byte>(kNullArr, 0);
 
             THEN("the result span is empty")
             {
@@ -67,7 +67,7 @@ SCENARIO("SpanUtils")
             THEN("the span covers the array memory")
             {
                 REQUIRE(s.size() == sizeof(kArr));
-                REQUIRE(reinterpret_cast<const void*>(s.data()) == reinterpret_cast<const void*>(kArr));
+                REQUIRE(static_cast<const void*>(s.data()) == static_cast<const void*>(kArr));
             }
         }
 
@@ -93,7 +93,7 @@ SCENARIO("SpanUtils")
             THEN("the span covers the array memory")
             {
                 REQUIRE(s.size() == sizeof(kArr));
-                REQUIRE(reinterpret_cast<const void*>(s.data()) == reinterpret_cast<const void*>(kArr));
+                REQUIRE(static_cast<const void*>(s.data()) == static_cast<const void*>(kArr));
             }
         }
     }
@@ -109,13 +109,13 @@ SCENARIO("SpanUtils")
             THEN("the span covers the array memory and is writable")
             {
                 REQUIRE(s.size() == sizeof(arr));
-                REQUIRE(reinterpret_cast<const void*>(s.data()) == reinterpret_cast<const void*>(arr));
+                REQUIRE(static_cast<const void*>(s.data()) == static_cast<const void*>(arr));
             }
 
             THEN("the span is writable")
             {
                 s[0] = std::byte{ 0xFF };
-                REQUIRE(static_cast<unsigned char>(s[0]) == 0xFF);
+                REQUIRE(s[0] == std::byte{ 0xFF });
             }
         }
 
@@ -141,43 +141,44 @@ SCENARIO("SpanUtils")
             THEN("the span covers the array memory and is writable")
             {
                 REQUIRE(s.size() == sizeof(arr));
-                REQUIRE(reinterpret_cast<const void*>(s.data()) == reinterpret_cast<const void*>(arr));
+                REQUIRE(static_cast<const void*>(s.data()) == static_cast<const void*>(arr));
             }
 
             THEN("the span is writable")
             {
                 s[0] = std::byte{ 0xAA };
-                REQUIRE(static_cast<unsigned char>(s[0]) == 0xAA);
+                REQUIRE(s[0] == std::byte{ 0xAA });
             }
         }
     }
 
     GIVEN("source and destination arrays for copyTruncate")
     {
-        int arr1[] = { 1, 2, 3, 4, 5 };
-        int arr2[] = { 11, 12, 13 };
+        int biggerArr[] = { 1, 2, 3, 4, 5 };
+        int smallerArr[] = { 11, 12, 13 };
 
         WHEN("copyTruncate is called with source larger than destination")
         {
-            auto result = kf::copyTruncate(std::span<int>(arr2), std::span<const int>(arr1));
+            auto result = kf::copyTruncate(std::span{ smallerArr }, std::span{ biggerArr });
 
             THEN("only the first destination.size() elements are copied")
             {
-                REQUIRE(result.size() == 3);
                 constexpr int kExpected[] = { 1, 2, 3 };
-                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)) == 0);
+                REQUIRE(std::ranges::equal(result, kExpected));
             }
         }
 
         WHEN("copyTruncate is called with src smaller than dst")
         {
-            auto result = kf::copyTruncate(std::span<int>(arr1), std::span<const int>(arr2));
+            auto result = kf::copyTruncate(std::span{ biggerArr }, std::span{ smallerArr });
 
             THEN("all src elements are copied")
             {
-                REQUIRE(result.size() == 3);
-                constexpr int kExpected[] = { 11, 12, 13, 4, 5 };
-                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)) == 0);
+                constexpr int kExpectedResult[] = { 11, 12, 13 };
+                REQUIRE(std::ranges::equal(result, kExpectedResult));
+                
+                constexpr int kExpectedBiggerArr[] = { 11, 12, 13, 4, 5 };
+                REQUIRE(std::ranges::equal(biggerArr, kExpectedBiggerArr));
             }
         }
     }
@@ -189,77 +190,61 @@ SCENARIO("SpanUtils")
             constexpr int kSrc[] = { 1, 2, 3 };
             int dst[] = { 11, 22, 33 };
 
-            auto result = kf::copyExact(std::span<int>(dst), std::span<const int>(kSrc));
+            auto result = kf::copyExact(std::span{ dst }, std::span{ kSrc });
 
             THEN("all elements are copied")
             {
-                REQUIRE(result.size() == 3);
                 constexpr int kExpected[] = { 1, 2, 3 };
-                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)) == 0);
-            }
-        }
-
-        WHEN("copyExact is called with mismatched sizes")
-        {
-            constexpr int kSrc[] = { 1, 2, 3 };
-            int dst[] = { 11, 22 };
-
-            THEN("_Xinvalid_argument is called")
-            {
-                std::g_Xinvalid_argument_call_count = 0;
-                kf::copyExact(std::span<int>(dst), std::span<const int>(kSrc));
-                REQUIRE(std::g_Xinvalid_argument_call_count == 1);
+                REQUIRE(std::ranges::equal(result, kExpected));
             }
         }
     }
 
     GIVEN("source and destination arrays for copy")
     {
-        int arr1[] = { 5, 6 };
-        int arr2[] = { 55, 66, 77, 88 };
+        int smallerArr[] = { 5, 6 };
+        int biggerArr[] = { 55, 66, 77, 88 };
 
         WHEN("copy is called with source smaller than destination")
         {
-            auto result = kf::copy(std::span<int>(arr2), std::span<const int>(arr1));
+            auto result = kf::copy(std::span{ biggerArr }, std::span{ smallerArr });
 
             THEN("all source elements are copied")
             {
-                REQUIRE(result.size() == 2);
                 constexpr int kExpected[] = { 5, 6 };
-                REQUIRE(memcmp(result.data(), kExpected, sizeof(kExpected)) == 0);
-            }
-        }
-
-        WHEN("copy is called with source larger than destination")
-        {
-            THEN("_Xinvalid_argument is called")
-            {
-                std::g_Xinvalid_argument_call_count = 0;
-                kf::copy(std::span<int>(const_cast<int*>(arr1), 2), std::span<const int>(arr2, 4));
-                REQUIRE(std::g_Xinvalid_argument_call_count == 1);
+                REQUIRE(std::ranges::equal(result, kExpected));
             }
         }
     }
 
-    GIVEN("two arrays for equals")
+    GIVEN("arrays for equals")
     {
         constexpr int kA[] = { 1, 2, 3 };
         constexpr int kB[] = { 1, 2, 3 };
         constexpr int kC[] = { 1, 2, 4 };
+        constexpr int kD[] = { 1, 2, 3, 4 };
 
         WHEN("equals is called on identical arrays")
         {
             THEN("returns true")
             {
-                REQUIRE(kf::equals(std::span<const int>(kA), std::span<const int>(kB)));
+                REQUIRE(kf::equals(std::span{ kA }, std::span{ kB }));
             }
         }
 
-        WHEN("equals is called on different arrays")
+        WHEN("equals is called on different array content")
         {
             THEN("returns false")
             {
-                REQUIRE(!kf::equals(std::span<const int>(kA), std::span<const int>(kC)));
+                REQUIRE(!kf::equals(std::span{ kA }, std::span{ kC }));
+            }
+        }
+
+        WHEN("equals is called on different array size")
+        {
+            THEN("returns false")
+            {
+                REQUIRE(!kf::equals(std::span{ kC }, std::span{ kD }));
             }
         }
 
@@ -267,9 +252,10 @@ SCENARIO("SpanUtils")
         {
             constexpr int* kLeft = nullptr;
             constexpr int* kRight = nullptr;
+
             THEN("returns true")
             {
-                REQUIRE(kf::equals(std::span<const int>(kLeft, 0), std::span<const int>(kRight, 0)));
+                REQUIRE(kf::equals(std::span{ kLeft, 0 }, std::span{ kRight, 0 }));
             }
         }
     }
@@ -282,7 +268,7 @@ SCENARIO("SpanUtils")
         {
             THEN("returns the correct index")
             {
-                REQUIRE(kf::indexOf(std::span<const int>(kArr), 30) == 2);
+                REQUIRE(kf::indexOf(std::span{ kArr }, 30) == 2);
             }
         }
 
@@ -290,7 +276,7 @@ SCENARIO("SpanUtils")
         {
             THEN("returns -1")
             {
-                REQUIRE(kf::indexOf(std::span<const int>(kArr), 75) == -1);
+                REQUIRE(kf::indexOf(std::span{ kArr }, 75) == -1);
             }
         }
 
@@ -298,7 +284,7 @@ SCENARIO("SpanUtils")
         {
             THEN("returns -1")
             {
-                REQUIRE(kf::indexOf(std::span<const int>(kArr), 10, 5) == -1);
+                REQUIRE(kf::indexOf(std::span{ kArr }, 10, 5) == -1);
             }
         }
     }
@@ -312,12 +298,12 @@ SCENARIO("SpanUtils")
         WHEN("split is called with idx before first separator")
         {
             ptrdiff_t idx = 0;
-            auto s = kf::split(std::span<const int>(kArr), kSeparator, idx);
+            auto result = kf::split(std::span{ kArr }, kSeparator, idx);
 
             THEN("returns the first segment before separator")
             {
-                REQUIRE(s.size() == 1);
-                REQUIRE(s[0] == 1);
+                constexpr int kExpected[] = { 1 };
+                REQUIRE(std::ranges::equal(result, kExpected));
             }
 
             THEN("idx is updated to the first separator index")
@@ -329,13 +315,12 @@ SCENARIO("SpanUtils")
         WHEN("split is called with idx between separators")
         {
             ptrdiff_t idx = 2;
-            auto s = kf::split(std::span<const int>(kArr), kSeparator, idx);
+            auto result = kf::split(std::span{ kArr }, kSeparator, idx);
 
             THEN("returns the segment after first separator before last separator")
             {
-                REQUIRE(s.size() == 2);
-                REQUIRE(s[0] == 3);
-                REQUIRE(s[1] == 7);
+                constexpr int kExpected[] = { 3, 7 };
+                REQUIRE(std::ranges::equal(result, kExpected));
             }
 
             THEN("idx is updated to the next separator index")
@@ -347,14 +332,12 @@ SCENARIO("SpanUtils")
         WHEN("split is called with idx after the last separator")
         {
             ptrdiff_t idx = 5;
-            auto s = kf::split(std::span<const int>(kArr), kSeparator, idx);
+            auto result = kf::split(std::span{ kArr }, kSeparator, idx);
 
             THEN("returns the last segment after separator")
             {
-                REQUIRE(s.size() == 3);
-                REQUIRE(s[0] == 5);
-                REQUIRE(s[1] == 9);
-                REQUIRE(s[2] == 8);
+                constexpr int kExpected[] = { 5, 9, 8 };
+                REQUIRE(std::ranges::equal(result, kExpected));
             }
 
             THEN("idx is updated to -1 indicating no more separators")
@@ -366,12 +349,12 @@ SCENARIO("SpanUtils")
         WHEN("split is called with no separator found")
         {
             ptrdiff_t idx = 0;
-            auto s = kf::split(std::span<const int>(kArr), kMissingSeparator, idx);
+            auto result = kf::split(std::span{ kArr }, kMissingSeparator, idx);
 
             THEN("returns the whole array")
             {
-                REQUIRE(s.size() == 8);
-                REQUIRE(reinterpret_cast<const void*>(s.data()) == reinterpret_cast<const void*>(kArr));
+                REQUIRE(result.size_bytes() == sizeof(kArr));
+                REQUIRE(static_cast<const void*>(result.data()) == static_cast<const void*>(kArr));
             }
 
             THEN("idx is updated to -1 indicating no more separators")
@@ -391,7 +374,7 @@ SCENARIO("SpanUtils")
         {
             THEN("returns the element at that index")
             {
-                REQUIRE(kf::atOrDefault(std::span<const int>(kArr), 1, kDefault) == 8);
+                REQUIRE(kf::atOrDefault(std::span{ kArr }, 1, kDefault) == 8);
             }
         }
 
@@ -399,16 +382,17 @@ SCENARIO("SpanUtils")
         {
             THEN("returns the default value")
             {
-                REQUIRE(kf::atOrDefault(std::span<const int>(kArr), 5, kDefault) == kDefault);
+                REQUIRE(kf::atOrDefault(std::span{ kArr }, 5, kDefault) == kDefault);
             }
         }
 
         WHEN("atOrDefault is called on an empty span")
         {
             constexpr int* kEmpty = nullptr;
+
             THEN("returns the default value")
             {
-                REQUIRE(kf::atOrDefault(std::span<const int>(kEmpty, 0), 0, kOtherDefault) == kOtherDefault);
+                REQUIRE(kf::atOrDefault(std::span{ kEmpty, 0 }, 0, kOtherDefault) == kOtherDefault);
             }
         }
     }

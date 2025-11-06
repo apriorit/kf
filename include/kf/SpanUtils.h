@@ -4,13 +4,13 @@
 namespace kf
 {
     template<class T, class U>
-    inline constexpr std::span<T> span_cast(std::span<U> input) noexcept
+    constexpr std::span<T> span_cast(std::span<U> input) noexcept
     {
         return { reinterpret_cast<T*>(input.data()), input.size_bytes() / sizeof(T) };
     }
 
     template<class T, class U>
-    inline constexpr std::span<T> span_cast(U* data, size_t size) noexcept
+    constexpr std::span<T> span_cast(U* data, size_t size) noexcept
     {
         return { reinterpret_cast<T*>(data), size * sizeof(U) / sizeof(T) };
     }
@@ -22,7 +22,7 @@ namespace kf
 
     // TODO: rename to asBytes
     template<class T, size_t N>
-    inline constexpr auto as_bytes(const T(&p)[N]) noexcept
+    constexpr auto as_bytes(const T(&p)[N]) noexcept
     {
         return std::span<const std::byte, sizeof(T)* N>{ reinterpret_cast<const std::byte*>(p), sizeof(p) };
     }
@@ -34,25 +34,25 @@ namespace kf
 
     // TODO: rename to asWritableBytes
     template<class T, size_t N>
-    inline constexpr auto as_writable_bytes(T(&p)[N]) noexcept
+    constexpr auto as_writable_bytes(T(&p)[N]) noexcept
     {
         return std::span<std::byte, sizeof(T) * N>{ reinterpret_cast<std::byte*>(p), sizeof(p) };
     }
 
-    template<class T, size_t dstExtent, size_t srcExtent>
-    inline constexpr std::span<T> copyTruncate(std::span<T, dstExtent> dst, std::span<const T, srcExtent> src) noexcept
+    template<class T, class Y, size_t dstExtent, size_t srcExtent> requires std::is_same_v<T, std::remove_const_t<Y>>
+    constexpr std::span<T> copyTruncate(std::span<T, dstExtent> dst, std::span<Y, srcExtent> src) noexcept
     {
         //
         // Source can be larger than destination, truncate in such case
         //
 
-        src = src.first(min(src.size(), dst.size()));
+        auto truncatedSrc = src.first(min(src.size(), dst.size()));
 
-        return { dst.begin(), copy(src.begin(), src.end(), dst.begin()) };
+        return { dst.begin(), copy(truncatedSrc.begin(), truncatedSrc.end(), dst.begin()) };
     }
 
-    template<class T, size_t dstExtent, size_t srcExtent>
-    inline constexpr std::span<T> copyExact(std::span<T, dstExtent> dst, std::span<const T, srcExtent> src) noexcept
+    template<class T, class Y, size_t dstExtent, size_t srcExtent> requires std::is_same_v<T, std::remove_const_t<Y>>
+    constexpr std::span<T> copyExact(std::span<T, dstExtent> dst, std::span<Y, srcExtent> src) noexcept
     {
         //
         // Source MUST be equal to destination
@@ -73,8 +73,8 @@ namespace kf
         return { dst.begin(), copy(src.begin(), src.end(), dst.begin()) };
     }
 
-    template<class T, size_t dstExtent, size_t srcExtent>
-    inline constexpr std::span<T> copy(std::span<T, dstExtent> dst, std::span<const T, srcExtent> src) noexcept
+    template<class T, class Y, size_t dstExtent, size_t srcExtent> requires std::is_same_v<T, std::remove_const_t<Y>>
+    constexpr std::span<T> copy(std::span<T, dstExtent> dst, std::span<Y, srcExtent> src) noexcept
     {
         //
         // Source MUST be smaller or equal to destination
@@ -96,13 +96,13 @@ namespace kf
     }
 
     template<class T, size_t LeftExtent, size_t RightExtent>
-    inline constexpr bool equals(std::span<T, LeftExtent> left, std::span<T, RightExtent> right) noexcept
+    constexpr bool equals(std::span<T, LeftExtent> left, std::span<T, RightExtent> right) noexcept
     {
         return std::equal(left.begin(), left.end(), right.begin(), right.end());
     }
 
-    template<class T>
-    inline constexpr ptrdiff_t indexOf(std::span<T> input, typename std::span<T>::const_reference elem, ptrdiff_t fromIndex = 0) noexcept
+    template<class T, size_t extent>
+    constexpr ptrdiff_t indexOf(std::span<T, extent> input, typename std::span<T, extent>::const_reference elem, ptrdiff_t fromIndex = 0) noexcept
     {
         for (auto i = fromIndex; i < ssize(input); ++i)
         {
@@ -115,8 +115,8 @@ namespace kf
         return -1;
     }
 
-    template<class T>
-    inline constexpr std::span<T> split(std::span<T> input, typename std::span<T>::const_reference separator, _Inout_ ptrdiff_t& fromIndex) noexcept
+    template<class T, size_t extent>
+    constexpr std::span<T> split(std::span<T, extent> input, typename std::span<T, extent>::const_reference separator, _Inout_ ptrdiff_t& fromIndex) noexcept
     {
         auto originalFromIndex = fromIndex;
 
@@ -132,8 +132,8 @@ namespace kf
         return input.subspan(originalFromIndex, count);
     }
 
-    template<class T>
-    inline constexpr T atOrDefault(std::span<T> input, size_t index, std::convertible_to<T> auto defaultValue) noexcept
+    template<class T, size_t extent>
+    constexpr T atOrDefault(std::span<T, extent> input, size_t index, std::convertible_to<T> auto defaultValue) noexcept
     {
         return input.size() > index ? input[index] : defaultValue;
     }
