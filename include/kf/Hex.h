@@ -49,7 +49,7 @@ namespace kf
             return input.charLength() / 2;
         }
 
-        static bool decode(const ASimpleString& input, _Out_ span<std::byte>& output)
+        static bool decode(const ASimpleString& input, _Out_ std::span<std::byte>& output)
         {
             if (output.size() != static_cast<size_t>(decodeLen(input)))
             {
