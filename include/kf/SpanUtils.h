@@ -104,7 +104,7 @@ namespace kf
     template<class T, size_t extent>
     constexpr ptrdiff_t indexOf(std::span<T, extent> input, typename std::span<T, extent>::const_reference elem, ptrdiff_t fromIndex = 0) noexcept
     {
-        for (auto i = fromIndex; i < ssize(input); ++i)
+        for (auto i = fromIndex; i < std::ssize(input); ++i)
         {
             if (input[i] == elem)
             {
