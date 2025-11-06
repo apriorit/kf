@@ -7,7 +7,7 @@ SCENARIO("SpanUtils")
     {
         constexpr int kArr[] = { 1, 2, 3, 4 };
 
-        WHEN("span_cast is called on not empty span")
+        WHEN("span_cast is called on a non-empty span")
         {
             std::span<const int> intSpan(kArr);
             auto byteSpan = kf::span_cast<const std::byte>(intSpan);
