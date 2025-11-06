@@ -15,7 +15,7 @@ namespace kf
     class TextDetector
     {
     public:
-        static bool isText(span<const std::byte> buffer)
+        static bool isText(std::span<const std::byte> buffer)
         {
             EncodingDetector encodingDetector(buffer);
 

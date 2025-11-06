@@ -9,7 +9,7 @@ namespace kf
     class Scanner
     {
     public:
-        Scanner(span<const std::byte> data) : m_data(data)
+        Scanner(std::span<const std::byte> data) : m_data(data)
         {
         }
 
@@ -69,6 +69,6 @@ namespace kf
         }
 
     private:
-        span<const std::byte> m_data;
+        std::span<const std::byte> m_data;
     };
 }

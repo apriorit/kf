@@ -13,12 +13,12 @@ namespace kf
     class Hex
     {
     public:
-        static int encodeLen(span<const std::byte> input)
+        static int encodeLen(std::span<const std::byte> input)
         {
             return static_cast<int>(input.size() * 2);
         }
 
-        static bool encode(span<const std::byte> input, _Out_ USimpleString& output)
+        static bool encode(std::span<const std::byte> input, _Out_ USimpleString& output)
         {
             if (output.maxByteLength() < encodeLen(input))
             {

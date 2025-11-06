@@ -12,7 +12,7 @@ namespace kf
     class EncodingDetector
     {
     public:
-        EncodingDetector(span<const std::byte> buffer);
+        EncodingDetector(std::span<const std::byte> buffer);
 
         enum Encoding
         {
@@ -32,15 +32,15 @@ namespace kf
         enum { kMinimalBufferSize = kMaximumBomLength };
 
     private:
-        bool detectBom(span<const std::byte, kMaximumBomLength> bomBytes);
-        bool detectUtf16(span<const std::byte> buffer);
+        bool detectBom(std::span<const std::byte, kMaximumBomLength> bomBytes);
+        bool detectUtf16(std::span<const std::byte> buffer);
 
     private:
         Encoding m_encoding = Unknown;
         int m_bomLength = 0;
     };
 
-    inline EncodingDetector::EncodingDetector(span<const std::byte> buffer) : m_encoding(), m_bomLength()
+    inline EncodingDetector::EncodingDetector(std::span<const std::byte> buffer) : m_encoding(), m_bomLength()
     {
         if (buffer.size() < kMinimalBufferSize)
         {
@@ -61,7 +61,7 @@ namespace kf
         m_encoding = ANSI;
     }
 
-    inline bool EncodingDetector::detectBom(span<const std::byte, kMaximumBomLength> bomBytes)
+    inline bool EncodingDetector::detectBom(std::span<const std::byte, kMaximumBomLength> bomBytes)
     {
         if (bomBytes[0] == std::byte(0xff) && bomBytes[1] == std::byte(0xfe) && (bomBytes[2] != std::byte(0) || bomBytes[3] != std::byte(0)))
         {
@@ -101,7 +101,7 @@ namespace kf
         return false;
     }
 
-    inline bool EncodingDetector::detectUtf16(span<const std::byte> buffer)
+    inline bool EncodingDetector::detectUtf16(std::span<const std::byte> buffer)
     {
         int zeros[2] = {};
 
