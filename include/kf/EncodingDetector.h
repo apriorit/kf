@@ -105,7 +105,7 @@ namespace kf
     {
         int zeros[2] = {};
 
-        for (std::size_t i = 0; i < buffer.size(); ++i)
+        for (size_t i = 0; i < buffer.size(); ++i)
         {
             if (buffer[i] == std::byte(0))
             {

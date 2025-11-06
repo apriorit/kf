@@ -51,7 +51,7 @@ namespace kf
 
         static bool decode(const ASimpleString& input, _Out_ span<std::byte>& output)
         {
-            if (output.size() != static_cast<std::size_t>(decodeLen(input)))
+            if (output.size() != static_cast<size_t>(decodeLen(input)))
             {
                 return false;
             }

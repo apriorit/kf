@@ -19,7 +19,7 @@ namespace kf
         USimpleString(_In_ const UNICODE_STRING& str);
         USimpleString(_In_reads_bytes_(byteLength) const void* buffer, _In_ int byteLength);
 
-        template<class T, std::size_t Extent>
+        template<class T, size_t Extent>
         USimpleString(std::span<T, Extent> buffer);
 
         USimpleString(_Inout_ USimpleString&& another);
@@ -117,7 +117,7 @@ namespace kf
             return ::RtlAppendUnicodeToString(&m_str, str);
         }
 
-        template<std::size_t N>
+        template<size_t N>
         int copyTo(_Out_ WCHAR(&destination)[N]) const
         {
             return copyTo(N, destination);
@@ -125,7 +125,7 @@ namespace kf
 
         int copyTo(_In_ int maxCharLength, _Out_cap_(maxCharLength) WCHAR* destination) const
         {
-            const int charsToCopy = std::min(maxCharLength - 1, charLength());
+            const int charsToCopy = (std::min)(maxCharLength - 1, charLength());
 
             if (charsToCopy >= 0)
             {
@@ -183,7 +183,7 @@ namespace kf
 
     inline USimpleString::USimpleString(_In_ const WCHAR* str, _In_ int maxCharLength)
     {
-        std::size_t byteLength = 0;
+        size_t byteLength = 0;
         ::RtlStringCbLengthW(str, maxCharLength * sizeof(WCHAR), &byteLength);
         setString(const_cast<WCHAR*>(str), static_cast<int>(byteLength), maxCharLength * sizeof(WCHAR));
     }
@@ -198,7 +198,7 @@ namespace kf
         setString(const_cast<void*>(buffer), byteLength);
     }
 
-    template<class T, std::size_t Extent>
+    template<class T, size_t Extent>
     inline USimpleString::USimpleString(std::span<T, Extent> buffer)
     {
         setString(const_cast<void*>(reinterpret_cast<const void*>(buffer.data())), static_cast<int>(buffer.size_bytes()));

@@ -15,7 +15,7 @@ namespace kf
     public:
         ASimpleString();
 
-        template<class T, std::size_t Extent>
+        template<class T, size_t Extent>
         ASimpleString(std::span<T, Extent> buffer);
 
         ASimpleString(_In_ const ANSI_STRING& str)
@@ -183,7 +183,7 @@ namespace kf
         empty();
     }
 
-    template<class T, std::size_t Extent>
+    template<class T, size_t Extent>
     inline ASimpleString::ASimpleString(std::span<T, Extent> buffer)
     {
         setString(const_cast<void*>(reinterpret_cast<const void*>(buffer.data())), static_cast<int>(buffer.size_bytes()));

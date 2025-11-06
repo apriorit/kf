@@ -43,7 +43,7 @@ namespace kf
         {
             auto data = span_cast<const wchar_t>(m_data);
 
-            std::ptrdiff_t fromIndex = 0;
+            ptrdiff_t fromIndex = 0;
             const auto str = split(data, L'\n', fromIndex);
 
             skip(static_cast<int>(fromIndex > 0 ? fromIndex * sizeof(wchar_t) : m_data.size()));
@@ -55,7 +55,7 @@ namespace kf
         {
             auto data = span_cast<const char>(m_data);
 
-            std::ptrdiff_t fromIndex = 0;
+            ptrdiff_t fromIndex = 0;
             const auto str = split(data, '\n', fromIndex);
 
             skip(static_cast<int>(fromIndex > 0 ? fromIndex * sizeof(char) : m_data.size()));
