@@ -317,7 +317,7 @@ SCENARIO("SpanUtils")
             ptrdiff_t idx = 2;
             auto result = kf::split(std::span{ kArr }, kSeparator, idx);
 
-            THEN("returns the segment after first separator before last separator")
+            THEN("returns the segment after the first separator and before the second separator")
             {
                 constexpr int kExpected[] = { 3, 7 };
                 REQUIRE(std::ranges::equal(result, kExpected));
