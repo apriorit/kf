@@ -4,7 +4,6 @@
 
 namespace kf
 {
-    using namespace std;
 
     // original implementation is taken from https://github.com/adamvr/arduino-base64/blob/master/Base64.cpp
 

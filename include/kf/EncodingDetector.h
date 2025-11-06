@@ -4,7 +4,6 @@
 
 namespace kf
 {
-    using namespace std;
 
     //////////////////////////////////////////////////////////////////////////////////
     // EncodingDetector class identifies the encoding of a buffer.
@@ -106,7 +105,7 @@ namespace kf
     {
         int zeros[2] = {};
 
-        for (size_t i = 0; i < buffer.size(); ++i)
+        for (std::size_t i = 0; i < buffer.size(); ++i)
         {
             if (buffer[i] == std::byte(0))
             {

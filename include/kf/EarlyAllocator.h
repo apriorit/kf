@@ -2,18 +2,17 @@
 
 namespace kf
 {
-    using namespace std;
 
     template<class T = std::byte>
     class EarlyAllocator
     {
     public:
-        static_assert(!is_const_v<T>, "The C++ Standard forbids containers of const elements because allocator<const T> is ill-formed.");
+        static_assert(!std::is_const_v<T>, "The C++ Standard forbids containers of const elements because allocator<const T> is ill-formed.");
 
         using value_type = T;
-        using size_type = size_t;
-        using difference_type = ptrdiff_t;
-        using propagate_on_container_move_assignment = true_type;
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+        using propagate_on_container_move_assignment = std::true_type;
 
         constexpr EarlyAllocator() noexcept = default;
 
@@ -31,7 +30,7 @@ namespace kf
         EarlyAllocator& operator=(const EarlyAllocator&) noexcept = default;
 
         template<POOL_TYPE poolType>
-        T* initialize(const size_t count) noexcept
+        T* initialize(const std::size_t count) noexcept
         {
             if (m_ptr || m_size)
             {
@@ -44,7 +43,7 @@ namespace kf
             return m_ptr;
         }
 
-        void deallocate(const T* ptr, const size_t count) noexcept
+        void deallocate(const T* ptr, const std::size_t count) noexcept
         {
             if (ptr != m_ptr || count * sizeof(T) > m_size)
             {
@@ -56,7 +55,7 @@ namespace kf
             m_size = 0;
         }
 
-        _NODISCARD T* allocate(const size_t count) noexcept
+        _NODISCARD T* allocate(const std::size_t count) noexcept
         {
             if (!m_ptr || count * sizeof(T) > m_size)
             {
@@ -68,6 +67,6 @@ namespace kf
 
     private:
         T* m_ptr = nullptr;
-        size_t m_size = 0;
+        std::size_t m_size = 0;
     };
 }

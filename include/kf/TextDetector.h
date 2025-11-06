@@ -7,7 +7,6 @@
 
 namespace kf
 {
-    using namespace std;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     // TextDetector class provides a utility to determine whether a given buffer contains textual data.
@@ -62,15 +61,15 @@ namespace kf
         }
 
         template<class T>
-        static bool isValidTextLE(span<const T> buffer)
+        static bool isValidTextLE(std::span<const T> buffer)
         {
-            return ranges::none_of(buffer, [](auto ch) { return isInvalidChar(ch); });
+            return std::ranges::none_of(buffer, [](auto ch) { return isInvalidChar(ch); });
         }
 
         template<class T>
-        static bool isValidTextBE(span<const T> buffer)
+        static bool isValidTextBE(std::span<const T> buffer)
         {
-            return ranges::none_of(buffer, [](auto ch) { return isInvalidChar(swapBytes(ch)); });
+            return std::ranges::none_of(buffer, [](auto ch) { return isInvalidChar(swapBytes(ch)); });
         }
     };
 }

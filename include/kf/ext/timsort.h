@@ -38,7 +38,6 @@ namespace timsort
 {
     namespace detail
     {
-        using namespace std;
 
         template<class T>
         inline int cmp(const T& lhs, const T& rhs)
@@ -101,7 +100,7 @@ namespace timsort
         inline int compute_minrun(const uint64_t size)
         {
             const int top_bit = 64 - clzll(size);
-            const int shift = max(top_bit, 6) - 6;
+            const int shift = std::max(top_bit, 6) - 6;
             const int minrun = static_cast<int>(size >> shift);
             const uint64_t mask = (1ULL << shift) - 1;
 
@@ -218,7 +217,7 @@ namespace timsort
                     return;
                 }
 
-                swap(dst[start], dst[end]);
+                std::swap(dst[start], dst[end]);
                 start++;
                 end--;
             }
@@ -238,7 +237,7 @@ namespace timsort
             {
                 if (cmp(dst[size - 2], dst[size - 1]) > 0)
                 {
-                    swap(dst[size - 2], dst[size - 1]);
+                    std::swap(dst[size - 2], dst[size - 1]);
                 }
 
                 return 2;
@@ -350,7 +349,7 @@ namespace timsort
             const size_t B = stack[stack_curr - 1].length;
             const size_t curr = stack[stack_curr - 2].start;
             size_t i, j, k;
-            tim_sort_resize(store, min(A, B));
+            tim_sort_resize(store, std::min(A, B));
             T* storage = store->storage;
 
             /* left merge */
