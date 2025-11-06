@@ -1,5 +1,6 @@
 #pragma once
 #include <span>
+#include <algorithm>
 
 namespace kf
 {
@@ -46,9 +47,9 @@ namespace kf
         // Source can be larger than destination, truncate in such case
         //
 
-        auto truncatedSrc = src.first(min(src.size(), dst.size()));
+        auto truncatedSrc = src.first((std::min)(src.size(), dst.size()));
 
-        return { dst.begin(), copy(truncatedSrc.begin(), truncatedSrc.end(), dst.begin()) };
+        return { dst.begin(), std::copy(truncatedSrc.begin(), truncatedSrc.end(), dst.begin()) };
     }
 
     template<class T, class Y, size_t dstExtent, size_t srcExtent> requires std::is_same_v<T, std::remove_const_t<Y>>
@@ -70,7 +71,7 @@ namespace kf
             static_assert(srcExtent == dstExtent);
         }
 
-        return { dst.begin(), copy(src.begin(), src.end(), dst.begin()) };
+        return { dst.begin(), std::copy(src.begin(), src.end(), dst.begin()) };
     }
 
     template<class T, class Y, size_t dstExtent, size_t srcExtent> requires std::is_same_v<T, std::remove_const_t<Y>>
