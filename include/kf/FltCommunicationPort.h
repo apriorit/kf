@@ -120,7 +120,7 @@ namespace kf
                     return status;
                 }
 
-                const ULONG saclSize = sizeof(ACL) + lowMandatorySidLength + sizeof SYSTEM_MANDATORY_LABEL_ACE;
+                const ULONG saclSize = sizeof(ACL) + lowMandatorySidLength + sizeof(SYSTEM_MANDATORY_LABEL_ACE);
                 status = sacl.emplace(saclSize);
                 if (!NT_SUCCESS(status))
                 {
