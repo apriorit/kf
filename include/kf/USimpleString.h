@@ -5,7 +5,6 @@
 
 namespace kf
 {
-    using namespace std;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     // USimpleString - non-owning string for NT kernel, inspired by http://docs.oracle.com/javase/7/docs/api/java/lang/String.html
@@ -21,7 +20,7 @@ namespace kf
         USimpleString(_In_reads_bytes_(byteLength) const void* buffer, _In_ int byteLength);
 
         template<class T, size_t Extent>
-        USimpleString(span<T, Extent> buffer);
+        USimpleString(std::span<T, Extent> buffer);
 
         USimpleString(_Inout_ USimpleString&& another);
         USimpleString(_In_ const USimpleString& another);
@@ -126,7 +125,7 @@ namespace kf
 
         int copyTo(_In_ int maxCharLength, _Out_cap_(maxCharLength) WCHAR* destination) const
         {
-            const int charsToCopy = min(maxCharLength - 1, charLength());
+            const int charsToCopy = (std::min)(maxCharLength - 1, charLength());
 
             if (charsToCopy >= 0)
             {
@@ -200,7 +199,7 @@ namespace kf
     }
 
     template<class T, size_t Extent>
-    inline USimpleString::USimpleString(span<T, Extent> buffer)
+    inline USimpleString::USimpleString(std::span<T, Extent> buffer)
     {
         setString(const_cast<void*>(reinterpret_cast<const void*>(buffer.data())), static_cast<int>(buffer.size_bytes()));
     }
