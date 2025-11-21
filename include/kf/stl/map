@@ -2,6 +2,8 @@
 #include <kf/MapAllocator.h>
 #include <map>
 #include <optional>
+#include <initializer_list>
+#include <concepts>
 
 #if _ITERATOR_DEBUG_LEVEL > 0
 #error "_ITERATOR_DEBUG_LEVEL must not be greater than 0"
@@ -9,6 +11,19 @@
 
 namespace kf
 {
+    // Helper trait to detect transparent comparators
+    template<typename Comp, typename = void>
+    struct has_is_transparent : std::false_type {};
+    
+    template<typename Comp>
+    struct has_is_transparent<Comp, std::void_t<typename Comp::is_transparent>> : std::true_type {};
+
+    // C++20 concept for transparent comparators
+    template<typename Comp>
+    concept TransparentComparator = requires {
+        typename Comp::is_transparent;
+    };
+
     //////////////////////////////////////////////////////////////////////////
     // map - wraps std::map and allows using it in exception-free environments.
     //
@@ -25,8 +40,17 @@ namespace kf
         using mapped_type = map_type::mapped_type;
         using value_type = map_type::value_type;
         using size_type = map_type::size_type;
+        using difference_type = map_type::difference_type;
+        using key_compare = map_type::key_compare;
+        using value_compare = map_type::value_compare;
+        using reference = map_type::reference;
+        using const_reference = map_type::const_reference;
+        using pointer = map_type::pointer;
+        using const_pointer = map_type::const_pointer;
         using iterator = map_type::iterator;
         using const_iterator = map_type::const_iterator;
+        using reverse_iterator = map_type::reverse_iterator;
+        using const_reverse_iterator = map_type::const_reverse_iterator;
 
     public:
         map() = default;
@@ -60,6 +84,16 @@ namespace kf
             return STATUS_SUCCESS;
         }
 
+        std::optional<std::reference_wrapper<ValueType>> operator[](const KeyType& key)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return std::ref((*m_internalMap)[key]);
+        }
+
         std::optional<std::reference_wrapper<ValueType>> operator[](KeyType&& key)
         {
             if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
@@ -68,6 +102,26 @@ namespace kf
             }
 
             return std::ref((*m_internalMap)[std::forward<KeyType>(key)]);
+        }
+
+        [[nodiscard]] std::optional<std::reference_wrapper<ValueType>> at(const KeyType& key)
+        {
+            auto it = m_internalMap->find(key);
+            if (it == m_internalMap->end())
+            {
+                return {};
+            }
+            return std::ref(it->second);
+        }
+
+        [[nodiscard]] std::optional<std::reference_wrapper<const ValueType>> at(const KeyType& key) const
+        {
+            auto it = m_internalMap->find(key);
+            if (it == m_internalMap->end())
+            {
+                return {};
+            }
+            return std::ref(it->second);
         }
 
         template <class... Args>
@@ -81,6 +135,156 @@ namespace kf
             return m_internalMap->emplace(std::forward<Args>(values)...);
         }
 
+        std::optional<std::pair<iterator, bool>> insert(const value_type& value)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->insert(value);
+        }
+
+        std::optional<std::pair<iterator, bool>> insert(value_type&& value)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->insert(std::move(value));
+        }
+
+        std::optional<iterator> insert(const_iterator hint, const value_type& value)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->insert(hint, value);
+        }
+
+        std::optional<iterator> insert(const_iterator hint, value_type&& value)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->insert(hint, std::move(value));
+        }
+
+        template<class InputIt>
+        bool insert(InputIt first, InputIt last)
+        {
+            // Insert elements one by one to properly handle memory allocation
+            // prepareMemory must be called once, then consumed, then called again
+            for (auto it = first; it != last; ++it)
+            {
+                if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+                {
+                    return false;
+                }
+                m_internalMap->insert(*it);
+            }
+
+            return true;
+        }
+
+        bool insert(std::initializer_list<value_type> ilist)
+        {
+            return insert(ilist.begin(), ilist.end());
+        }
+
+        template<class M>
+        std::optional<std::pair<iterator, bool>> insert_or_assign(const KeyType& key, M&& obj)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->insert_or_assign(key, std::forward<M>(obj));
+        }
+
+        template<class M>
+        std::optional<std::pair<iterator, bool>> insert_or_assign(KeyType&& key, M&& obj)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->insert_or_assign(std::move(key), std::forward<M>(obj));
+        }
+
+        template<class M>
+        std::optional<iterator> insert_or_assign(const_iterator hint, const KeyType& key, M&& obj)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->insert_or_assign(hint, key, std::forward<M>(obj));
+        }
+
+        template<class M>
+        std::optional<iterator> insert_or_assign(const_iterator hint, KeyType&& key, M&& obj)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->insert_or_assign(hint, std::move(key), std::forward<M>(obj));
+        }
+
+        template<class... Args>
+        std::optional<std::pair<iterator, bool>> try_emplace(const KeyType& key, Args&&... args)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->try_emplace(key, std::forward<Args>(args)...);
+        }
+
+        template<class... Args>
+        std::optional<std::pair<iterator, bool>> try_emplace(KeyType&& key, Args&&... args)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->try_emplace(std::move(key), std::forward<Args>(args)...);
+        }
+
+        template<class... Args>
+        std::optional<iterator> try_emplace(const_iterator hint, const KeyType& key, Args&&... args)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->try_emplace(hint, key, std::forward<Args>(args)...);
+        }
+
+        template<class... Args>
+        std::optional<iterator> try_emplace(const_iterator hint, KeyType&& key, Args&&... args)
+        {
+            if (!m_internalMap->get_allocator().prepareMemory(kNodeSize))
+            {
+                return {};
+            }
+
+            return m_internalMap->try_emplace(hint, std::move(key), std::forward<Args>(args)...);
+        }
+
         [[nodiscard]] iterator find(const KeyType& key)
         {
             return m_internalMap->find(key);
@@ -91,9 +295,61 @@ namespace kf
             return m_internalMap->find(key);
         }
 
+        // Heterogeneous lookup methods (enabled only for transparent comparators)
+        template<typename K>
+        [[nodiscard]] iterator find(const K& key) requires TransparentComparator<key_compare>
+        {
+            return m_internalMap->find(key);
+        }
+
+        template<typename K>
+        [[nodiscard]] const_iterator find(const K& key) const requires TransparentComparator<key_compare>
+        {
+            return m_internalMap->find(key);
+        }
+
         [[nodiscard]] bool contains(const KeyType& key) const
         {
             return m_internalMap->contains(key);
+        }
+
+        template<typename K>
+        [[nodiscard]] bool contains(const K& key) const requires TransparentComparator<key_compare>
+        {
+            return m_internalMap->contains(key);
+        }
+
+        [[nodiscard]] size_type count(const KeyType& key) const
+        {
+            return m_internalMap->count(key);
+        }
+
+        template<typename K>
+        [[nodiscard]] size_type count(const K& key) const requires TransparentComparator<key_compare>
+        {
+            return m_internalMap->count(key);
+        }
+
+        [[nodiscard]] std::pair<iterator, iterator> equal_range(const KeyType& key)
+        {
+            return m_internalMap->equal_range(key);
+        }
+
+        [[nodiscard]] std::pair<const_iterator, const_iterator> equal_range(const KeyType& key) const
+        {
+            return m_internalMap->equal_range(key);
+        }
+
+        template<typename K>
+        [[nodiscard]] std::pair<iterator, iterator> equal_range(const K& key) requires TransparentComparator<key_compare>
+        {
+            return m_internalMap->equal_range(key);
+        }
+
+        template<typename K>
+        [[nodiscard]] std::pair<const_iterator, const_iterator> equal_range(const K& key) const requires TransparentComparator<key_compare>
+        {
+            return m_internalMap->equal_range(key);
         }
 
         void clear() noexcept
@@ -126,6 +382,11 @@ namespace kf
             return m_internalMap->begin();
         }
 
+        [[nodiscard]] const_iterator cbegin() const noexcept
+        {
+            return m_internalMap->cbegin();
+        }
+
         [[nodiscard]] iterator end() noexcept
         {
             return m_internalMap->end();
@@ -136,12 +397,59 @@ namespace kf
             return m_internalMap->end();
         }
 
+        [[nodiscard]] const_iterator cend() const noexcept
+        {
+            return m_internalMap->cend();
+        }
+
+        [[nodiscard]] reverse_iterator rbegin() noexcept
+        {
+            return m_internalMap->rbegin();
+        }
+
+        [[nodiscard]] const_reverse_iterator rbegin() const noexcept
+        {
+            return m_internalMap->rbegin();
+        }
+
+        [[nodiscard]] const_reverse_iterator crbegin() const noexcept
+        {
+            return m_internalMap->crbegin();
+        }
+
+        [[nodiscard]] reverse_iterator rend() noexcept
+        {
+            return m_internalMap->rend();
+        }
+
+        [[nodiscard]] const_reverse_iterator rend() const noexcept
+        {
+            return m_internalMap->rend();
+        }
+
+        [[nodiscard]] const_reverse_iterator crend() const noexcept
+        {
+            return m_internalMap->crend();
+        }
+
         [[nodiscard]] iterator upper_bound(const KeyType& key)
         {
             return m_internalMap->upper_bound(key);
         }
 
         [[nodiscard]] const_iterator upper_bound(const KeyType& key) const
+        {
+            return m_internalMap->upper_bound(key);
+        }
+
+        template<typename K>
+        [[nodiscard]] iterator upper_bound(const K& key) requires TransparentComparator<key_compare>
+        {
+            return m_internalMap->upper_bound(key);
+        }
+
+        template<typename K>
+        [[nodiscard]] const_iterator upper_bound(const K& key) const requires TransparentComparator<key_compare>
         {
             return m_internalMap->upper_bound(key);
         }
@@ -156,6 +464,18 @@ namespace kf
             return m_internalMap->lower_bound(key);
         }
 
+        template<typename K>
+        [[nodiscard]] iterator lower_bound(const K& key) requires TransparentComparator<key_compare>
+        {
+            return m_internalMap->lower_bound(key);
+        }
+
+        template<typename K>
+        [[nodiscard]] const_iterator lower_bound(const K& key) const requires TransparentComparator<key_compare>
+        {
+            return m_internalMap->lower_bound(key);
+        }
+
         bool empty() const noexcept
         {
             return m_internalMap->empty();
@@ -164,6 +484,21 @@ namespace kf
         size_type size() const noexcept
         {
             return m_internalMap->size();
+        }
+
+        [[nodiscard]] size_type max_size() const noexcept
+        {
+            return m_internalMap->max_size();
+        }
+
+        [[nodiscard]] key_compare key_comp() const
+        {
+            return m_internalMap->key_comp();
+        }
+
+        [[nodiscard]] value_compare value_comp() const
+        {
+            return m_internalMap->value_comp();
         }
 
     private:
