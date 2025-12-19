@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <optional>
+#include <iterator>
 #include <kf/Allocator.h>
 
 #if _KERNEL_MODE && _ITERATOR_DEBUG_LEVEL > 0
@@ -272,6 +273,20 @@ namespace kf
             }
 
             return m_vector.insert(m_vector.begin() + idx, count, value);
+        }
+
+        template<std::input_iterator InputIt>
+        constexpr std::optional<iterator> insert(const_iterator pos, InputIt first, InputIt last) noexcept
+        {
+            const auto idx = pos - m_vector.begin();
+            const auto count = std::distance(first, last);
+
+            if (auto status = reallocateGrowth(m_vector.size() + count); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_vector.insert(m_vector.begin() + idx, first, last);
         }
 
         template<class... Args>
