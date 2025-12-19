@@ -85,7 +85,7 @@ SCENARIO("SCOPE_FAILURE macro")
             SCOPE_FAILURE(status)
             {
                 value++;
-                scopedStatus = status;;
+                scopedStatus = status;
             };
 
             status = STATUS_CANT_WAIT;
@@ -95,6 +95,56 @@ SCENARIO("SCOPE_FAILURE macro")
         {
             REQUIRE(value == 1);
             REQUIRE(scopedStatus == STATUS_CANT_WAIT);
+        }
+    }
+
+    GIVEN("SCOPE_FAILURE macro with a type convertible to NTSTATUS (unsuccessful case)")
+    {
+        struct StatusWrapper
+        {
+            NTSTATUS status;
+            operator NTSTATUS() const { return status; }
+        };
+
+        StatusWrapper status{ STATUS_SUCCESS };
+        int value = 0;
+
+        {
+            status.status = STATUS_ACCESS_DENIED;
+
+            SCOPE_FAILURE(status)
+            {
+                value++;
+            };
+        }
+
+        THEN("Scoped function should be called for unsuccessful value")
+        {
+            REQUIRE(value == 1);
+        }
+    }
+
+    GIVEN("SCOPE_FAILURE macro with a type convertible to NTSTATUS (successful case)")
+    {
+        struct StatusWrapper
+        {
+            NTSTATUS status;
+            operator NTSTATUS() const { return status; }
+        };
+
+        StatusWrapper status{ STATUS_SUCCESS };
+        int value = 0;
+
+        {
+            SCOPE_FAILURE(status)
+            {
+                value++;
+            };
+        }
+
+        THEN("Scoped function should not be called when value is successful")
+        {
+            REQUIRE(value == 0);
         }
     }
 }

@@ -200,7 +200,7 @@ namespace kf
             PMDL inputMdl = nullptr;
             PMDL outputMdl = nullptr;
 
-            NTSTATUS status = [&]()
+            NTSTATUS status = [&]() -> NTSTATUS
             {
                 //
                 // Lock user buffers so __try/__except is required only here and not in the handler->onMessage
