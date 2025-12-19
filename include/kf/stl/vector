@@ -275,7 +275,7 @@ namespace kf
             return m_vector.insert(m_vector.begin() + idx, count, value);
         }
 
-        template<class InputIt>
+        template<std::input_iterator InputIt>
         constexpr std::optional<iterator> insert(const_iterator pos, InputIt first, InputIt last) noexcept
         {
             const auto idx = pos - m_vector.begin();
