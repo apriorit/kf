@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <optional>
+#include <iterator>
 #include <kf/Allocator.h>
 
 #if _KERNEL_MODE && _ITERATOR_DEBUG_LEVEL > 0
