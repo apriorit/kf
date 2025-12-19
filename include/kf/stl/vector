@@ -274,6 +274,20 @@ namespace kf
             return m_vector.insert(m_vector.begin() + idx, count, value);
         }
 
+        template<class InputIt>
+        constexpr std::optional<iterator> insert(const_iterator pos, InputIt first, InputIt last) noexcept
+        {
+            const auto idx = pos - m_vector.begin();
+            const auto count = std::distance(first, last);
+
+            if (auto status = reallocateGrowth(m_vector.size() + count); !NT_SUCCESS(status))
+            {
+                return std::nullopt;
+            }
+
+            return m_vector.insert(m_vector.begin() + idx, first, last);
+        }
+
         template<class... Args>
         constexpr std::optional<iterator> emplace(const_iterator pos, Args&&... args) noexcept
         {
