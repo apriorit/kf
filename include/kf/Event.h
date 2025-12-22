@@ -30,10 +30,10 @@ namespace kf
             return !!KeReadStateEvent(&m_event);
         }
 
-        NTSTATUS wait(_In_opt_ PLARGE_INTEGER timeout = nullptr)
+        NTSTATUS wait(_In_opt_ const LARGE_INTEGER* timeout = nullptr)
         {
             ASSERT(KeGetCurrentIrql() <= APC_LEVEL);
-            return KeWaitForSingleObject(&m_event, Executive, KernelMode, false, timeout);
+            return KeWaitForSingleObject(&m_event, Executive, KernelMode, false, const_cast<LARGE_INTEGER*>(timeout));
         }
 
     private:
