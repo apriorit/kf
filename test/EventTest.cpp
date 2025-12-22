@@ -4,8 +4,8 @@
 
 SCENARIO("kf::Event")
 {
-    constexpr auto kOneMillisecond = 10'000; // 1ms
-    LARGE_INTEGER kZeroTimeout{0};
+    constexpr LARGE_INTEGER kOneMillisecond{ .QuadPart = -10'000LL }; // 1ms
+    constexpr LARGE_INTEGER kZeroTimeout{};
 
     GIVEN("NotificationEvent with true state")
     {
@@ -96,10 +96,8 @@ SCENARIO("kf::Event")
         WHEN("A wait is performed with a timeout and the event is not set")
         {
             kf::Event ev(NotificationEvent, false);
-            LARGE_INTEGER timeout;
-            timeout.QuadPart = -kOneMillisecond;
 
-            const auto status = ev.wait(&timeout);
+            const auto status = ev.wait(&kOneMillisecond);
 
             THEN("The wait times out")
             {
@@ -145,12 +143,11 @@ SCENARIO("kf::Event")
 
             event.set();
 
-            THEN("Only one wait is successed and event resets")
+            THEN("The first wait succeeds, the second timeouts and event resets")
             {
-                auto status1 = event.wait(&kZeroTimeout);
-                auto status2 = event.wait(&kZeroTimeout);
-                REQUIRE_NT_SUCCESS(status1);
-                REQUIRE(status2 == STATUS_TIMEOUT);
+                REQUIRE(STATUS_SUCCESS == event.wait(&kZeroTimeout));
+                REQUIRE(!event.isSet());
+                REQUIRE(STATUS_TIMEOUT == event.wait(&kZeroTimeout));
                 REQUIRE(!event.isSet());
             }
         }
