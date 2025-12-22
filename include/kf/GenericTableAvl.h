@@ -152,6 +152,9 @@ namespace kf
         __drv_allocatesMem(Mem)
         static void* NTAPI allocateRoutine(_In_ RTL_AVL_TABLE*, _In_ CLONG byteSize)
         {
+// 28160: Must succeed pool allocations are forbidden. Allocation failures cause a system crash.
+// 4996: ExAllocatePoolWithTag is deprecated, use ExAllocatePool2
+#pragma warning(suppress: 28160 4996) 
             return ::ExAllocatePoolWithTag(poolType, byteSize, PoolTag);
         }
 

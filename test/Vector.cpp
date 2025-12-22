@@ -393,6 +393,119 @@ SCENARIO("vector insert operations")
     }
 }
 
+SCENARIO("vector insert range operations")
+{
+    GIVEN("empty vector")
+    {
+        kf::vector<int, PagedPool> v;
+
+        WHEN("insert range from array at begin")
+        {
+            int arr[] = {10, 20, 30};
+            auto iter = v.insert(v.begin(), std::begin(arr), std::end(arr));
+
+            THEN("elements are inserted successfully")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 3);
+                REQUIRE(v[0] == 10);
+                REQUIRE(v[1] == 20);
+                REQUIRE(v[2] == 30);
+            }
+        }
+
+        WHEN("insert range from another vector")
+        {
+            kf::vector<int, PagedPool> source;
+            REQUIRE_NT_SUCCESS(source.push_back(100));
+            REQUIRE_NT_SUCCESS(source.push_back(200));
+            REQUIRE_NT_SUCCESS(source.push_back(300));
+
+            auto iter = v.insert(v.begin(), source.begin(), source.end());
+
+            THEN("elements are inserted successfully")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 3);
+                REQUIRE(v[0] == 100);
+                REQUIRE(v[1] == 200);
+                REQUIRE(v[2] == 300);
+            }
+        }
+
+        WHEN("insert empty range")
+        {
+            int arr[] = {1, 2, 3};
+            auto iter = v.insert(v.begin(), std::begin(arr), std::begin(arr));
+
+            THEN("nothing is inserted")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 0);
+                REQUIRE(v.empty() == true);
+            }
+        }
+    }
+
+    GIVEN("vector with elements")
+    {
+        kf::vector<int, PagedPool> v;
+        REQUIRE_NT_SUCCESS(v.push_back(1));
+        REQUIRE_NT_SUCCESS(v.push_back(5));
+
+        WHEN("insert range at beginning")
+        {
+            int arr[] = {-2, -1, 0};
+            auto iter = v.insert(v.begin(), std::begin(arr), std::end(arr));
+
+            THEN("elements are inserted at correct position")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 5);
+                REQUIRE(v[0] == -2);
+                REQUIRE(v[1] == -1);
+                REQUIRE(v[2] == 0);
+                REQUIRE(v[3] == 1);
+                REQUIRE(v[4] == 5);
+            }
+        }
+
+        WHEN("insert range in middle")
+        {
+            int arr[] = {2, 3, 4};
+            auto iter = v.insert(v.begin() + 1, std::begin(arr), std::end(arr));
+
+            THEN("elements are inserted in correct position")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 5);
+                REQUIRE(v[0] == 1);
+                REQUIRE(v[1] == 2);
+                REQUIRE(v[2] == 3);
+                REQUIRE(v[3] == 4);
+                REQUIRE(v[4] == 5);
+            }
+        }
+
+        WHEN("insert range at end")
+        {
+            int arr[] = {6, 7, 8};
+            auto iter = v.insert(v.end(), std::begin(arr), std::end(arr));
+
+            THEN("elements are inserted at end")
+            {
+                REQUIRE(iter.has_value());
+                REQUIRE(v.size() == 5);
+                REQUIRE(v[0] == 1);
+                REQUIRE(v[1] == 5);
+                REQUIRE(v[2] == 6);
+                REQUIRE(v[3] == 7);
+                REQUIRE(v[4] == 8);
+            }
+        }
+    }
+}
+
 SCENARIO("vector emplace operations")
 {
     GIVEN("empty vector")

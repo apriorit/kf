@@ -24,14 +24,16 @@ namespace kf
         TimerThread& operator=(TimerThread&&) = delete;
         TimerThread& operator=(const TimerThread&) = delete;
 
-        NTSTATUS start(LARGE_INTEGER period, invocable auto&& callback)
+        // routine sould be `void (T::*)()`
+        template<auto routine, class T>
+        NTSTATUS start(T* obj, LARGE_INTEGER period)
         {
             // Need a negative value for KeWaitForSingleObject
             m_period.QuadPart = -period.QuadPart;
 
-            using Context = pair<TimerThread*, decltype(callback)>;
+            using Context = pair<TimerThread*, T*>;
 
-            auto context = make_unique<Context, PagedPool>(this, move(callback));
+            auto context = make_unique<Context, PagedPool>(this, obj);
             if (!context)
             {
                 return STATUS_INSUFFICIENT_RESOURCES;
@@ -41,7 +43,7 @@ namespace kf
                 {
                     {
                         unique_ptr<Context> context{ static_cast<Context*>(rawContext) };
-                        context->first->threadRoutine(context->second);
+                        context->first->threadRoutine<routine>(context->second);
                     }
 
                     PsTerminateSystemThread(STATUS_SUCCESS);
@@ -98,11 +100,12 @@ namespace kf
             return status;
         }
 
-        void threadRoutine(invocable auto callback)
+        template<auto routine, class T>
+        void threadRoutine(T* obj)
         {
             while (STATUS_TIMEOUT == KeWaitForSingleObject(&m_stopEvent, Executive, KernelMode, false, &m_period))
             {
-                callback();
+                (obj->*routine)();
             }
         }
 
