@@ -5,26 +5,20 @@ using namespace kf;
 
 namespace
 {
-    using Map = kf::TreeMap<int, int, PagedPool>;
+    using IntTreeMap = kf::TreeMap<int, int, PagedPool>;
 
-    constexpr int KeyToValue(int key)
+    constexpr int keyToValue(int key)
     {
         return key * 10;
     }
 
-    constexpr int ValueToKey(int value)
-    {
-        return value / 10;
-    }
-
-    constexpr int kMinKey = 1;
-    constexpr int kMaxKey = 5;
-    constexpr int kMapSize = kMaxKey - kMinKey + 1;
+    constexpr std::array kKeys = { 1, 5, 3, 4, 2 };
+    constexpr std::array kNonExistingKeys = { -1, 0, 6, 7, 8 };
 }
 
 SCENARIO("TreeMap: all methods")
 {
-    Map map;
+    IntTreeMap map;
 
     GIVEN("empty map")
     {
@@ -50,7 +44,7 @@ SCENARIO("TreeMap: all methods")
 
         WHEN("containsKey is called")
         {
-            auto contains = map.containsKey(kMinKey);
+            auto contains = map.containsKey(kKeys.front());
 
             THEN("the value is false")
             {
@@ -60,7 +54,7 @@ SCENARIO("TreeMap: all methods")
 
         WHEN("get is called")
         {
-            auto value = map.get(kMinKey);
+            auto value = map.get(kKeys.front());
 
             THEN("the value is nullptr")
             {
@@ -70,7 +64,7 @@ SCENARIO("TreeMap: all methods")
 
         WHEN("remove is called")
         {
-            auto removed = map.remove(kMinKey);
+            auto removed = map.remove(kKeys.front());
 
             THEN("the removal should fail")
             {
@@ -92,9 +86,9 @@ SCENARIO("TreeMap: all methods")
 
     GIVEN("map with elements")
     {
-        for (int key = kMinKey; key <= kMaxKey; ++key)
+        for (int key : kKeys)
         {
-            REQUIRE_NT_SUCCESS(map.put(key, KeyToValue(key)));
+            REQUIRE_NT_SUCCESS(map.put(key, keyToValue(key)));
         }
 
         WHEN("isEmpty is called")
@@ -109,48 +103,54 @@ SCENARIO("TreeMap: all methods")
         {
             THEN("the size is valid")
             {
-                REQUIRE(map.size() == kMapSize);
+                REQUIRE(map.size() == kKeys.size());
             }
         }
 
         WHEN("containsKey is called for existing key")
         {
-            auto contains = map.containsKey(kMinKey + 1);
-
             THEN("the value should be true")
             {
-                REQUIRE(contains);
+                for (int key : kKeys)
+                {
+                    REQUIRE(map.containsKey(key));
+                }
             }
         }
 
         WHEN("containsKey is called for non-existing key")
         {
-            auto contains = map.containsKey(kMinKey - 1);
-
             THEN("the value should be false")
             {
-                REQUIRE(!contains);
+                for (int key : kNonExistingKeys)
+                {
+                    REQUIRE(!map.containsKey(key));
+                }
             }
         }
 
         WHEN("get is called for existing key")
         {
-            auto value = map.get(kMaxKey / 2);
-
             THEN("the value should be valid")
             {
-                REQUIRE(value);
-                REQUIRE(*value == KeyToValue(kMaxKey / 2));
+                for (int key : kKeys)
+                {
+                    auto value = map.get(key);
+                    REQUIRE(value);
+                    REQUIRE(*value == keyToValue(key));
+                }
             }
         }
 
         WHEN("get is called for non-existing key")
         {
-            auto value = map.get(kMaxKey + 2);
-
             THEN("the value should be nullptr")
             {
-                REQUIRE(!value);
+                for (int key : kNonExistingKeys)
+                {
+                    auto value = map.get(key);
+                    REQUIRE(!value);
+                }
             }
         }
 
@@ -161,13 +161,13 @@ SCENARIO("TreeMap: all methods")
             THEN("the value should be valid")
             {
                 REQUIRE(value);
-                REQUIRE(*value == KeyToValue(kMinKey));
+                REQUIRE(*value == keyToValue(std::ranges::min(kKeys)));
             }
         }
 
         WHEN("getByIndex is called for non-existing index")
         {
-            auto value = map.getByIndex(kMapSize + 1);
+            auto value = map.getByIndex(static_cast<ULONG>(kKeys.size()));
 
             THEN("the value should be nullptr")
             {
@@ -177,8 +177,8 @@ SCENARIO("TreeMap: all methods")
 
         WHEN("put is called for new key")
         {
-            int newKey = kMaxKey + 1;
-            int newValue = KeyToValue(newKey);
+            int newKey = kNonExistingKeys.front();
+            int newValue = keyToValue(newKey);
             auto status = map.put(newKey, newValue);
 
             THEN("the put should succeed")
@@ -195,14 +195,14 @@ SCENARIO("TreeMap: all methods")
 
             THEN("the size should increase")
             {
-                REQUIRE(map.size() == kMapSize + 1);
+                REQUIRE(map.size() == kKeys.size() + 1);
             }
         }
 
         WHEN("put is called for existing key")
         {
-            const int newValue = KeyToValue(kMinKey) + 100;
-            auto status = map.put(kMinKey, newValue);
+            int newValue = keyToValue(kKeys.front()) + 100;
+            auto status = map.put(kKeys.front(), newValue);
 
             THEN("the put should succeed")
             {
@@ -211,7 +211,7 @@ SCENARIO("TreeMap: all methods")
 
             THEN("the value should be updated")
             {
-                auto value = map.get(kMinKey);
+                auto value = map.get(kKeys.front());
                 REQUIRE(value);
                 REQUIRE(*value == newValue);
             }
@@ -219,7 +219,7 @@ SCENARIO("TreeMap: all methods")
 
         WHEN("remove is called for existing key")
         {
-            auto removed = map.remove(kMinKey);
+            auto removed = map.remove(kKeys.front());
 
             THEN("the removal should succeed")
             {
@@ -228,19 +228,19 @@ SCENARIO("TreeMap: all methods")
             
             THEN("the key is no longer in the map")
             {
-                auto value = map.get(kMinKey);
+                auto value = map.get(kKeys.front());
                 REQUIRE(!value);
             }
 
             THEN("the size is reduced")
             {
-                REQUIRE(map.size() == kMapSize - 1);
+                REQUIRE(map.size() == kKeys.size() - 1);
             }
         }
 
         WHEN("remove is called for non-existing key")
         {
-            auto removed = map.remove(kMinKey - 1);
+            auto removed = map.remove(kNonExistingKeys.front());
 
             THEN("the removal should fail")
             {
@@ -249,7 +249,7 @@ SCENARIO("TreeMap: all methods")
 
             THEN("the size remains unchanged")
             {
-                REQUIRE(map.size() == kMapSize);
+                REQUIRE(map.size() == kKeys.size());
             }
         }
 
@@ -265,35 +265,37 @@ SCENARIO("TreeMap: all methods")
             
             THEN("valid key is no longer accessible")
             {
-                REQUIRE(!map.get(kMinKey));
+                for (int key : kKeys)
+                {
+                    REQUIRE(!map.get(key));
+                }
             }
         }
 
         WHEN("iterate over map using getByIndex")
         {
-            int count = 0;
-
-            THEN("all elements are accessible")
+            THEN("all elements are accessible and sorted in ascending order")
             {
-                for (auto i = 0; i < kMapSize; ++i)
+                std::array<int, kKeys.size()> sortedKeys = kKeys;
+                std::ranges::sort(sortedKeys);
+
+                for (auto i = 0; i < kKeys.size(); ++i)
                 {
-                    auto val = map.getByIndex(i);
-                    REQUIRE(val);
-                    REQUIRE(*val == KeyToValue(kMinKey + i));
-                    ++count;
+                    auto value = map.getByIndex(i);
+                    REQUIRE(value);
+                    REQUIRE(*value == keyToValue(sortedKeys[i]));
                 }
-                REQUIRE(count == kMapSize);
             }
         }
 
-        WHEN("map is moved")
+        WHEN("map is moved by constructor")
         {
-            Map movedMap = std::move(map);
+            IntTreeMap destinationMap = std::move(map);
 
-            THEN("the moved map is not empty")
+            THEN("destinationMap map is not empty")
             {
-                REQUIRE(!movedMap.isEmpty());
-                REQUIRE(movedMap.size() == kMapSize);
+                REQUIRE(!destinationMap.isEmpty());
+                REQUIRE(destinationMap.size() == kKeys.size());
             }
 
             THEN("original map is empty")
@@ -304,11 +306,39 @@ SCENARIO("TreeMap: all methods")
 
             THEN("moved elements are accessible")
             {
-                for (int key = kMinKey; key <= kMaxKey; ++key)
+                for (int key : kKeys)
                 {
-                    auto value = movedMap.get(key);
+                    auto value = destinationMap.get(key);
                     REQUIRE(value);
-                    REQUIRE(*value == KeyToValue(key));
+                    REQUIRE(*value == keyToValue(key));
+                }
+            }
+        }
+
+        WHEN("map is moved by operator=")
+        {
+            IntTreeMap destinationMap;
+            destinationMap = std::move(map);
+
+            THEN("destinationMap map is not empty")
+            {
+                REQUIRE(!destinationMap.isEmpty());
+                REQUIRE(destinationMap.size() == kKeys.size());
+            }
+
+            THEN("original map is empty")
+            {
+                REQUIRE(map.isEmpty());
+                REQUIRE(map.size() == 0);
+            }
+
+            THEN("moved elements are accessible")
+            {
+                for (int key : kKeys)
+                {
+                    auto value = destinationMap.get(key);
+                    REQUIRE(value);
+                    REQUIRE(*value == keyToValue(key));
                 }
             }
         }
@@ -318,36 +348,36 @@ SCENARIO("TreeMap: all methods")
 namespace
 {
     // Counts the number of times an object is constructed and destructed.
-    struct ConstructionDestructionCounter
+    struct LifecycleCounter
     {
     public:
-        ConstructionDestructionCounter()
+        LifecycleCounter()
         {
             ++s_constructCount;
         }
 
-        ConstructionDestructionCounter(ConstructionDestructionCounter&&) noexcept
+        LifecycleCounter(LifecycleCounter&&) noexcept
         {
             ++s_constructCount;
         }
 
-        ConstructionDestructionCounter& operator=(ConstructionDestructionCounter&& other) noexcept = default;
+        LifecycleCounter& operator=(LifecycleCounter&& other) noexcept = default;
 
-        ~ConstructionDestructionCounter()
+        ~LifecycleCounter()
         {
             ++s_destructCount;
         }
 
-        ConstructionDestructionCounter(const ConstructionDestructionCounter&) = delete;
-        ConstructionDestructionCounter& operator=(const ConstructionDestructionCounter&) = delete;
+        LifecycleCounter(const LifecycleCounter&) = delete;
+        LifecycleCounter& operator=(const LifecycleCounter&) = delete;
 
-        static void ResetCounters()
+        static void resetCounters()
         {
             s_constructCount = 0;
             s_destructCount = 0;
         }
 
-        static bool AllObjectsAreDestructed()
+        static bool areAllObjectsDestructed()
         {
             return s_constructCount == s_destructCount;
         }
@@ -357,120 +387,147 @@ namespace
         static inline int s_destructCount = 0;
     };
 
-    using DestructionMap = kf::TreeMap<int, ConstructionDestructionCounter, PagedPool>;
+    using LifecycleCounterTreeMap = kf::TreeMap<int, LifecycleCounter, PagedPool>;
 }
 
-SCENARIO("TreeMap: destruction check")
+SCENARIO("TreeMap: lifecycle check")
 {
-    constexpr int kKey1 = 1;
-    constexpr int kKey2 = 2;
-    constexpr int kKey3 = 3;
-
+    LifecycleCounter::resetCounters();
+    
     GIVEN("map with one item")
     {
-        ConstructionDestructionCounter::ResetCounters();
-        DestructionMap map;
+        LifecycleCounterTreeMap map;
 
-        REQUIRE_NT_SUCCESS(map.put(kKey1, ConstructionDestructionCounter()));
+        REQUIRE_NT_SUCCESS(map.put(kKeys.front(), LifecycleCounter{}));
+        REQUIRE(!LifecycleCounter::areAllObjectsDestructed());
 
         WHEN("item is removed by key")
         {
-            auto removed = map.remove(kKey1);
+            auto removed = map.remove(kKeys.front());
 
-            THEN("destructor is called once")
+            THEN("all objects are destructed")
             {
                 REQUIRE(removed);
-                REQUIRE(ConstructionDestructionCounter::AllObjectsAreDestructed());
+                REQUIRE(LifecycleCounter::areAllObjectsDestructed());
             }
         }
 
-        WHEN("item is removed by value")
+        WHEN("item is removed by object")
         {
-            auto value = map.get(kKey1);
+            auto value = map.get(kKeys.front());
             auto removed = map.removeByObject(value);
 
-            THEN("destructor is called once")
+            THEN("all objects are destructed")
             {
                 REQUIRE(removed);
-                REQUIRE(ConstructionDestructionCounter::AllObjectsAreDestructed());
+                REQUIRE(LifecycleCounter::areAllObjectsDestructed());
+            }
+        }
+
+        WHEN("map is cleared")
+        {
+            map.clear();
+
+            THEN("all objects are destructed")
+            {
+                REQUIRE(LifecycleCounter::areAllObjectsDestructed());
             }
         }
     }
 
     GIVEN("map with multiple items")
     {
-        ConstructionDestructionCounter::ResetCounters();
-
-        WHEN("map is going out of scope")
         {
-            DestructionMap map;
-            map.put(kKey1, ConstructionDestructionCounter());
-            map.put(kKey2, ConstructionDestructionCounter());
-            map.put(kKey3, ConstructionDestructionCounter());
+            LifecycleCounterTreeMap map;
+
+            for (int key : kKeys)
+            {
+                map.put(key, LifecycleCounter{});
+            }
+
+            REQUIRE(!LifecycleCounter::areAllObjectsDestructed());
         }
 
-        THEN("destructors are called for all items")
+        WHEN("map has gone out of scope")
         {
-            REQUIRE(ConstructionDestructionCounter::AllObjectsAreDestructed());
+            THEN("all objects are destructed")
+            {
+                REQUIRE(LifecycleCounter::areAllObjectsDestructed());
+            }
         }
     }
 
-    GIVEN("map moved back from nested scope")
+    GIVEN("map value overwrite")
     {
-        ConstructionDestructionCounter::ResetCounters();
+        LifecycleCounterTreeMap map;
 
-        DestructionMap movedMap;
+        REQUIRE_NT_SUCCESS(map.put(kKeys.front(), LifecycleCounter{}));
+        REQUIRE(!LifecycleCounter::areAllObjectsDestructed());
+
+        WHEN("value is overwritten for the same key")
         {
-            DestructionMap map;
-            map.put(kKey1, std::move(ConstructionDestructionCounter()));
-            map.put(kKey2, std::move(ConstructionDestructionCounter()));
+            REQUIRE_NT_SUCCESS(map.put(kKeys.front(), LifecycleCounter{}));
 
-            movedMap = std::move(map);
-
-            THEN("destructors are called for moved-from objests only")
+            THEN("all objects are not destructed yet")
             {
-                REQUIRE(!ConstructionDestructionCounter::AllObjectsAreDestructed());
+                REQUIRE(!LifecycleCounter::areAllObjectsDestructed());
             }
 
-            THEN("the moved map is not empty")
+            THEN("removing the key destructs remaining objects")
             {
-                REQUIRE(!movedMap.isEmpty());
-                REQUIRE(movedMap.size() == 2);
-            }
-
-            THEN("original map is empty")
-            {
-                REQUIRE(map.isEmpty());
-                REQUIRE(map.size() == 0);
+                auto removed = map.remove(kKeys.front());
+                REQUIRE(removed);
+                REQUIRE(LifecycleCounter::areAllObjectsDestructed());
             }
         }
-        
-        WHEN("original map is out of scope")
+    }
+
+    GIVEN("map with multiple items moved to another map")
+    {
+        LifecycleCounterTreeMap destinationMap;
+
         {
-            THEN("destructors for moved-to objects are still not called")
+            LifecycleCounterTreeMap map;
+
+            for (int key : kKeys)
             {
-                REQUIRE(!ConstructionDestructionCounter::AllObjectsAreDestructed());
+                map.put(key, LifecycleCounter{});
             }
 
-            THEN("the moved map is not empty")
-            {
-                REQUIRE(!movedMap.isEmpty());
-                REQUIRE(movedMap.size() == 2);
-            }
+            destinationMap = std::move(map);
+
+            REQUIRE(!LifecycleCounter::areAllObjectsDestructed());
         }
 
-        WHEN("movedMap is cleared")
+        WHEN("original map has gone out of scope but destination map lives")
         {
-            movedMap.clear();
-
-            THEN("destructors are called for all objects")
+            THEN("all objects are not destructed")
             {
-                REQUIRE(ConstructionDestructionCounter::AllObjectsAreDestructed());
+                REQUIRE(!LifecycleCounter::areAllObjectsDestructed());
             }
+        }
+    }
 
-            THEN("the moved map is empty")
+    GIVEN("map with multiple items moved to another map")
+    {
+        LifecycleCounterTreeMap map;
+
+        for (int key : kKeys)
+        {
+            map.put(key, LifecycleCounter{});
+        }
+
+        REQUIRE(!LifecycleCounter::areAllObjectsDestructed());
+
+        {
+            LifecycleCounterTreeMap destinationMap = std::move(map);
+        }
+
+        WHEN("destination map has gone out of scope but original map lives")
+        {
+            THEN("all objects are destructed")
             {
-                REQUIRE(movedMap.isEmpty());
+                REQUIRE(LifecycleCounter::areAllObjectsDestructed());
             }
         }
     }

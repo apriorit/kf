@@ -1,6 +1,8 @@
 #pragma once
+#define NOMINMAX
 #include <ntifs.h>
 #include <algorithm>
+#include <ranges>
 #include <array>
 #include <kmtest/kmtest.h>
 
