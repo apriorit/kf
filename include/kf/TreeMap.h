@@ -101,6 +101,8 @@ namespace kf
             return m_table.deleteElement(Node::fromKey(key));
         }
 
+        // Important! Use only the value returned by other map methods.
+        // The usage of the value that doesn't exist in map will lead to undefined behavior.
         bool removeByObject(const V* value)
         {
             Node* node = CONTAINING_RECORD(value, Node, m_value);

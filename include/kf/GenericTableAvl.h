@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <utility>
+#include <kf/stl/new>
 
 namespace kf
 {
@@ -11,6 +12,9 @@ namespace kf
     class GenericTableAvl
     {
     public:
+        GenericTableAvl(const GenericTableAvl&) = delete;
+        GenericTableAvl& operator=(const GenericTableAvl&) = delete;
+
         GenericTableAvl()
         {
             init();
@@ -113,9 +117,6 @@ namespace kf
         }
 
     private:
-        GenericTableAvl(const GenericTableAvl&);
-        GenericTableAvl& operator=(const GenericTableAvl&);
-
         void init()
         {
 #pragma warning(suppress: 28023) // missing _Function_class_ annotation
@@ -152,10 +153,7 @@ namespace kf
         __drv_allocatesMem(Mem)
         static void* NTAPI allocateRoutine(_In_ RTL_AVL_TABLE*, _In_ CLONG byteSize)
         {
-// 28160: Must succeed pool allocations are forbidden. Allocation failures cause a system crash.
-// 4996: ExAllocatePoolWithTag is deprecated, use ExAllocatePool2
-#pragma warning(suppress: 28160 4996) 
-            return ::ExAllocatePoolWithTag(poolType, byteSize, PoolTag);
+            return operator new(byteSize, poolType);
         }
 
         _IRQL_requires_same_
@@ -163,7 +161,7 @@ namespace kf
         static void NTAPI freeRoutine(_In_ RTL_AVL_TABLE*, _In_ __drv_freesMem(Mem) _Post_invalid_ void* buffer)
         {
             reinterpret_cast<T*>(static_cast<RTL_BALANCED_LINKS*>(buffer) + 1)->~T();
-            ::ExFreePoolWithTag(buffer, PoolTag);
+            operator delete(buffer);
         }
 
         _IRQL_requires_same_
