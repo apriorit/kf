@@ -20,7 +20,7 @@ namespace kf
             init();
         }
 
-        GenericTableAvl(_Inout_ GenericTableAvl&& another)
+        GenericTableAvl(_Inout_ GenericTableAvl&& another) noexcept
         {
             moveInit(another);
         }
@@ -105,7 +105,7 @@ namespace kf
             }
         }
 
-        GenericTableAvl& operator=(_Inout_ GenericTableAvl&& another)
+        GenericTableAvl& operator=(_Inout_ GenericTableAvl&& another) noexcept
         {
             if (this != &another)
             {
@@ -119,7 +119,6 @@ namespace kf
     private:
         void init()
         {
-#pragma warning(suppress: 28023) // missing _Function_class_ annotation
             ::RtlInitializeGenericTableAvl(&m_table, &compareRoutine, &allocateRoutine, &freeRoutine, this);
         }
 
@@ -186,9 +185,6 @@ namespace kf
                 return GenericEqual;
             }
         }
-
-    private:
-        enum { PoolTag = '++TG' };
 
     private:
         RTL_AVL_TABLE m_table;

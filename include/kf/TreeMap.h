@@ -16,7 +16,7 @@ namespace kf
         {
         }
 
-        TreeMap(_Inout_ TreeMap&& another) : m_table(std::move(another.m_table))
+        TreeMap(_Inout_ TreeMap&& another) noexcept : m_table(std::move(another.m_table))
         {
         }
 
@@ -109,7 +109,7 @@ namespace kf
             return m_table.deleteElement(*node);
         }
 
-        TreeMap& operator=(_Inout_ TreeMap&& another)
+        TreeMap& operator=(_Inout_ TreeMap&& another) noexcept
         {
             m_table = std::move(another.m_table);
             return *this;
@@ -131,7 +131,7 @@ namespace kf
             {
             }
 
-            Node(Node&& another) : m_key(std::move(another.m_key)), m_value(std::move(another.m_value))
+            Node(Node&& another) noexcept : m_key(std::move(another.m_key)), m_value(std::move(another.m_value))
             {
             }
 
