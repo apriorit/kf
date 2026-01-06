@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <ranges>
 #include <array>
+#include <span>
 #include <kmtest/kmtest.h>
 
 // TODO: move this default implementation to kf

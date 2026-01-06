@@ -63,6 +63,7 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     AutoSpinLockTest.cpp
     EResourceSharedLockTest.cpp
     RecursiveAutoSpinLockTest.cpp
+    UStringBuilderTest.cpp
     USimpleStringTest.cpp
 )
 
