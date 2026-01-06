@@ -120,7 +120,7 @@ namespace kf
                     return status;
                 }
 
-                const ULONG saclSize = sizeof(ACL) + lowMandatorySidLength + sizeof SYSTEM_MANDATORY_LABEL_ACE;
+                const ULONG saclSize = sizeof(ACL) + lowMandatorySidLength + sizeof(SYSTEM_MANDATORY_LABEL_ACE);
                 status = sacl.emplace(saclSize);
                 if (!NT_SUCCESS(status))
                 {
@@ -200,7 +200,7 @@ namespace kf
             PMDL inputMdl = nullptr;
             PMDL outputMdl = nullptr;
 
-            NTSTATUS status = [&]()
+            NTSTATUS status = [&]() -> NTSTATUS
             {
                 //
                 // Lock user buffers so __try/__except is required only here and not in the handler->onMessage
