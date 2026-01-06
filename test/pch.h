@@ -2,6 +2,7 @@
 #include <ntifs.h>
 #include <algorithm>
 #include <array>
+#include <span>
 #include <kmtest/kmtest.h>
 
 // TODO: move this default implementation to kf
