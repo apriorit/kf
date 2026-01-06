@@ -121,7 +121,7 @@ SCENARIO("kf::Semaphore")
             sem.release();
             sem.release();
 
-            THEN("Two immediate acquires succeed, next fails")
+            THEN("Two immediate acquires succeed, next times out")
             {
                 REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
                 REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
