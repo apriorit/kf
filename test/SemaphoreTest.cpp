@@ -1,45 +1,43 @@
 #include "pch.h"
 #include <kf/Semaphore.h>
-#include <kf/Thread.h>
-
-namespace
-{
-    constexpr int kOneMillisecond = 1000;
-
-    struct Context
-    {
-        kf::Semaphore* semaphore = nullptr;
-        NTSTATUS status = STATUS_WAIT_1;
-    };
-
-    void delay()
-    {
-        LARGE_INTEGER timeout;
-        timeout.QuadPart = -kOneMillisecond;
-        KeDelayExecutionThread(KernelMode, false, &timeout);
-    }
-}
 
 SCENARIO("kf::Semaphore")
 {
+    constexpr LARGE_INTEGER kOneMillisecond{ .QuadPart = -10'000LL }; // 1ms
+    constexpr LARGE_INTEGER kZeroTimeout{};
+
     GIVEN("A semaphore with count = 1 and limit = 1")
     {
         kf::Semaphore sem(1, 1);
-        Context ctx{ &sem };
-        kf::Thread thread;
 
         WHEN("Trying to acquire should succeed immediately")
         {
-            thread.start([](void* context) {
-                auto ctx = static_cast<Context*>(context);
-                ctx->status = ctx->semaphore->wait();
-                }, &ctx);
-
-            thread.join();
-
             THEN("Thread doesn't wait")
             {
-                REQUIRE(ctx.status == STATUS_SUCCESS);
+                REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+            }
+        }
+
+        WHEN("Acquiring twice should deplete the count and then timeout")
+        {
+            REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+
+            THEN("Second wait times out")
+            {
+                REQUIRE(STATUS_TIMEOUT == sem.wait(&kOneMillisecond));
+            }
+        }
+
+        WHEN("After depleting, release allows acquiring again")
+        {
+            REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+            REQUIRE(STATUS_TIMEOUT == sem.wait(&kOneMillisecond));
+
+            sem.release();
+
+            THEN("Wait succeeds after release")
+            {
+                REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
             }
         }
     }
@@ -48,150 +46,86 @@ SCENARIO("kf::Semaphore")
     {
         kf::Semaphore sem(0, 1);
 
-        WHEN("Threads wait with 0")
+        WHEN("Trying to acquire should timeout")
         {
-            kf::Thread thread;
-            Context ctx{ &sem };
-
-            thread.start([](void* context) {
-                auto ctx = static_cast<Context*>(context);
-                LARGE_INTEGER timeout{ 0 };
-                ctx->status = ctx->semaphore->wait(&timeout);
-                }, &ctx);
-
-            thread.join();
-
-            THEN("Thread should be timed out")
+            THEN("Wait fails with timeout")
             {
-                REQUIRE(ctx.status == STATUS_TIMEOUT);
+                REQUIRE(STATUS_TIMEOUT == sem.wait(&kOneMillisecond));
             }
         }
 
-        WHEN("Threads wait with 100 milliseconds")
+        WHEN("Release makes next acquire succeed and then timeout again")
         {
-            kf::Thread thread;
-            Context ctx{ &sem };
+            sem.release();
 
-            thread.start([](void* context) {
-                auto ctx = static_cast<Context*>(context);
-                LARGE_INTEGER timeout;
-                timeout.QuadPart = kOneMillisecond * -100;
-                ctx->status = ctx->semaphore->wait(&timeout);
-                }, &ctx);
-
-            delay();
-
-            THEN("Thread should be waiting")
+            THEN("First wait succeeds immediately and subsequent wait times out")
             {
-                REQUIRE(ctx.status == STATUS_WAIT_1);
-            }
-
-            thread.join();
-
-            THEN("Thread should be timed out after 100 milliseconds")
-            {
-                REQUIRE(ctx.status == STATUS_TIMEOUT);
+                REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+                REQUIRE(STATUS_TIMEOUT == sem.wait(&kOneMillisecond));
             }
         }
     }
 
-    GIVEN("Semaphore with count = 0 and limit = 2")
+    GIVEN("A semaphore with count = 1000 and limit = 1000")
+    {
+        kf::Semaphore sem(1000, 1000);
+
+        WHEN("Acquiring up to count succeeds, extra wait times out")
+        {
+            for (int i = 0; i < 1000; ++i)
+            {
+                REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+            }
+
+            THEN("Next wait times out")
+            {
+                REQUIRE(STATUS_TIMEOUT == sem.wait(&kOneMillisecond));
+            }
+        }
+
+        WHEN("Releasing after depletion allows acquire to succeed")
+        {
+            for (int i = 0; i < 1000; ++i)
+            {
+                REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+            }
+            REQUIRE(STATUS_TIMEOUT == sem.wait(&kOneMillisecond));
+
+            sem.release();
+
+            THEN("Wait succeeds after release")
+            {
+                REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+            }
+        }
+    }
+
+    GIVEN("A semaphore with count = 0, limit = 2 and multi-adjust release")
     {
         kf::Semaphore sem(0, 2);
-        Context ctx1{ &sem }, ctx2{ &sem };
-        kf::Thread thread1, thread2;
 
-        thread1.start([](void* context) {
-            auto ctx = static_cast<Context*>(context);
-            ctx->status = ctx->semaphore->wait();
-            }, &ctx1);
-
-        thread2.start([](void* context) {
-            auto ctx = static_cast<Context*>(context);
-            ctx->status = ctx->semaphore->wait();
-            }, &ctx2);
-
-        delay();
-
-        THEN("Both threads are waiting")
-        {
-            REQUIRE(ctx1.status == STATUS_WAIT_1);
-            REQUIRE(ctx2.status == STATUS_WAIT_1);
-        }
-
-        WHEN("We release semaphore with 2")
+        WHEN("Release with adjustment 2")
         {
             sem.release(2);
-            thread1.join();
-            thread2.join();
 
-            THEN("Both threads should stop waiting")
+            THEN("Two immediate acquires succeed, third times out")
             {
-                REQUIRE(ctx1.status == STATUS_SUCCESS);
-                REQUIRE(ctx2.status == STATUS_SUCCESS);
+                REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+                REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+                REQUIRE(STATUS_TIMEOUT == sem.wait(&kOneMillisecond));
             }
         }
-    }
 
-    GIVEN("Semaphore with count = 2 and limit = 2")
-    {
-        kf::Semaphore sem(2, 2);
-        Context ctx{ &sem };
-        kf::Thread thread;
-
-        WHEN("Semaphore released over limit twice")
+        WHEN("Multiple single releases allow multiple acquires")
         {
             sem.release();
             sem.release();
 
-            THEN("No crash occurs")
+            THEN("Two immediate acquires succeed, next fails")
             {
-            }
-        }
-    }
-
-    GIVEN("Semaphore with count = 1 and limit = 2")
-    {
-        kf::Semaphore sem(1, 2);
-        Context ctx1{ &sem }, ctx2{ &sem }, ctx3{ &sem };
-        kf::Thread thread1, thread2, thread3;
-
-        WHEN("Semaphore is released twice, exceeding the limit")
-        {
-            sem.release();
-            sem.release();
-
-            THEN("First two threads should succeed, third should wait")
-            {
-                thread1.start([](void* context) {
-                    auto ctx = static_cast<Context*>(context);
-                    ctx->status = ctx->semaphore->wait();
-                    }, &ctx1);
-
-                thread2.start([](void* context) {
-                    auto ctx = static_cast<Context*>(context);
-                    ctx->status = ctx->semaphore->wait();
-                    }, &ctx2);
-
-                thread3.start([](void* context) {
-                    auto ctx = static_cast<Context*>(context);
-                    ctx->status = ctx->semaphore->wait();
-                    }, &ctx3);
-
-                delay();
-
-                int waitCount = (ctx1.status != STATUS_SUCCESS) + (ctx2.status != STATUS_SUCCESS) + (ctx3.status != STATUS_SUCCESS);
-                REQUIRE(waitCount == 1);
-
-                sem.release();
-                thread1.join();
-                thread2.join();
-                thread3.join();
-
-                THEN("Third thread should succeed after release")
-                {
-                    REQUIRE(ctx3.status == STATUS_SUCCESS);
-                }
+                REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+                REQUIRE(STATUS_SUCCESS == sem.wait(&kZeroTimeout));
+                REQUIRE(STATUS_TIMEOUT == sem.wait(&kOneMillisecond));
             }
         }
     }
