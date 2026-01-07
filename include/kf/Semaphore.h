@@ -21,10 +21,10 @@ namespace kf
             return &m_semaphore;
         }
 
-        NTSTATUS wait(_In_opt_ PLARGE_INTEGER timeout = nullptr)
+        NTSTATUS wait(_In_opt_ const LARGE_INTEGER* timeout = nullptr)
         {
             ASSERT(KeGetCurrentIrql() <= APC_LEVEL);
-            return KeWaitForSingleObject(&m_semaphore, Executive, KernelMode, false, timeout);
+            return KeWaitForSingleObject(&m_semaphore, Executive, KernelMode, false, const_cast<LARGE_INTEGER*>(timeout));
         }
 
         void release(LONG adjustment = 1)

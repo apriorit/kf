@@ -16,7 +16,7 @@ namespace kf
         {
         }
 
-        TreeMap(_Inout_ TreeMap&& another) : m_table(std::move(another.m_table))
+        TreeMap(_Inout_ TreeMap&& another) noexcept : m_table(std::move(another.m_table))
         {
         }
 
@@ -101,13 +101,15 @@ namespace kf
             return m_table.deleteElement(Node::fromKey(key));
         }
 
+        // Important! Use only the value returned by other map methods.
+        // The usage of the value that doesn't exist in map will lead to undefined behavior.
         bool removeByObject(const V* value)
         {
             Node* node = CONTAINING_RECORD(value, Node, m_value);
             return m_table.deleteElement(*node);
         }
 
-        TreeMap& operator=(_Inout_ TreeMap&& another)
+        TreeMap& operator=(_Inout_ TreeMap&& another) noexcept
         {
             m_table = std::move(another.m_table);
             return *this;
@@ -129,7 +131,7 @@ namespace kf
             {
             }
 
-            Node(Node&& another) : m_key(std::move(another.m_key)), m_value(std::move(another.m_value))
+            Node(Node&& another) noexcept : m_key(std::move(another.m_key)), m_value(std::move(another.m_value))
             {
             }
 

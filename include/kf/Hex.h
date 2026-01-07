@@ -8,6 +8,9 @@ namespace kf
 {
     using namespace std;
 
+    ////////////////////////////////////////////////////////////////////////////
+    // The Hex class provides functionality to encode binary data into hexadecimal string representation
+    // and decode hexadecimal strings back into binary data.
     class Hex
     {
     public:
