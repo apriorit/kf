@@ -106,6 +106,7 @@ namespace kf
 
         bool matches(_In_ const USimpleString& expression) const;
         bool matchesIgnoreCase(_In_ const USimpleString& expression) const;
+        LONG toLong(_In_ ULONG base) const;
 
         NTSTATUS concat(_In_ const USimpleString& str)
         {
@@ -334,7 +335,11 @@ namespace kf
         return const_cast<USimpleString*>(this)->end();
     }
 
-    // Comparison
+    // Comparison return code meaning:
+    // Return code	Description
+    // 0: this equals str
+    // <0: this is less than str
+    // >0: this is greater than str
     inline int USimpleString::compareTo(_In_ const UNICODE_STRING& str) const
     {
         return ::RtlCompareUnicodeString(&m_str, &str, FALSE);
@@ -375,11 +380,13 @@ namespace kf
         return equalsIgnoreCase(str.string());
     }
 
+    // Case sensitive lexicographical comparison
     inline bool USimpleString::operator<(_In_ const USimpleString& another) const
     {
         return compareTo(another) < 0;
     }
 
+    // Case sensitive lexicographical comparison
     inline bool USimpleString::operator==(_In_ const USimpleString& another) const
     {
         return equals(another);
@@ -584,5 +591,13 @@ namespace kf
     inline bool USimpleString::LessIgnoreCase::operator()(_In_ const USimpleString& strLeft, _In_ const USimpleString& strRight) const
     {
         return strLeft.compareToIgnoreCase(strRight) < 0;
+    }
+
+    inline LONG USimpleString::toLong(_In_ ULONG base) const
+    {
+        ULONG value = 0;
+        ::RtlUnicodeStringToInteger(&m_str, base, reinterpret_cast<PULONG>(&value));
+
+        return value;
     }
 }
