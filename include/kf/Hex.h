@@ -6,7 +6,6 @@
 
 namespace kf
 {
-    using namespace std;
 
     ////////////////////////////////////////////////////////////////////////////
     // The Hex class provides functionality to encode binary data into hexadecimal string representation
@@ -14,12 +13,12 @@ namespace kf
     class Hex
     {
     public:
-        static int encodeLen(span<const std::byte> input)
+        static int encodeLen(std::span<const std::byte> input)
         {
             return static_cast<int>(input.size() * 2);
         }
 
-        static bool encode(span<const std::byte> input, _Out_ USimpleString& output)
+        static bool encode(std::span<const std::byte> input, _Out_ USimpleString& output)
         {
             if (output.maxByteLength() < encodeLen(input))
             {
@@ -40,7 +39,7 @@ namespace kf
             return true;
         }
 
-        static int decodeLen(span<const char> input)
+        static int decodeLen(std::span<const char> input)
         {
             return static_cast<int>(input.size() / 2);
         }
@@ -50,7 +49,7 @@ namespace kf
             return input.charLength() / 2;
         }
 
-        static bool decode(const ASimpleString& input, _Out_ span<std::byte>& output)
+        static bool decode(const ASimpleString& input, _Out_ std::span<std::byte>& output)
         {
             if (output.size() != static_cast<size_t>(decodeLen(input)))
             {
@@ -74,14 +73,14 @@ namespace kf
     private:
         static inline const char kHexArray[] = "0123456789ABCDEF";
 
-        static array<wchar_t, 2> toHex(uint8_t b)
+        static std::array<wchar_t, 2> toHex(uint8_t b)
         {
             return { static_cast<wchar_t>(kHexArray[b >> 4]), static_cast<wchar_t>(kHexArray[b & 0xF]) };
         }
 
-        static int fromHex(const array<const char, 2>& hexByte)
+        static int fromHex(const std::array<const char, 2>& hexByte)
         {
-            array<int, 2> digits;
+            std::array<int, 2> digits;
 
             for (int i = 0; i < 2; ++i)
             {
