@@ -48,7 +48,7 @@ namespace kf
                 return status;
             }
 
-            Node* newNode = m_table.lookupElement(Node::fromKey(key));;
+            Node* newNode = m_table.lookupElement(Node::fromKey(key));
             ASSERT(newNode);
 
             m_links.addLast(*newNode);
