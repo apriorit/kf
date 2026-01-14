@@ -109,7 +109,7 @@ SCENARIO("TreeMap: all methods")
 
         WHEN("containsKey is called for existing key")
         {
-            THEN("the value should be true")
+            THEN("all inserted keys are found")
             {
                 for (int key : kKeys)
                 {
@@ -120,7 +120,7 @@ SCENARIO("TreeMap: all methods")
 
         WHEN("containsKey is called for non-existing key")
         {
-            THEN("the value should be false")
+            THEN("no key is found")
             {
                 for (int key : kNonExistingKeys)
                 {
