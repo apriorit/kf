@@ -14,9 +14,9 @@ namespace kf
     class LinkedTreeMap
     {
     public:
-        LinkedTreeMap() = default;
-        LinkedTreeMap(_Inout_ LinkedTreeMap&& another) = default;
-        LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another) = default;
+        LinkedTreeMap() noexcept = default;
+        LinkedTreeMap(_Inout_ LinkedTreeMap&& another) noexcept = default;
+        LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another) noexcept = default;
 
         LinkedTreeMap(const LinkedTreeMap&) = delete;
         LinkedTreeMap& operator=(const LinkedTreeMap&) = delete;
@@ -48,10 +48,7 @@ namespace kf
                 return status;
             }
 
-            auto insertedValue = get(key);
-            ASSERT(insertedValue);
-
-            Node* newNode = CONTAINING_RECORD(insertedValue, Node, m_value);
+            Node* newNode = m_table.lookupElement(Node::fromKey(key));;
             ASSERT(newNode);
 
             m_links.addLast(*newNode);
@@ -78,10 +75,11 @@ namespace kf
         V* getByIndex(const ULONG index)
         {
             ULONG currentIndex = 0;
-            auto it = m_links.iterator();
-            while (it.hasNext())
+
+            for (auto it = m_links.iterator(); it.hasNext();)
             {
                 auto node = it.next();
+
                 if (currentIndex == index)
                 {
                     return &node->m_value;
@@ -143,9 +141,7 @@ namespace kf
             {
             }
 
-            Node(Node&& another) : m_key(std::move(another.m_key)), m_value(std::move(another.m_value)), m_listEntry(std::move(another.m_listEntry))
-            {
-            }
+            Node(Node&& another) noexcept = default;
 
             bool operator<(const Node& another) const
             {
@@ -155,13 +151,11 @@ namespace kf
 
             K m_key;
             V m_value;
-
             DoubleLinkedListEntry m_listEntry;
         };
 
     private:
         GenericTableAvl<Node, poolType> m_table;
-
         DoubleLinkedList<Node, &Node::m_listEntry> m_links;
     };
 }

@@ -2,78 +2,65 @@
 #include <kf/LinkedTreeMap.h>
 
 using namespace kf;
-using Map = kf::LinkedTreeMap<int, int, PagedPool>;
 
 namespace
 {
-    constexpr int KeyToValue(int key)
+    using LinkedIntMap = kf::LinkedTreeMap<int, int, PagedPool>;
+
+    constexpr int keyToValue(int key)
     {
         return key * 10;
     }
 
-    constexpr int ValueToKey(int value)
-    {
-        return value / 10;
-    }
-
-    constexpr int kMinKey = 1;
-    constexpr int kMaxKey = 5;
-    constexpr int kMapSize = kMaxKey - kMinKey + 1;
+    constexpr std::array<int, 5> kKeys = { 1, 5, 3, 4, 2 };
+    constexpr std::array<int, 5> kNonExistingKeys = { -1, 0, 6, 7, 8 };
 }
 
 SCENARIO("LinkedTreeMap: all methods")
 {
-    Map map;
+    LinkedIntMap map;
 
     GIVEN("empty map")
     {
         WHEN("isEmpty is called")
         {
-            auto isEmpty = map.isEmpty();
-
             THEN("the value is true")
             {
-                REQUIRE(isEmpty == true);
+                REQUIRE(map.isEmpty());
             }
         }
 
         WHEN("size is called")
         {
-            auto size = map.size();
-
             THEN("the size is 0")
             {
-                REQUIRE(size == 0);
+                REQUIRE(map.size() == 0);
             }
         }
 
         WHEN("containsKey is called")
         {
-            auto contains = map.containsKey(kMinKey);
-
             THEN("the value is false")
             {
-                REQUIRE(contains == false);
+                REQUIRE(!map.containsKey(kKeys.front()));
             }
         }
 
         WHEN("get is called")
         {
-            auto value = map.get(kMinKey);
-
             THEN("the value is nullptr")
             {
+                auto value = map.get(kKeys.front());
                 REQUIRE(value == nullptr);
             }
         }
 
         WHEN("remove is called")
         {
-            auto removed = map.remove(kMinKey);
-
             THEN("the removal should fail")
             {
-                REQUIRE(removed == false);
+                auto removed = map.remove(kKeys.front());
+                REQUIRE(!removed);
             }
         }
 
@@ -83,7 +70,7 @@ SCENARIO("LinkedTreeMap: all methods")
 
             THEN("map is still empty")
             {
-                REQUIRE(map.isEmpty() == true);
+                REQUIRE(map.isEmpty());
                 REQUIRE(map.size() == 0);
             }
         }
@@ -91,16 +78,16 @@ SCENARIO("LinkedTreeMap: all methods")
 
     GIVEN("map with elements")
     {
-        for (int key = kMinKey; key <= kMaxKey; ++key)
+        for (int key : kKeys)
         {
-            REQUIRE_NT_SUCCESS(map.put(key, KeyToValue(key)));
+            REQUIRE_NT_SUCCESS(map.put(key, keyToValue(key)));
         }
 
         WHEN("isEmpty is called")
         {
             THEN("the value is false")
             {
-                REQUIRE(map.isEmpty() == false);
+                REQUIRE(!map.isEmpty());
             }
         }
 
@@ -108,67 +95,75 @@ SCENARIO("LinkedTreeMap: all methods")
         {
             THEN("the size is valid")
             {
-                REQUIRE(map.size() == kMapSize);
+                REQUIRE(map.size() == kKeys.size());
             }
         }
 
         WHEN("containsKey is called for existing key")
         {
-            auto contains = map.containsKey(kMinKey + 1);
-
-            THEN("the value should be true")
+            THEN("all inserted keys are found")
             {
-                REQUIRE(contains == true);
+                for (int key : kKeys)
+                {
+                    REQUIRE(map.containsKey(key));
+                }
             }
         }
 
         WHEN("containsKey is called for non-existing key")
         {
-            auto contains = map.containsKey(kMinKey - 1);
-
-            THEN("the value should be false")
+            THEN("no key is found")
             {
-                REQUIRE(contains == false);
+                for (int key : kNonExistingKeys)
+                {
+                    REQUIRE(!map.containsKey(key));
+                }
             }
         }
 
         WHEN("get is called for existing key")
         {
-            auto value = map.get(kMaxKey / 2);
-
-            THEN("the value should be valid")
+            THEN("values match inserted data")
             {
-                REQUIRE(value != nullptr);
-                REQUIRE(*value == KeyToValue(kMaxKey / 2));
+                for (int key : kKeys)
+                {
+                    auto value = map.get(key);
+                    REQUIRE(value != nullptr);
+                    REQUIRE(*value == keyToValue(key));
+                }
             }
         }
 
         WHEN("get is called for non-existing key")
         {
-            auto value = map.get(kMaxKey + 2);
-
-            THEN("the value should be nullptr")
+            THEN("the value is nullptr")
             {
-                REQUIRE(value == nullptr);
+                for (int key : kNonExistingKeys)
+                {
+                    auto value = map.get(key);
+                    REQUIRE(value == nullptr);
+                }
             }
         }
 
-        WHEN("getByIndex is called for existing index")
+        WHEN("getByIndex is called for valid indices")
         {
-            auto value = map.getByIndex(0);
-
-            THEN("the value should be valid")
+            THEN("elements follow insertion order")
             {
-                REQUIRE(value != nullptr);
-                REQUIRE(*value == KeyToValue(kMinKey));
+                for (ULONG i = 0; i < kKeys.size(); ++i)
+                {
+                    auto value = map.getByIndex(i);
+                    REQUIRE(value != nullptr);
+                    REQUIRE(*value == keyToValue(kKeys[i]));
+                }
             }
         }
 
         WHEN("getByIndex is called for non-existing index")
         {
-            auto value = map.getByIndex(kMapSize + 1);
+            auto value = map.getByIndex(static_cast<ULONG>(kKeys.size()));
 
-            THEN("the value should be nullptr")
+            THEN("the value is nullptr")
             {
                 REQUIRE(value == nullptr);
             }
@@ -176,8 +171,8 @@ SCENARIO("LinkedTreeMap: all methods")
 
         WHEN("put is called for new key")
         {
-            int newKey = kMaxKey + 1;
-            int newValue = KeyToValue(newKey);
+            int newKey = kNonExistingKeys.front();
+            int newValue = keyToValue(newKey);
             auto status = map.put(newKey, newValue);
 
             THEN("the put should succeed")
@@ -194,14 +189,14 @@ SCENARIO("LinkedTreeMap: all methods")
 
             THEN("the size should increase")
             {
-                REQUIRE(map.size() == kMapSize + 1);
+                REQUIRE(map.size() == kKeys.size() + 1);
             }
         }
 
         WHEN("put is called for existing key")
         {
-            const int newValue = KeyToValue(kMinKey) + 100;
-            auto status = map.put(kMinKey, newValue);
+            int newValue = keyToValue(kKeys.front()) + 100;
+            auto status = map.put(kKeys.front(), newValue);
 
             THEN("the put should succeed")
             {
@@ -210,7 +205,7 @@ SCENARIO("LinkedTreeMap: all methods")
 
             THEN("the value should be updated")
             {
-                auto value = map.get(kMinKey);
+                auto value = map.get(kKeys.front());
                 REQUIRE(value != nullptr);
                 REQUIRE(*value == newValue);
             }
@@ -218,37 +213,37 @@ SCENARIO("LinkedTreeMap: all methods")
 
         WHEN("remove is called for existing key")
         {
-            auto removed = map.remove(kMinKey);
+            auto removed = map.remove(kKeys.front());
 
             THEN("the removal should succeed")
             {
-                REQUIRE(removed == true);
+                REQUIRE(removed);
             }
 
             THEN("the key is no longer in the map")
             {
-                auto value = map.get(kMinKey);
+                auto value = map.get(kKeys.front());
                 REQUIRE(value == nullptr);
             }
 
             THEN("the size is reduced")
             {
-                REQUIRE(map.size() == kMapSize - 1);
+                REQUIRE(map.size() == kKeys.size() - 1);
             }
         }
 
         WHEN("remove is called for non-existing key")
         {
-            auto removed = map.remove(kMinKey - 1);
+            auto removed = map.remove(kNonExistingKeys.front());
 
             THEN("the removal should fail")
             {
-                REQUIRE(removed == false);
+                REQUIRE(!removed);
             }
 
             THEN("the size remains unchanged")
             {
-                REQUIRE(map.size() == kMapSize);
+                REQUIRE(map.size() == kKeys.size());
             }
         }
 
@@ -258,56 +253,85 @@ SCENARIO("LinkedTreeMap: all methods")
 
             THEN("map is empty")
             {
-                REQUIRE(map.isEmpty() == true);
+                REQUIRE(map.isEmpty());
                 REQUIRE(map.size() == 0);
             }
 
             THEN("valid key is no longer accessible")
             {
-                REQUIRE(map.get(kMinKey) == nullptr);
+                for (int key : kKeys)
+                {
+                    REQUIRE(map.get(key) == nullptr);
+                }
             }
         }
 
         WHEN("iterate over map using getByIndex")
         {
-            int count = 0;
-
             THEN("all elements are accessible in insertion order")
             {
-                for (auto i = 0; i < kMapSize; ++i)
+                ULONG index = 0;
+                for (int key : kKeys)
                 {
-                    auto val = map.getByIndex(i);
-                    REQUIRE(val != nullptr);
-                    REQUIRE(*val == KeyToValue(kMinKey + i));
-                    ++count;
+                    auto value = map.getByIndex(index++);
+                    REQUIRE(value != nullptr);
+                    REQUIRE(*value == keyToValue(key));
                 }
-                REQUIRE(count == kMapSize);
+                REQUIRE(index == kKeys.size());
             }
         }
 
-        WHEN("map is moved")
+        WHEN("map is moved by constructor")
         {
-            Map movedMap = std::move(map);
+            LinkedIntMap destinationMap = std::move(map);
 
-            THEN("the moved map is not empty")
+            THEN("destination map is not empty")
             {
-                REQUIRE(movedMap.isEmpty() == false);
-                REQUIRE(movedMap.size() == kMapSize);
+                REQUIRE(!destinationMap.isEmpty());
+                REQUIRE(destinationMap.size() == kKeys.size());
             }
 
             THEN("original map is empty")
             {
-                REQUIRE(map.isEmpty() == true);
+                REQUIRE(map.isEmpty());
                 REQUIRE(map.size() == 0);
             }
 
             THEN("moved elements are accessible")
             {
-                for (int key = kMinKey; key <= kMaxKey; ++key)
+                for (int key : kKeys)
                 {
-                    auto value = movedMap.get(key);
+                    auto value = destinationMap.get(key);
                     REQUIRE(value != nullptr);
-                    REQUIRE(*value == KeyToValue(key));
+                    REQUIRE(*value == keyToValue(key));
+                }
+            }
+        }
+
+        WHEN("map is moved by operator=")
+        {
+            LinkedIntMap destinationMap;
+            destinationMap = std::move(map);
+
+            THEN("destination map is not empty")
+            {
+                REQUIRE(!destinationMap.isEmpty());
+                REQUIRE(destinationMap.size() == kKeys.size());
+            }
+
+            THEN("original map is empty")
+            {
+                REQUIRE(map.isEmpty());
+                REQUIRE(map.size() == 0);
+            }
+
+            THEN("moved elements are accessible")
+            {
+                for (int key : kKeys)
+                {
+                    auto value = destinationMap.get(key);
+                    REQUIRE(value != nullptr);
+                    REQUIRE(*value == keyToValue(key));
                 }
             }
         }
@@ -316,107 +340,164 @@ SCENARIO("LinkedTreeMap: all methods")
 
 SCENARIO("LinkedTreeMap: ordering")
 {
-    Map map;
+    LinkedIntMap map;
 
-    GIVEN("map with elements inserted in order")
+    GIVEN("map with elements")
     {
-        for (int key = kMinKey; key <= kMaxKey; ++key)
+        for (int key : kKeys)
         {
-            REQUIRE_NT_SUCCESS(map.put(key, KeyToValue(key)));
+            REQUIRE_NT_SUCCESS(map.put(key, keyToValue(key)));
         }
 
         WHEN("iterating using getByIndex")
         {
             THEN("elements are returned in insertion order")
             {
-                for (int i = 0; i < kMapSize; ++i)
+                for (ULONG index = 0; index < kKeys.size(); ++index)
                 {
-                    auto val = map.getByIndex(i);
-                    REQUIRE(val != nullptr);
-                    REQUIRE(*val == KeyToValue(kMinKey + i));
+                    auto value = map.getByIndex(index);
+                    REQUIRE(*value == keyToValue(kKeys[index]));
                 }
             }
         }
-    }
 
-    GIVEN("map with elements inserted in reverse order")
-    {
-        for (int key = kMaxKey; key >= kMinKey; --key)
+        WHEN("the middle inserted key is updated")
         {
-            REQUIRE_NT_SUCCESS(map.put(key, KeyToValue(key)));
-        }
+            constexpr size_t kUpdateKeyIndex = kKeys.size() / 2;
+            constexpr int kUpdateKey = kKeys[kUpdateKeyIndex];
+            REQUIRE_NT_SUCCESS(map.put(kUpdateKey, keyToValue(kUpdateKey)));
 
-        WHEN("iterating using getByIndex")
-        {
-            THEN("elements are returned in insertion order (reverse)")
-            {
-                for (int i = 0; i < kMapSize; ++i)
-                {
-                    auto val = map.getByIndex(i);
-                    REQUIRE(val != nullptr);
-                    REQUIRE(*val == KeyToValue(kMaxKey - i));
-                }
-            }
-        }
-    }
-
-    GIVEN("map with elements, then one is updated")
-    {
-        for (int key = kMinKey; key <= kMaxKey; ++key)
-        {
-            REQUIRE_NT_SUCCESS(map.put(key, KeyToValue(key)));
-        }
-        // Update a middle key
-        int updateKey = kMinKey + 2;
-        int newValue = 291;
-        REQUIRE_NT_SUCCESS(map.put(updateKey, newValue));
-
-        WHEN("iterating using getByIndex")
-        {
             THEN("updated key is moved to the end")
             {
-                int expectedOrder[kMapSize] = { kMinKey, kMinKey + 1, kMinKey + 3, kMinKey + 4, updateKey };
-                for (int i = 0; i < kMapSize; ++i)
+                for (size_t index = 0; index < kKeys.size(); ++index)
                 {
-                    auto val = map.getByIndex(i);
-                    REQUIRE(val != nullptr);
-                    if (expectedOrder[i] == updateKey)
+                    auto value = map.getByIndex(static_cast<ULONG>(index));
+
+                    if (index < kKeys.size() - 1)
                     {
-                        REQUIRE(*val == newValue);
+                        if (index < kUpdateKeyIndex)
+                        {
+                            REQUIRE(*value == keyToValue(kKeys[index]));
+                        }
+                        else
+                        {
+                            REQUIRE(*value == keyToValue(kKeys[index + 1]));
+                        }
                     }
                     else
                     {
-                        REQUIRE(*val == KeyToValue(expectedOrder[i]));
+                        REQUIRE(*value == keyToValue(kUpdateKey));
                     }
                 }
             }
         }
-    }
 
-    GIVEN("map with elements, then one is removed and a new one is added")
-    {
-        for (int key = kMinKey; key <= kMaxKey; ++key)
+        WHEN("the first inserted key is updated")
         {
-            REQUIRE_NT_SUCCESS(map.put(key, KeyToValue(key)));
+            constexpr size_t kUpdateKeyIndex = 0;
+            constexpr int kUpdateKey = kKeys[kUpdateKeyIndex];
+            REQUIRE_NT_SUCCESS(map.put(kUpdateKey, keyToValue(kUpdateKey)));
+
+            THEN("updated key is moved to the end")
+            {
+                for (size_t index = 0; index < kKeys.size(); ++index)
+                {
+                    auto value = map.getByIndex(static_cast<ULONG>(index));
+
+                    if (index < kKeys.size() - 1)
+                    {
+                        REQUIRE(*value == keyToValue(kKeys[index + 1]));
+                    }
+                    else
+                    {
+                        REQUIRE(*value == keyToValue(kUpdateKey));
+                    }
+                }
+            }
         }
 
-        int removeKey = kMinKey + 1;
-        REQUIRE(map.remove(removeKey) == true);
-
-        int newKey = kMaxKey + 1;
-        int newValue = KeyToValue(newKey);
-        REQUIRE_NT_SUCCESS(map.put(newKey, newValue));
-
-        WHEN("iterating using getByIndex")
+        WHEN("the last inserted key is updated")
         {
-            THEN("order reflects removals and new insertions at the end")
+            constexpr size_t kUpdateKeyIndex = kKeys.size() - 1;
+            constexpr int kUpdateKey = kKeys[kUpdateKeyIndex];
+            REQUIRE_NT_SUCCESS(map.put(kUpdateKey, keyToValue(kUpdateKey)));
+
+            THEN("updated key is moved to the end")
             {
-                int expectedOrder[] = { kMinKey, kMinKey + 2, kMinKey + 3, kMaxKey, newKey };
-                for (int i = 0; i < kMapSize; ++i)
+                for (size_t index = 0; index < kKeys.size(); ++index)
                 {
-                    auto val = map.getByIndex(i);
-                    REQUIRE(val != nullptr);
-                    REQUIRE(*val == KeyToValue(expectedOrder[i]));
+                    auto value = map.getByIndex(static_cast<ULONG>(index));
+
+                    if (index < kKeys.size() - 1)
+                    {
+                        REQUIRE(*value == keyToValue(kKeys[index]));
+                    }
+                    else
+                    {
+                        REQUIRE(*value == keyToValue(kUpdateKey));
+                    }
+                }
+            }
+        }
+
+        WHEN("the first inserted key is removed")
+        {
+            constexpr size_t kRemoveKeyIndex = 0;
+            constexpr int kRemoveKey = kKeys[kRemoveKeyIndex];
+            REQUIRE(map.remove(kRemoveKey));
+
+            THEN("elements preserve insertion order without removed key")
+            {
+                REQUIRE(map.size() == kKeys.size() - 1);
+
+                for (size_t index = 0; index < map.size(); ++index)
+                {
+                    auto value = map.getByIndex(static_cast<ULONG>(index));
+                    REQUIRE(*value == keyToValue(kKeys[index + 1]));
+                }
+            }
+        }
+
+        WHEN("the middle inserted key is removed")
+        {
+            constexpr size_t kRemoveKeyIndex = kKeys.size() / 2;
+            constexpr int kRemoveKey = kKeys[kRemoveKeyIndex];
+            REQUIRE(map.remove(kRemoveKey));
+
+            THEN("elements preserve insertion order without removed key")
+            {
+                REQUIRE(map.size() == kKeys.size() - 1);
+
+                for (size_t index = 0; index < map.size(); ++index)
+                {
+                    auto value = map.getByIndex(static_cast<ULONG>(index));
+
+                    if (index < kRemoveKeyIndex)
+                    {
+                        REQUIRE(*value == keyToValue(kKeys[index]));
+                    }
+                    else
+                    {
+                        REQUIRE(*value == keyToValue(kKeys[index + 1]));
+                    }
+                }
+            }
+        }
+
+        WHEN("the last inserted key is removed")
+        {
+            constexpr size_t kRemoveKeyIndex = kKeys.size() - 1;
+            constexpr int kRemoveKey = kKeys[kRemoveKeyIndex];
+            REQUIRE(map.remove(kRemoveKey));
+
+            THEN("elements preserve insertion order without removed key")
+            {
+                REQUIRE(map.size() == kKeys.size() - 1);
+
+                for (size_t index = 0; index < map.size(); ++index)
+                {
+                    auto value = map.getByIndex(static_cast<ULONG>(index));
+                    REQUIRE(*value == keyToValue(kKeys[index]));
                 }
             }
         }
