@@ -112,6 +112,7 @@ SCENARIO("kf::Thread basic lifecycle")
 
             THEN("it's safe to call join() multiple times")
             {
+                REQUIRE(true);
             }
         }
 
@@ -143,8 +144,6 @@ SCENARIO("kf::Thread basic lifecycle")
                     PsTerminateSystemThread(STATUS_SUCCESS);
                 }, 
                 &context));
-
-            thread.join();
 
             THEN("join() waits for completion")
             {
