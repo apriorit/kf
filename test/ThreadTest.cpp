@@ -73,7 +73,7 @@ SCENARIO("kf::Thread basic lifecycle")
 
             THEN("start() should succeed")
             {
-                REQUIRE(NT_SUCCESS(status));
+                REQUIRE_NT_SUCCESS(status);
             }
 
             thread.join();
