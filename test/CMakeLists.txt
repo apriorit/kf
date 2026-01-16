@@ -44,10 +44,12 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     HexTest.cpp
     MapTest.cpp
     Vector.cpp
+    LinkedTreeMapTest.cpp
     ObserverTest.cpp
     EncodingDetectorTest.cpp
     IntrusivePtrTest.cpp
     TextDetectorTest.cpp
+    ToUnderlyingTest.cpp
     ScopeExitTest.cpp
     SingletonTest.cpp
     DoubleLinkedListTest.cpp
@@ -55,11 +57,18 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     VariableSizeStructTest.cpp
     ScopeFailureTest.cpp
     Base64Test.cpp
+    TreeSetTest.cpp
+    TreeMapTest.cpp
+    EventTest.cpp
+    SpanUtilsTest.cpp
     AlgorithmTest.cpp
     AutoSpinLockTest.cpp
     EResourceSharedLockTest.cpp
     RecursiveAutoSpinLockTest.cpp
     ThreadTest.cpp
+    SemaphoreTest.cpp
+    UStringBuilderTest.cpp
+    USimpleStringTest.cpp
 )
 
 target_link_libraries(kf-test kf::kf kmtest::kmtest)

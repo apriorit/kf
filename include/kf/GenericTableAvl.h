@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <utility>
+#include <kf/stl/new>
 
 namespace kf
 {
@@ -11,12 +12,15 @@ namespace kf
     class GenericTableAvl
     {
     public:
+        GenericTableAvl(const GenericTableAvl&) = delete;
+        GenericTableAvl& operator=(const GenericTableAvl&) = delete;
+
         GenericTableAvl()
         {
             init();
         }
 
-        GenericTableAvl(_Inout_ GenericTableAvl&& another)
+        GenericTableAvl(_Inout_ GenericTableAvl&& another) noexcept
         {
             moveInit(another);
         }
@@ -101,7 +105,7 @@ namespace kf
             }
         }
 
-        GenericTableAvl& operator=(_Inout_ GenericTableAvl&& another)
+        GenericTableAvl& operator=(_Inout_ GenericTableAvl&& another) noexcept
         {
             if (this != &another)
             {
@@ -113,12 +117,8 @@ namespace kf
         }
 
     private:
-        GenericTableAvl(const GenericTableAvl&);
-        GenericTableAvl& operator=(const GenericTableAvl&);
-
         void init()
         {
-#pragma warning(suppress: 28023) // missing _Function_class_ annotation
             ::RtlInitializeGenericTableAvl(&m_table, &compareRoutine, &allocateRoutine, &freeRoutine, this);
         }
 
@@ -152,7 +152,7 @@ namespace kf
         __drv_allocatesMem(Mem)
         static void* NTAPI allocateRoutine(_In_ RTL_AVL_TABLE*, _In_ CLONG byteSize)
         {
-            return ::ExAllocatePoolWithTag(poolType, byteSize, PoolTag);
+            return operator new(byteSize, poolType);
         }
 
         _IRQL_requires_same_
@@ -160,7 +160,7 @@ namespace kf
         static void NTAPI freeRoutine(_In_ RTL_AVL_TABLE*, _In_ __drv_freesMem(Mem) _Post_invalid_ void* buffer)
         {
             reinterpret_cast<T*>(static_cast<RTL_BALANCED_LINKS*>(buffer) + 1)->~T();
-            ::ExFreePoolWithTag(buffer, PoolTag);
+            operator delete(buffer);
         }
 
         _IRQL_requires_same_
@@ -185,9 +185,6 @@ namespace kf
                 return GenericEqual;
             }
         }
-
-    private:
-        enum { PoolTag = '++TG' };
 
     private:
         RTL_AVL_TABLE m_table;
