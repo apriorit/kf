@@ -5,7 +5,7 @@ namespace kf
     //////////////////////////////////////////////////////////////////////////
     // FltResourceSharedLock
 
-    class [[deprecated("Use std::unique_lock instead")]] FltResourceSharedLock
+    class [[deprecated("Use std::shared_lock instead")]] FltResourceSharedLock
     {
     public:
         FltResourceSharedLock(_In_ PERESOURCE resource) : m_resource(FltResource::fromEResource(resource))

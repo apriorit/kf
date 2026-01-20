@@ -7,11 +7,11 @@
 
 namespace kf
 {
-    template<typename F>
+    template<typename F, typename T> requires std::convertible_to<T, NTSTATUS>
     class ScopeFailure
     {
     public:
-        ScopeFailure(NTSTATUS& status, F&& f) : m_status(status), m_f(f)
+        ScopeFailure(T& status, F&& f) : m_status(status), m_f(f)
         {
         }
         
@@ -30,22 +30,23 @@ namespace kf
         ScopeFailure& operator=(const ScopeFailure&);
 
     private:
-        NTSTATUS& m_status;
-        F m_f;        
+        T& m_status;
+        F m_f;
     };
 
+    template<typename T> requires std::convertible_to<T, NTSTATUS>
     struct MakeScopeFailure
     {
-        MakeScopeFailure(NTSTATUS& status) : m_status(status)
+        MakeScopeFailure(T& status) : m_status(status)
         {
         }
 
         template<typename F>
-        ScopeFailure<F> operator+=(F&& f)
+        ScopeFailure<F, T> operator+=(F&& f)
         {
-            return ScopeFailure<F>(m_status, std::move(f));
+            return ScopeFailure<F, T>(m_status, std::move(f));
         }
 
-        NTSTATUS& m_status;
+        T& m_status;
     };
 }
