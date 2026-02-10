@@ -2,18 +2,17 @@
 
 namespace kf
 {
-    using namespace std;
 
     template<class T = std::byte>
     class EarlyAllocator
     {
     public:
-        static_assert(!is_const_v<T>, "The C++ Standard forbids containers of const elements because allocator<const T> is ill-formed.");
+        static_assert(!std::is_const_v<T>, "The C++ Standard forbids containers of const elements because allocator<const T> is ill-formed.");
 
         using value_type = T;
         using size_type = size_t;
         using difference_type = ptrdiff_t;
-        using propagate_on_container_move_assignment = true_type;
+        using propagate_on_container_move_assignment = std::true_type;
 
         constexpr EarlyAllocator() noexcept = default;
 
@@ -33,10 +32,7 @@ namespace kf
         template<POOL_TYPE poolType>
         T* initialize(const size_t count) noexcept
         {
-            if (m_ptr || m_size)
-            {
-                _Xinvalid_argument("m_ptr || m_size");
-            }
+            ASSERT(!(m_ptr || m_size));
 
             m_size = count * sizeof(T);
             m_ptr = static_cast<T*>(operator new(m_size, poolType));
@@ -46,10 +42,7 @@ namespace kf
 
         void deallocate(const T* ptr, const size_t count) noexcept
         {
-            if (ptr != m_ptr || count * sizeof(T) > m_size)
-            {
-                _Xinvalid_argument("ptr != m_ptr || count * sizeof(T) > m_size");
-            }
+            ASSERT(ptr == m_ptr && count * sizeof(T) <= m_size);
 
             operator delete(m_ptr);
             m_ptr = nullptr;
@@ -58,10 +51,7 @@ namespace kf
 
         _NODISCARD T* allocate(const size_t count) noexcept
         {
-            if (!m_ptr || count * sizeof(T) > m_size)
-            {
-                _Xinvalid_argument("!m_ptr || count * sizeof(T) > m_size");
-            }
+            ASSERT(m_ptr && count * sizeof(T) <= m_size);
 
             return m_ptr;
         }

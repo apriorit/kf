@@ -4,7 +4,6 @@
 
 namespace kf
 {
-    using namespace std;
 
     // original implementation is taken from https://github.com/adamvr/arduino-base64/blob/master/Base64.cpp
 
@@ -33,7 +32,7 @@ namespace kf
             return ((6 * input.charLength()) / 8) - numEq;
         }
 
-        static int decode(const USimpleString& input, span<std::byte> output)
+        static int decode(const USimpleString& input, std::span<std::byte> output)
         {
             int inputIdx = 0;
             int a4Idx = 0;
