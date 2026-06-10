@@ -38,6 +38,33 @@ SCENARIO("vector size and capacity")
             }
         }
 
+        WHEN("assign range from array")
+        {
+            int arr[] = {10, 20, 30};
+            REQUIRE_NT_SUCCESS(v.assign(std::begin(arr), std::end(arr)));
+
+            THEN("vector contains range elements")
+            {
+                REQUIRE(v.size() == 3);
+                REQUIRE(v[0] == 10);
+                REQUIRE(v[1] == 20);
+                REQUIRE(v[2] == 30);
+            }
+        }
+
+        WHEN("assign from initializer list")
+        {
+            REQUIRE_NT_SUCCESS(v.assign({7, 8, 9}));
+
+            THEN("vector contains initializer list elements")
+            {
+                REQUIRE(v.size() == 3);
+                REQUIRE(v[0] == 7);
+                REQUIRE(v[1] == 8);
+                REQUIRE(v[2] == 9);
+            }
+        }
+
         WHEN("resize to 1000")
         {
             REQUIRE_NT_SUCCESS(v.resize(1000));
