@@ -57,6 +57,26 @@ namespace kf
             return STATUS_SUCCESS;
         }
 
+        template<std::forward_iterator ForwardIt>
+        constexpr [[nodiscard]] NTSTATUS assign(ForwardIt first, ForwardIt last) noexcept
+        {
+            const auto count = static_cast<size_type>(std::distance(first, last));
+
+            if (auto status = reallocateGrowth(count); !NT_SUCCESS(status))
+            {
+                return status;
+            }
+
+            m_vector.assign(first, last);
+
+            return STATUS_SUCCESS;
+        }
+
+        constexpr [[nodiscard]] NTSTATUS assign(std::initializer_list<T> ilist) noexcept
+        {
+            return assign(ilist.begin(), ilist.end());
+        }
+
         constexpr Allocator get_allocator() noexcept
         {
             return m_vector.get_allocator();
