@@ -57,8 +57,8 @@ namespace kf
             return STATUS_SUCCESS;
         }
 
-        template<std::input_iterator InputIt>
-        constexpr [[nodiscard]] NTSTATUS assign(InputIt first, InputIt last) noexcept
+        template<std::forward_iterator ForwardIt>
+        constexpr [[nodiscard]] NTSTATUS assign(ForwardIt first, ForwardIt last) noexcept
         {
             const auto count = static_cast<size_type>(std::distance(first, last));
 
