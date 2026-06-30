@@ -37,4 +37,5 @@ This repository is a public technical example from Apriorit related to system pr
 Apriorit is a cybersecurity-focused software engineering company that helps technology companies build secure, reliable, and high-performance software — from kernel-level components to cloud-based platforms.
 
 Learn more: https://www.apriorit.com/our-expertise/kernel-and-driver-development
+
 Website: https://www.apriorit.com
