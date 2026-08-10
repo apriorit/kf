@@ -99,7 +99,7 @@ SCENARIO("USimpleString: all methods")
                 REQUIRE(str.compareToIgnoreCase(emptyStr) == 0);
             }
         }
-        
+
         WHEN("compareToIgnoreCase is called with non-empty string")
         {
             kf::USimpleString nonEmptyStr(L"Hello");
@@ -405,7 +405,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns the correct byte length")
             {
-                REQUIRE(byteLength == wcslen(testStr) * sizeof(wchar_t));
+                REQUIRE(byteLength == static_cast<int>(wcslen(testStr) * sizeof(wchar_t)));
             }
         }
 
@@ -425,7 +425,7 @@ SCENARIO("USimpleString: all methods")
 
             THEN("it returns the correct character length")
             {
-                REQUIRE(charLength == wcslen(testStr));
+                REQUIRE(charLength == static_cast<int>(wcslen(testStr)));
             }
         }
 
@@ -451,22 +451,22 @@ SCENARIO("USimpleString: all methods")
 
             THEN("charLength() returns the new character length")
             {
-                REQUIRE(str.charLength() == wcslen(newStr));
+                REQUIRE(str.charLength() == static_cast<int>(wcslen(newStr)));
             }
 
             THEN("maxCharLength() takes into account the terminating zero")
             {
                 REQUIRE(str.maxCharLength() == str.charLength() + 1);
             }
-            
+
             THEN("byteLength() returns the new byte length")
             {
-                REQUIRE(str.byteLength() == wcslen(newStr) * sizeof(wchar_t));
+                REQUIRE(str.byteLength() == static_cast<int>(wcslen(newStr) * sizeof(wchar_t)));
             }
 
             THEN("maxByteLength() takes into account the terminating zero")
             {
-                REQUIRE(str.maxByteLength() == str.byteLength() + sizeof(wchar_t));
+                REQUIRE(str.maxByteLength() == static_cast<int>(str.byteLength() + sizeof(wchar_t)));
             }
         }
 

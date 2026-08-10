@@ -98,7 +98,7 @@ SCENARIO("TreeSet: all methods")
         {
             THEN("the size is valid")
             {
-                REQUIRE(set.size() == kElements.size());
+                REQUIRE(set.size() == static_cast<int>(kElements.size()));
             }
         }
 
@@ -165,7 +165,7 @@ SCENARIO("TreeSet: all methods")
 
             THEN("the size is reduced")
             {
-                REQUIRE(set.size() == kElements.size() - 1);
+                REQUIRE(set.size() == static_cast<int>(kElements.size()) - 1);
             }
         }
 
@@ -196,7 +196,7 @@ SCENARIO("TreeSet: all methods")
 
             THEN("the size should increase")
             {
-                REQUIRE(set.size() == kElements.size() + 1);
+                REQUIRE(set.size() == static_cast<int>(kElements.size()) + 1);
             }
         }
 
@@ -260,7 +260,7 @@ SCENARIO("TreeSet: all methods")
             THEN("destination set is not empty")
             {
                 REQUIRE(!destinationSet.isEmpty());
-                REQUIRE(destinationSet.size() == kElements.size());
+                REQUIRE(destinationSet.size() == static_cast<int>(kElements.size()));
             }
 
             THEN("original set is empty")
@@ -286,7 +286,7 @@ SCENARIO("TreeSet: all methods")
             THEN("destination set is not empty")
             {
                 REQUIRE(!destinationSet.isEmpty());
-                REQUIRE(destinationSet.size() == kElements.size());
+                REQUIRE(destinationSet.size() == static_cast<int>(kElements.size()));
             }
 
             THEN("original set is empty")
