@@ -95,7 +95,7 @@ SCENARIO("LinkedTreeMap: all methods")
         {
             THEN("the size is valid")
             {
-                REQUIRE(map.size() == kKeys.size());
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()));
             }
         }
 
@@ -189,7 +189,7 @@ SCENARIO("LinkedTreeMap: all methods")
 
             THEN("the size should increase")
             {
-                REQUIRE(map.size() == kKeys.size() + 1);
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()) + 1);
             }
         }
 
@@ -228,7 +228,7 @@ SCENARIO("LinkedTreeMap: all methods")
 
             THEN("the size is reduced")
             {
-                REQUIRE(map.size() == kKeys.size() - 1);
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()) - 1);
             }
         }
 
@@ -243,7 +243,7 @@ SCENARIO("LinkedTreeMap: all methods")
 
             THEN("the size remains unchanged")
             {
-                REQUIRE(map.size() == kKeys.size());
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()));
             }
         }
 
@@ -288,7 +288,7 @@ SCENARIO("LinkedTreeMap: all methods")
             THEN("destination map is not empty")
             {
                 REQUIRE(!destinationMap.isEmpty());
-                REQUIRE(destinationMap.size() == kKeys.size());
+                REQUIRE(destinationMap.size() == static_cast<int>(kKeys.size()));
             }
 
             THEN("original map is empty")
@@ -316,7 +316,7 @@ SCENARIO("LinkedTreeMap: all methods")
             THEN("destination map is not empty")
             {
                 REQUIRE(!destinationMap.isEmpty());
-                REQUIRE(destinationMap.size() == kKeys.size());
+                REQUIRE(destinationMap.size() == static_cast<int>(kKeys.size()));
             }
 
             THEN("original map is empty")
@@ -448,9 +448,9 @@ SCENARIO("LinkedTreeMap: ordering")
 
             THEN("elements preserve insertion order without removed key")
             {
-                REQUIRE(map.size() == kKeys.size() - 1);
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()) - 1);
 
-                for (size_t index = 0; index < map.size(); ++index)
+                for (size_t index = 0; index < static_cast<size_t>(map.size()); ++index)
                 {
                     auto value = map.getByIndex(static_cast<ULONG>(index));
                     REQUIRE(*value == keyToValue(kKeys[index + 1]));
@@ -466,9 +466,9 @@ SCENARIO("LinkedTreeMap: ordering")
 
             THEN("elements preserve insertion order without removed key")
             {
-                REQUIRE(map.size() == kKeys.size() - 1);
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()) - 1);
 
-                for (size_t index = 0; index < map.size(); ++index)
+                for (size_t index = 0; index < static_cast<size_t>(map.size()); ++index)
                 {
                     auto value = map.getByIndex(static_cast<ULONG>(index));
 
@@ -492,9 +492,9 @@ SCENARIO("LinkedTreeMap: ordering")
 
             THEN("elements preserve insertion order without removed key")
             {
-                REQUIRE(map.size() == kKeys.size() - 1);
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()) - 1);
 
-                for (size_t index = 0; index < map.size(); ++index)
+                for (size_t index = 0; index < static_cast<size_t>(map.size()); ++index)
                 {
                     auto value = map.getByIndex(static_cast<ULONG>(index));
                     REQUIRE(*value == keyToValue(kKeys[index]));

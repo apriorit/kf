@@ -103,7 +103,7 @@ SCENARIO("TreeMap: all methods")
         {
             THEN("the size is valid")
             {
-                REQUIRE(map.size() == kKeys.size());
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()));
             }
         }
 
@@ -195,7 +195,7 @@ SCENARIO("TreeMap: all methods")
 
             THEN("the size should increase")
             {
-                REQUIRE(map.size() == kKeys.size() + 1);
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()) + 1);
             }
         }
 
@@ -234,7 +234,7 @@ SCENARIO("TreeMap: all methods")
 
             THEN("the size is reduced")
             {
-                REQUIRE(map.size() == kKeys.size() - 1);
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()) - 1);
             }
         }
 
@@ -249,7 +249,7 @@ SCENARIO("TreeMap: all methods")
 
             THEN("the size remains unchanged")
             {
-                REQUIRE(map.size() == kKeys.size());
+                REQUIRE(map.size() == static_cast<int>(kKeys.size()));
             }
         }
 
@@ -279,9 +279,9 @@ SCENARIO("TreeMap: all methods")
                 std::array<int, kKeys.size()> sortedKeys = kKeys;
                 std::ranges::sort(sortedKeys);
 
-                for (auto i = 0; i < kKeys.size(); ++i)
+                for (size_t i = 0; i < kKeys.size(); ++i)
                 {
-                    auto value = map.getByIndex(i);
+                    auto value = map.getByIndex(static_cast<ULONG>(i));
                     REQUIRE(value);
                     REQUIRE(*value == keyToValue(sortedKeys[i]));
                 }
@@ -295,7 +295,7 @@ SCENARIO("TreeMap: all methods")
             THEN("destinationMap map is not empty")
             {
                 REQUIRE(!destinationMap.isEmpty());
-                REQUIRE(destinationMap.size() == kKeys.size());
+                REQUIRE(destinationMap.size() == static_cast<int>(kKeys.size()));
             }
 
             THEN("original map is empty")
@@ -323,7 +323,7 @@ SCENARIO("TreeMap: all methods")
             THEN("destinationMap map is not empty")
             {
                 REQUIRE(!destinationMap.isEmpty());
-                REQUIRE(destinationMap.size() == kKeys.size());
+                REQUIRE(destinationMap.size() == static_cast<int>(kKeys.size()));
             }
 
             THEN("original map is empty")

@@ -15,6 +15,10 @@ on:
       - '*.md'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   build:
     strategy:
@@ -22,16 +26,38 @@ jobs:
       matrix:
         os: [windows-2022]
         config: [Debug, Release]
-        platform: [x64]
+        platform: [x64, Win32]
 
     runs-on: ${{ matrix.os }}
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
+
+    - name: Cache WDK NuGet package (Win32)
+      if: matrix.platform == 'Win32'
+      id: cache-wdk
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}\packages\Internal.Microsoft.Windows.WDK
+        key: wdk-nuget-${{ hashFiles('.github/workflows/ci.yml') }}
+
+    - name: Install WDK NuGet package (Win32)
+      if: matrix.platform == 'Win32' && steps.cache-wdk.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        nuget sources add -Name github -Source https://nuget.pkg.github.com/apriorit/index.json -Username ${{ github.repository_owner }} -Password ${{ secrets.GITHUB_TOKEN }} -StorePasswordInClearText
+        nuget install Internal.Microsoft.Windows.WDK -Source github -OutputDirectory ${{ github.workspace }}\packages -ExcludeVersion
+
+    - name: Set WDKContentRoot (Win32)
+      if: matrix.platform == 'Win32'
+      shell: pwsh
+      run: |
+        $wdkContentRoot = Resolve-Path "${{ github.workspace }}\packages\Internal.Microsoft.Windows.WDK\c"
+        echo "WDKContentRoot=$wdkContentRoot\" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
     - name: Configure CMake
       run: |
