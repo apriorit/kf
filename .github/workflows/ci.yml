@@ -68,7 +68,7 @@ jobs:
         cmake --build build --config ${{ matrix.config }} --parallel
 
     - name: Validate Vista SP2 compatibility
-      uses: sergiusthebest/pecompatcheck-action@v1
+      uses: sergiusthebest/pecompatcheck-action@0ac779e953508f7ef968af9ec1c4d99ce59202d7 # v1
       with:
         binary: build/test/${{ matrix.config }}/kf-test.sys
         windows-version: vista-sp2
