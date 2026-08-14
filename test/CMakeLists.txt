@@ -71,7 +71,14 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     USimpleStringTest.cpp
 )
 
-target_link_libraries(kf-test kf::kf kmtest::kmtest)
+target_link_libraries(kf-test PRIVATE kf::kf kmtest::kmtest)
+
+# Older 32-bit Windows XP/7 CRTs do not export the memcmp symbol that some STL
+# scalar-fill paths expect, including std::vector::resize(..., value). Link the
+# WDK compatibility implementation for the 32-bit test target.
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    target_link_libraries(kf-test PRIVATE WDK::MEMCMP)
+endif()
 
 # Activate precompiled headers, unfortunately `target_precompile_headers` doesn't work with `wdk_add_driver`
 set_target_properties(kf-test PROPERTIES COMPILE_FLAGS "/Yupch.h")
