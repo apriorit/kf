@@ -1,8 +1,4 @@
 #pragma once
-// WIN9X_COMPAT_SPINLOCK must be defined to ensure binary compatibility with Vista and Windows 7
-#ifndef WIN9X_COMPAT_SPINLOCK
-    #define WIN9X_COMPAT_SPINLOCK
-#endif
 #include <wdm.h>
 
 namespace kf
