@@ -79,3 +79,6 @@ set_source_files_properties(pch.cpp PROPERTIES COMPILE_FLAGS "/Ycpch.h")
 
 # TODO: move it to FindWDK
 target_compile_definitions(kf-test PRIVATE _ITERATOR_DEBUG_LEVEL=0)
+
+# Required for binary compatibility with Vista and Windows 7
+target_compile_definitions(kf-test PRIVATE WIN9X_COMPAT_SPINLOCK)
