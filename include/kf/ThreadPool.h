@@ -53,7 +53,7 @@ namespace kf
         }
 
     private:
-        Thread m_threads[kMaxCount];
+        Thread m_threads[kMaxCount]{};
         int m_count;
     };
 }
