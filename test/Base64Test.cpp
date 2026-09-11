@@ -59,16 +59,16 @@ SCENARIO("Base64::decode")
     GIVEN("Encoded string 'VA=='")
     {
         kf::USimpleString input(L"VA=="); // "T"
-        constexpr std::wstring_view kExpectedOutput = L"T";
+        constexpr std::string_view kExpectedOutput = "T";
         constexpr size_t kExpectedLength = kExpectedOutput.size();
-        std::array<wchar_t, kExpectedLength> output;
+        std::array<char, kExpectedLength> output;
 
         THEN("Decoded symbol is 'T' and decoded length is 1")
         {
             int written = kf::Base64::decode(input, std::as_writable_bytes(std::span{ output }));
             REQUIRE(written == kExpectedLength);
 
-            REQUIRE(std::wstring_view(output.data(), written) == kExpectedOutput);
+            REQUIRE(std::string_view(output.data(), written) == kExpectedOutput);
         }
     }
 
