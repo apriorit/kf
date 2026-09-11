@@ -128,6 +128,71 @@ SCENARIO("ASimpleString: all methods")
                 REQUIRE(trimmedStr.isEmpty());
             }
         }
+
+        WHEN("empty() is called")
+        {
+            str.empty();
+
+            THEN("it remains empty")
+            {
+                REQUIRE(str.isEmpty());
+            }
+        }
+    }
+
+    GIVEN("a non-empty string that gets reset via empty()")
+    {
+        kf::ASimpleString str("Hello");
+        str.empty();
+
+        WHEN("empty() is called on a previously non-empty string")
+        {
+            THEN("it becomes empty")
+            {
+                REQUIRE(str.isEmpty());
+                REQUIRE(str.charLength() == 0);
+                REQUIRE(!str.begin());
+            }
+        }
+    }
+
+    GIVEN("a string constructed from an ANSI_STRING")
+    {
+        char buffer[] = "Hello";
+        ANSI_STRING ansiStr
+        {
+            .Length = static_cast<USHORT>(strlen(buffer)),
+            .MaximumLength = static_cast<USHORT>(sizeof(buffer)),
+            .Buffer = buffer,
+        };
+
+        kf::ASimpleString str(ansiStr);
+
+        WHEN("the string is constructed")
+        {
+            THEN("it holds the same content")
+            {
+                REQUIRE(str.equals(ansiStr));
+                REQUIRE(str.charLength() == strlen(buffer));
+            }
+        }
+    }
+
+    GIVEN("a string constructed from a span")
+    {
+        char buffer[] = "Hello";
+        std::span<char> spanBuffer(buffer, strlen(buffer));
+
+        kf::ASimpleString str(spanBuffer);
+
+        WHEN("the string is constructed")
+        {
+            THEN("it holds the same content")
+            {
+                kf::ASimpleString expected("Hello");
+                REQUIRE(str.equals(expected.string()));
+            }
+        }
     }
 
     GIVEN("non-empty string")
@@ -165,12 +230,18 @@ SCENARIO("ASimpleString: all methods")
 
         WHEN("setString is called with another non-empty string")
         {
-            const char* newStr = "Test123!@#";
-            str.setString(const_cast<char*>(newStr), static_cast<int>(strlen(newStr)));
+            char newStr[] = "Test123!@#";
+            str.setString(newStr, static_cast<int>(strlen(newStr)));
 
             THEN("string() now holds new pointer")
             {
                 REQUIRE(str.string().Buffer == newStr);
+            }
+
+            THEN("string content matches the new string")
+            {
+                kf::ASimpleString expected(newStr);
+                REQUIRE(str.equals(expected.string()));
             }
 
             THEN("charLength() returns the new character length")
@@ -181,6 +252,31 @@ SCENARIO("ASimpleString: all methods")
             THEN("byteLength() returns the new byte length")
             {
                 REQUIRE(str.byteLength() == strlen(newStr));
+            }
+        }
+
+        WHEN("setString is called with an explicit maxByteLength")
+        {
+            char newStr[] = "Test123!@#EXTRA";
+            int usedLength = static_cast<int>(strlen("Test123!@#"));
+            str.setString(newStr, usedLength, static_cast<int>(sizeof(newStr) - 1));
+
+            THEN("charLength() reflects the used length, not the max length")
+            {
+                REQUIRE(str.charLength() == usedLength);
+            }
+
+            THEN("MaximumLength is stored correctly")
+            {
+                REQUIRE(str.string().MaximumLength == sizeof(newStr) - 1);
+            }
+        }
+
+        WHEN("charAt() is called with a valid index")
+        {
+            THEN("it returns the correct character")
+            {
+                REQUIRE(str.charAt(2) == testStr[2]);
             }
         }
 
@@ -218,6 +314,16 @@ SCENARIO("ASimpleString: all methods")
             THEN("it returns false")
             {
                 REQUIRE(!str.equals(diffStr.string()));
+            }
+        }
+
+        WHEN("equals() is called with a string differing only by case")
+        {
+            kf::ASimpleString differentCaseStr("  hello, world!  :):) ");
+
+            THEN("it returns false (comparison is case-sensitive)")
+            {
+                REQUIRE(!str.equals(differentCaseStr.string()));
             }
         }
 
@@ -317,6 +423,44 @@ SCENARIO("ASimpleString: all methods")
             }
         }
 
+        WHEN("indexOf(substring) is called with a partially matching pattern that fails and backtracks")
+        {
+            kf::ASimpleString multiPattern("aaab");
+            kf::ASimpleString sub("aab");
+
+            int index = multiPattern.indexOf(sub);
+
+            THEN("it correctly backtracks and finds the real occurrence")
+            {
+                REQUIRE(index == 1); // "aaab" -> "aab" starts at index 1
+            }
+        }
+
+        WHEN("indexOf(substring, fromIndex) is called with two occurrences")
+        {
+            kf::ASimpleString repeated("World World");
+            kf::ASimpleString sub("World");
+
+            int firstIndex = repeated.indexOf(sub, 0);
+            int secondIndex = repeated.indexOf(sub, firstIndex + 1);
+
+            THEN("the second search skips the first occurrence and finds the next one")
+            {
+                REQUIRE(firstIndex == 0);
+                REQUIRE(secondIndex == 6);
+            }
+        }
+
+        WHEN("indexOf(char, fromIndex) is called with fromIndex at charLength()")
+        {
+            int index = str.indexOf('H', str.charLength());
+
+            THEN("it returns -1")
+            {
+                REQUIRE(index == -1);
+            }
+        }
+
         WHEN("substring() is called with only start index")
         {
             kf::ASimpleString subStr = str.substring(2);
@@ -336,6 +480,26 @@ SCENARIO("ASimpleString: all methods")
             THEN("it returns the correct substring")
             {
                 REQUIRE(subStr.equals(expected.string()));
+            }
+        }
+
+        WHEN("substring() is called with beginIndex == endIndex")
+        {
+            kf::ASimpleString subStr = str.substring(3, 3);
+
+            THEN("it returns an empty string")
+            {
+                REQUIRE(subStr.isEmpty());
+            }
+        }
+
+        WHEN("substring() is called with beginIndex == charLength()")
+        {
+            kf::ASimpleString subStr = str.substring(str.charLength());
+
+            THEN("it returns an empty string")
+            {
+                REQUIRE(subStr.isEmpty());
             }
         }
 
@@ -393,6 +557,29 @@ SCENARIO("ASimpleString: all methods")
             THEN("it trims all leading characters present in the set")
             {
                 REQUIRE(trimmedStr.equals(expected.string()));
+            }
+        }
+
+        WHEN("copy constructor is used")
+        {
+            kf::ASimpleString copyStr(str);
+
+            THEN("the copy has the same content and buffer")
+            {
+                REQUIRE(copyStr.equals(str.string()));
+                REQUIRE(copyStr.begin() == str.begin());
+            }
+        }
+
+        WHEN("copy assignment is used")
+        {
+            kf::ASimpleString assignedStr;
+            assignedStr = str;
+
+            THEN("the assigned string has the same content and buffer")
+            {
+                REQUIRE(assignedStr.equals(str.string()));
+                REQUIRE(assignedStr.begin() == str.begin());
             }
         }
     }
