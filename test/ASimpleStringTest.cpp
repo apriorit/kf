@@ -173,7 +173,7 @@ SCENARIO("ASimpleString: all methods")
             THEN("it holds the same content")
             {
                 REQUIRE(str.equals(ansiStr));
-                REQUIRE(str.charLength() == strlen(buffer));
+                REQUIRE(str.charLength() == static_cast<int>(strlen(buffer)));
             }
         }
     }
@@ -214,7 +214,7 @@ SCENARIO("ASimpleString: all methods")
 
             THEN("it returns the correct byte length")
             {
-                REQUIRE(byteLength == strlen(testStr));
+                REQUIRE(byteLength == static_cast<int>(strlen(testStr)));
             }
         }
 
@@ -224,7 +224,7 @@ SCENARIO("ASimpleString: all methods")
 
             THEN("it returns the correct character length")
             {
-                REQUIRE(charLength == strlen(testStr));
+                REQUIRE(charLength == static_cast<int>(strlen(testStr)));
             }
         }
 
@@ -246,12 +246,12 @@ SCENARIO("ASimpleString: all methods")
 
             THEN("charLength() returns the new character length")
             {
-                REQUIRE(str.charLength() == strlen(newStr));
+                REQUIRE(str.charLength() == static_cast<int>(strlen(newStr)));
             }
 
             THEN("byteLength() returns the new byte length")
             {
-                REQUIRE(str.byteLength() == strlen(newStr));
+                REQUIRE(str.byteLength() == static_cast<int>(strlen(newStr)));
             }
         }
 
