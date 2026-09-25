@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * Taken from https://github.com/swenson/sort
  * Revision: 05fd77bfec049ce8b7c408c4d3dd2d51ee061a15
@@ -31,8 +33,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include <kf/stl/new>
 #include <algorithm>
 #include <cstdint>
+#include <concepts>
+#include <ranges>
 
 namespace timsort
 {
@@ -51,14 +56,12 @@ namespace timsort
         /* adapted from Hacker's Delight */
         inline int clzll(uint64_t x)
         {
-            int n;
-
             if (x == 0)
             {
                 return 64;
             }
 
-            n = 0;
+            int n = 0;
 
             if (x <= 0x00000000FFFFFFFFL)
             {
@@ -334,7 +337,15 @@ namespace timsort
         {
             if (store->alloc < new_size)
             {
-                T* tempstore = (T*)malloc(new_size * sizeof(T));
+                T* tempstore = static_cast<T*>(malloc(new_size * sizeof(T)));
+                if (!tempstore)
+                {
+                    detail::free(store->storage);
+                    store->storage = nullptr;
+
+                    ExRaiseStatus(STATUS_INSUFFICIENT_RESOURCES);
+                }
+
                 memcpy(tempstore, store->storage, store->alloc);
                 detail::free(store->storage);
 
@@ -507,11 +518,14 @@ namespace timsort
             size_t len = count_run(dst, *curr, size);
             size_t run = minrun;
 
+            /* If there is less than minrun left until the end of the array */
             if (run > size - *curr)
             {
                 run = size - *curr;
             }
 
+            /* If the found sorted run is smaller than minrun,
+             * we need to extend this segment by sorting the rest of the elements to match the run size */
             if (run > len)
             {
                 binary_insertion_sort_start(&dst[*curr], len, run);
@@ -546,8 +560,11 @@ namespace timsort
         }
     }
 
-    /* Binary insertion sort */
     template<class T>
+    concept TrivialType = std::is_trivially_destructible_v<T> && std::is_trivially_copyable_v<T> && std::is_default_constructible_v<T>;
+
+    /* Binary insertion sort */
+    template<TrivialType T>
     inline void binary_insertion_sort(T* dst, const size_t size)
     {
         /* don't bother sorting an array of size <= 1 */
@@ -559,8 +576,28 @@ namespace timsort
         detail::binary_insertion_sort_start(dst, 1, size);
     }
 
-    template<class T>
-    inline void tim_sort(T* dst, const size_t size)
+    //
+    // Timsort implementation:
+    // - Runs at IRQL <= DISPATCH_LEVEL.
+    // - If an allocation fails, the function will raise a STATUS_INSUFFICIENT_RESOURCES exception.
+    // - Implemented for trivial types only (trivially destructible, trivially copyable, and default constructible).
+    //
+    // Complexity analysis:
+    // +------------------+-----------------+-------------------------------------------------------------------+
+    // | Case             | Time Complexity | Details / Scenario                                                |
+    // +------------------+-----------------+-------------------------------------------------------------------+
+    // | Best Case        | O(n)            | Occurs when the input array is already sorted or nearly sorted.   |
+    // +------------------+-----------------+-------------------------------------------------------------------+
+    // | Average Case     | O(n log n)      | Occurs with a randomly distributed array.                         |
+    // +------------------+-----------------+-------------------------------------------------------------------+
+    // | Worst Case       | O(n log n)      | Occurs in the worst-case layout of unsorted elements.             |
+    // +------------------+-----------------+-------------------------------------------------------------------+
+    // | Space Complexity | O(n)            | Requires auxiliary space for the temporary merge buffers.         |
+    // +------------------+-----------------+-------------------------------------------------------------------+
+    //
+
+    template<TrivialType T>
+    inline void tim_sort_seh(T* dst, const size_t size)
     {
         /* don't bother sorting an array of size 1 */
         if (size <= 1)
@@ -612,5 +649,25 @@ namespace timsort
                 return;
             }
         }
+    }
+
+    template<TrivialType T>
+    inline NTSTATUS tim_sort(T* dst, const size_t size)
+    {
+        __try
+        {
+            tim_sort_seh(dst, size);
+            return STATUS_SUCCESS;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+            return GetExceptionCode();
+        }
+    }
+
+    template<class R>
+    inline NTSTATUS tim_sort(R& dst)
+    {
+        return tim_sort(std::ranges::data(dst), std::ranges::size(dst));
     }
 }
