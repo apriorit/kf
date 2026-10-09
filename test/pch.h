@@ -5,6 +5,8 @@
 #include <ranges>
 #include <array>
 #include <span>
+#include <type_traits>
+#include <utility>
 #include <kmtest/kmtest.h>
 
 // TODO: move this default implementation to kf
