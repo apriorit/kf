@@ -72,6 +72,7 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     ASimpleStringTest.cpp
     TimsortTest.cpp
     GuardTest.cpp
+    ThreadPoolTest.cpp
 )
 
 target_link_libraries(kf-test kf::kf kmtest::kmtest)
