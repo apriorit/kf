@@ -17,7 +17,7 @@ namespace
     struct TestObject
     {
         ThreadContext m_threadContext;
-        
+
         NTSTATUS run()
         {
             m_threadContext.started = true;
@@ -68,7 +68,7 @@ SCENARIO("kf::Thread basic lifecycle")
                 {
                     static_cast<ThreadContext*>(context)->started = true;
                     PsTerminateSystemThread(STATUS_SUCCESS);
-                }, 
+                },
                 &context);
 
             THEN("start() should succeed")
@@ -142,7 +142,7 @@ SCENARIO("kf::Thread basic lifecycle")
 
                     static_cast<ThreadContext*>(context)->started = true;
                     PsTerminateSystemThread(STATUS_SUCCESS);
-                }, 
+                },
                 &context));
 
             THEN("join() waits for completion")

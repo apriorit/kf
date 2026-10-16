@@ -7,6 +7,7 @@
 #include <span>
 #include <type_traits>
 #include <utility>
+#include <atomic>
 #include <kmtest/kmtest.h>
 
 // TODO: move this default implementation to kf
@@ -35,52 +36,6 @@ __declspec(noreturn) inline void __cdecl _invoke_watson(
 {
 #pragma warning(suppress: 28159) // Consider using 'error logging or driver shutdown' instead of 'KeBugCheckEx'
     KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
-}
-
-__declspec(noreturn) inline void __cdecl _invoke_watson(
-    _In_opt_z_ wchar_t const* const /*expression*/,
-    _In_opt_z_ wchar_t const* const /*function_name*/,
-    _In_opt_z_ wchar_t const* const /*file_name*/,
-    _In_       unsigned int   const /*line_number*/,
-    _In_       uintptr_t      const /*reserved*/)
-{
-#pragma warning(suppress: 28159) // Consider using 'error logging or driver shutdown' instead of 'KeBugCheckEx'
-    KeBugCheckEx(KERNEL_SECURITY_CHECK_FAILURE, 0, 0, 0, 0);
-}
-
-inline void __ehvec_dtor(
-    void* ptr,
-    unsigned __int64 size,
-    unsigned __int64 count,
-    void(__cdecl* dtor)(void*)
-)
-{
-    UNREFERENCED_PARAMETER(ptr);
-    UNREFERENCED_PARAMETER(size);
-    UNREFERENCED_PARAMETER(count);
-    UNREFERENCED_PARAMETER(dtor);
-}
-
-inline void __cdecl __ehvec_copy_ctor(
-    void* dst,
-    void* src,
-    unsigned __int64 size,
-    unsigned __int64 count,
-    void(__cdecl* copy_ctor)(void*, void*),
-    void(__cdecl* dtor)(void*)
-)
-{
-    UNREFERENCED_PARAMETER(dtor);
-
-    auto d = static_cast<unsigned char*>(dst);
-    auto s = static_cast<unsigned char*>(src);
-
-    for (unsigned __int64 i = 0; i < count; ++i)
-    {
-        copy_ctor(d, s);
-        d += size;
-        s += size;
-    }
 }
 
 namespace std

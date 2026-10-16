@@ -7,21 +7,18 @@ namespace kf
     class ThreadPool
     {
     public:
-        ThreadPool(int count) : m_count(min(count, kMaxCount))
+        ThreadPool(int count) noexcept : m_count((std::min)(count, kMaxCount))
         {
         }
 
-        ThreadPool(ThreadPool&&) = default;
+        ThreadPool(ThreadPool&&) noexcept = default;
 
         ~ThreadPool()
         {
             join();
         }
 
-        ThreadPool& operator=(ThreadPool&&) = default;
-
-        ThreadPool(const ThreadPool&) = delete;
-        ThreadPool& operator=(const ThreadPool&) = delete;
+        ThreadPool& operator=(ThreadPool&&) noexcept = default;
 
         NTSTATUS start(KSTART_ROUTINE routine, PVOID context)
         {
@@ -53,7 +50,7 @@ namespace kf
         }
 
     private:
-        Thread m_threads[kMaxCount]{};
+        Thread m_threads[kMaxCount];
         int m_count;
     };
 }
