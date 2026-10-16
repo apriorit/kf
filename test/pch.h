@@ -7,6 +7,7 @@
 #include <span>
 #include <type_traits>
 #include <utility>
+#include <atomic>
 #include <kmtest/kmtest.h>
 
 // TODO: move this default implementation to kf

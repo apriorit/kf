@@ -7,18 +7,24 @@ namespace kf
     class Thread
     {
     public:
-        Thread() = default;
-        Thread(Thread&&) = default;
+        Thread() noexcept = default;
+        Thread(Thread&& another) noexcept = default;
 
         ~Thread()
         {
             join();
         }
 
-        Thread& operator=(Thread&&) = default;
+        Thread& operator=(Thread&& another) noexcept
+        {
+            if (this != &another)
+            {
+                join();
+                m_threadObject = std::move(another.m_threadObject);
+            }
 
-        Thread(const Thread&) = delete;
-        Thread& operator=(const Thread&) = delete;
+            return *this;
+        }
 
         NTSTATUS start(KSTART_ROUTINE routine, PVOID context)
         {

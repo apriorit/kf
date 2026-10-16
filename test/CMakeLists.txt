@@ -10,6 +10,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Set warning level to /W4 for MSVC
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX")
 
+# Disable exception handling for MSVC
+string(REGEX REPLACE "/EHsc" "/EHs-c-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
 # TODO: fix warnings in code and remove this define
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
 
@@ -72,6 +75,7 @@ wdk_add_driver(kf-test WINVER NTDDI_WIN10 STL
     ASimpleStringTest.cpp
     TimsortTest.cpp
     GuardTest.cpp
+    ThreadPoolTest.cpp
 )
 
 target_link_libraries(kf-test kf::kf kmtest::kmtest)
