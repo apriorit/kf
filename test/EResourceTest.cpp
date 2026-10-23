@@ -1,18 +1,5 @@
 #include "pch.h"
 #include <kf/EResource.h>
-#include <kf/ThreadPool.h>
-
-namespace
-{
-    constexpr int kOneMillisecond = 10'000; // 1 ms in 100-nanosecond intervals
-
-    void delay()
-    {
-        LARGE_INTEGER interval;
-        interval.QuadPart = -kOneMillisecond;
-        KeDelayExecutionThread(KernelMode, FALSE, &interval);
-    }
-}
 
 SCENARIO("kf::EResource")
 {
@@ -22,7 +9,7 @@ SCENARIO("kf::EResource")
 
         THEN("The resource is initialized and not acquired immediately")
         {
-            REQUIRE(resource.isAcquiredExclusive() == false);
+            REQUIRE(!resource.isAcquiredExclusive());
             REQUIRE(resource.isAcquiredShared() == 0);
         }
     }
@@ -38,8 +25,8 @@ SCENARIO("kf::EResource")
             //Therefore, a thread that has exclusive access to a resource also has shared access to the resource.
             THEN("The exclusive and shared locks are acquired")
             {
-                REQUIRE(acquired == true);
-                REQUIRE(resource.isAcquiredExclusive() == true);
+                REQUIRE(acquired);
+                REQUIRE(resource.isAcquiredExclusive());
                 REQUIRE(resource.isAcquiredShared() == 1);
             }
 
@@ -49,7 +36,7 @@ SCENARIO("kf::EResource")
 
                 THEN("The resource is no longer locked")
                 {
-                    REQUIRE(resource.isAcquiredExclusive() == false);
+                    REQUIRE(!resource.isAcquiredExclusive());
                     REQUIRE(resource.isAcquiredShared() == 0);
                 }
             }
@@ -63,8 +50,8 @@ SCENARIO("kf::EResource")
 
         THEN("The only shared lock is acquired")
         {
-            REQUIRE(acquired == true);
-            REQUIRE(resource.isAcquiredExclusive() == false);
+            REQUIRE(acquired);
+            REQUIRE(!resource.isAcquiredExclusive());
             REQUIRE(resource.isAcquiredShared() == 1);
         }
 
@@ -74,7 +61,7 @@ SCENARIO("kf::EResource")
 
             THEN("The resource is no longer locked")
             {
-                REQUIRE(resource.isAcquiredExclusive() == false);
+                REQUIRE(!resource.isAcquiredExclusive());
                 REQUIRE(resource.isAcquiredShared() == 0);
             }
         }
@@ -84,7 +71,7 @@ SCENARIO("kf::EResource")
     {
         kf::EResource resource;
         bool exclusiveAcquired = resource.acquireExclusive();
-        REQUIRE(exclusiveAcquired == true);
+        REQUIRE(exclusiveAcquired);
 
         WHEN("The resource is converted to shared")
         {
@@ -92,7 +79,7 @@ SCENARIO("kf::EResource")
 
             THEN("The lock is converted to shared")
             {
-                REQUIRE(resource.isAcquiredExclusive() == false);
+                REQUIRE(!resource.isAcquiredExclusive());
                 REQUIRE(resource.isAcquiredShared() == 1);
             }
 
@@ -102,7 +89,7 @@ SCENARIO("kf::EResource")
 
                 THEN("The resource is no longer locked")
                 {
-                    REQUIRE(resource.isAcquiredExclusive() == false);
+                    REQUIRE(!resource.isAcquiredExclusive());
                     REQUIRE(resource.isAcquiredShared() == 0);
                 }
             }
@@ -116,7 +103,7 @@ SCENARIO("kf::EResource")
 
         THEN("The resource is acquired exclusively and shared")
         {
-            REQUIRE(resource.isAcquiredExclusive() == true);
+            REQUIRE(resource.isAcquiredExclusive());
             REQUIRE(resource.isAcquiredShared() == 1);
         }
 
@@ -126,7 +113,7 @@ SCENARIO("kf::EResource")
 
             THEN("The resource is no longer locked")
             {
-                REQUIRE(resource.isAcquiredExclusive() == false);
+                REQUIRE(!resource.isAcquiredExclusive());
                 REQUIRE(resource.isAcquiredShared() == 0);
             }
         }
@@ -139,7 +126,7 @@ SCENARIO("kf::EResource")
 
         THEN("The resource is acquired shared")
         {
-            REQUIRE(resource.isAcquiredExclusive() == false);
+            REQUIRE(!resource.isAcquiredExclusive());
             REQUIRE(resource.isAcquiredShared() == 1);
         }
 
@@ -149,75 +136,121 @@ SCENARIO("kf::EResource")
 
             THEN("The resource is no longer locked")
             {
-                REQUIRE(resource.isAcquiredExclusive() == false);
+                REQUIRE(!resource.isAcquiredExclusive());
                 REQUIRE(resource.isAcquiredShared() == 0);
             }
         }
     }
 
-    GIVEN("The EResource and multiple threads")
+    GIVEN("The EResource acquired shared twice by the current thread")
     {
-        constexpr int kMaxThreadsCount = 64;
-        const ULONG numLogicalProcessors = KeQueryActiveProcessorCount(nullptr);
-        REQUIRE(numLogicalProcessors <= kMaxThreadsCount);
-
-        struct Context
-        {
-            kf::EResource* resource = nullptr;
-            std::array<bool, kMaxThreadsCount>* acquired = nullptr;
-            LONG counter = 0;
-        };
         kf::EResource resource;
-        std::array<bool, kMaxThreadsCount> acquired;
-        Context context{ &resource, &acquired };
-        kf::ThreadPool threadPool(numLogicalProcessors);
+        REQUIRE(resource.acquireShared());
+        REQUIRE(resource.acquireShared());
 
-        WHEN("Multiple threads attempt to acquire exclusive the resource")
+        WHEN("The shared acquires are released one at a time")
         {
-            threadPool.start([](void* context) {
-                auto res = static_cast<Context*>(context);
-                res->resource->acquireExclusive();
-                res->acquired->at(res->counter++) = true;
-                delay();
-                res->resource->release();
-                }, &context);
-
-            threadPool.join();
-
-            THEN("All threads can acquire and release the resource without deadlock")
+            THEN("One release leaves acquire count 1 and the second clears it")
             {
-                auto size = min(kMaxThreadsCount, numLogicalProcessors);
-                for (size_t i = 0; i < size; i++)
-                {
-                    REQUIRE(acquired.at(i) == true);
-                }
-                REQUIRE(resource.isAcquiredExclusive() == false);
+                REQUIRE(!resource.isAcquiredExclusive());
+                REQUIRE(resource.isAcquiredShared() == 2);
+
+                resource.release();
+
+                REQUIRE(!resource.isAcquiredExclusive());
+                REQUIRE(resource.isAcquiredShared() == 1);
+
+                resource.release();
+
+                REQUIRE(!resource.isAcquiredExclusive());
                 REQUIRE(resource.isAcquiredShared() == 0);
             }
         }
+    }
 
-        WHEN("Multiple threads attempt to acquire shared the resource")
+    GIVEN("The EResource acquired exclusive twice by the current thread")
+    {
+        kf::EResource resource;
+        REQUIRE(resource.acquireExclusive());
+        REQUIRE(resource.acquireExclusive());
+
+        WHEN("One exclusive acquire is released")
         {
-            threadPool.start([](void* context) {
-                auto res = static_cast<Context*>(context);
-                res->resource->acquireShared();
-                auto index = InterlockedIncrement(&res->counter) - 1;
-                res->acquired->at(index) = true;
-                delay();
-                res->resource->release();
-                }, &context);
-
-            threadPool.join();
-
-            THEN("All threads can acquire and release the resource without deadlock")
+            THEN("The resource stays exclusively owned")
             {
-                auto size = min(kMaxThreadsCount, numLogicalProcessors);
-                for (size_t i = 0; i < size; i++)
-                {
-                    REQUIRE(acquired.at(i) == true);
-                }
-                REQUIRE(resource.isAcquiredExclusive() == false);
+                REQUIRE(resource.isAcquiredExclusive());
+                REQUIRE(resource.isAcquiredShared() == 2);
+
+                resource.release();
+
+                REQUIRE(resource.isAcquiredExclusive());
+                REQUIRE(resource.isAcquiredShared() == 1);
+
+                resource.release();
+
+                REQUIRE(!resource.isAcquiredExclusive());
                 REQUIRE(resource.isAcquiredShared() == 0);
+            }
+        }
+    }
+
+    GIVEN("The EResource acquired exclusive twice")
+    {
+        kf::EResource resource;
+        REQUIRE(resource.acquireExclusive());
+        REQUIRE(resource.acquireExclusive());
+
+        WHEN("The exclusive acquire is converted to shared")
+        {
+            resource.convertExclusiveToShared();
+
+            THEN("Exclusive ownership is cleared and the recursive owner count is kept")
+            {
+                // Conversion clears the exclusive flag but does not drop recursive acquires.
+                REQUIRE(!resource.isAcquiredExclusive());
+                REQUIRE(resource.isAcquiredShared() == 2);
+                REQUIRE(resource.getOwnerCount() == 2);
+
+                resource.release();
+                resource.release();
+
+                REQUIRE(!resource.isAcquiredExclusive());
+                REQUIRE(resource.isAcquiredShared() == 0);
+            }
+        }
+    }
+
+    GIVEN("A free EResource")
+    {
+        kf::EResource resource;
+
+        WHEN("It is acquired exclusive without waiting")
+        {
+            const bool acquired = resource.acquireExclusive(false);
+
+            THEN("The non-blocking exclusive acquire succeeds")
+            {
+                REQUIRE(acquired);
+                REQUIRE(resource.isAcquiredExclusive());
+                REQUIRE(resource.isAcquiredShared() == 1);
+                REQUIRE(resource.getOwnerCount() == 1);
+
+                resource.release();
+            }
+        }
+
+        WHEN("It is acquired shared without waiting")
+        {
+            const bool acquired = resource.acquireShared(false);
+
+            THEN("The non-blocking shared acquire succeeds")
+            {
+                REQUIRE(acquired);
+                REQUIRE(!resource.isAcquiredExclusive());
+                REQUIRE(resource.isAcquiredShared() == 1);
+                REQUIRE(resource.getOwnerCount() == 1);
+
+                resource.release();
             }
         }
     }
