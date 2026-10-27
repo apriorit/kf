@@ -1,6 +1,8 @@
 #pragma once
 #include <span>
 #include <algorithm>
+#include <ranges>
+#include <concepts>
 
 namespace kf
 {
@@ -28,6 +30,19 @@ namespace kf
         return std::span<const std::byte, sizeof(T)* N>{ reinterpret_cast<const std::byte*>(p), sizeof(p) };
     }
 
+    template<std::ranges::contiguous_range R>
+    constexpr std::span<const std::byte> asBytes(const R& src) noexcept
+    {
+        return { reinterpret_cast<const std::byte*>(std::ranges::data(src)), sizeof(std::ranges::range_value_t<R>) * std::ranges::size(src) };
+    }
+
+    template<class T>
+    constexpr auto asBytes(const T& src)
+    {
+        return std::span<const std::byte, sizeof(T)>{ reinterpret_cast<const std::byte*>(&src), sizeof(T) };
+    }
+
+    // TODO: rename to asWritableBytes
     inline constexpr std::span<std::byte> as_writable_bytes(void* p, size_t size) noexcept
     {
         return { static_cast<std::byte*>(p), size };
@@ -38,6 +53,12 @@ namespace kf
     constexpr auto as_writable_bytes(T(&p)[N]) noexcept
     {
         return std::span<std::byte, sizeof(T) * N>{ reinterpret_cast<std::byte*>(p), sizeof(p) };
+    }
+
+    template<class T>
+    constexpr auto asWritableBytes(T& src)
+    {
+        return std::span<std::byte, sizeof(T)>{ reinterpret_cast<std::byte*>(&src), sizeof(T) };
     }
 
     template<class T, class Y, size_t dstExtent, size_t srcExtent> requires std::is_same_v<T, std::remove_const_t<Y>>

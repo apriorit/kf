@@ -578,7 +578,7 @@ namespace timsort
 
     //
     // Timsort implementation:
-    // - Runs at IRQL <= DISPATCH_LEVEL.
+    // - Runs at IRQL < DISPATCH_LEVEL.
     // - If an allocation fails, the function will raise a STATUS_INSUFFICIENT_RESOURCES exception.
     // - Implemented for trivial types only (trivially destructible, trivially copyable, and default constructible).
     //

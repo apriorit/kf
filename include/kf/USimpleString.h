@@ -95,6 +95,8 @@ namespace kf
 
         USimpleString trimLeft(_In_ const USimpleString& chars) const;
 
+        USimpleString removePrefix(_In_ const USimpleString& prefix) const;
+
         bool startsWith(_In_ const USimpleString& str) const;
         bool startsWithIgnoreCase(_In_ const USimpleString& str) const;
 
@@ -544,6 +546,11 @@ namespace kf
         }
 
         return substring(startIndex);
+    }
+
+    inline USimpleString USimpleString::removePrefix(_In_ const USimpleString& prefix) const
+    {
+        return startsWith(prefix) ? substring(prefix.charLength()) : m_str;
     }
 
     inline bool USimpleString::startsWith(_In_ const USimpleString& str) const

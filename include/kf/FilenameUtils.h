@@ -155,6 +155,43 @@ namespace kf
             return path.startsWithIgnoreCase(L"\\REGISTRY\\");
         }
 
+        // Returns true if 'child' is located strictly inside 'parent' at any depth (case-insensitive).
+        // Leading and trailing path separators '\\' of both arguments are ignored.
+        // An empty 'parent' (or "\\") is treated as the root directory, which contains any path with at least one name element.
+        // A directory does not contain itself, and a partial name match is not a match.
+        // "\\aa", "\\aa\\bb"    -> true
+        // "\\aa\\", "\\aa\\bb"  -> true
+        // "aa", "\\aa\\bb\\"    -> true  (leading/trailing separators are ignored)
+        // "\\AA", "\\aa\\bb"    -> true  (case-insensitive)
+        // "\\aa", "\\aa"        -> false
+        // "\\aa", "\\aa\\"      -> false
+        // "\\aa", "\\aab\\cc"   -> false
+        // "\\aa\\bb", "\\aa"    -> false
+        // "\\", "\\aa"          -> true
+        // "\\", "\\"            -> false
+        // "", "\\aa"            -> true
+        // "", "\\"              -> false
+        // "", ""                -> false
+        static bool directoryContains(USimpleString parent, USimpleString child)
+        {
+            parent = parent.trim(L'\\');
+            child = child.trim(L'\\');
+
+            if (parent.isEmpty())
+            {
+                // Root directory ("\\") contains every absolute path with at least one name element
+                return !child.isEmpty();
+            }
+
+            // Check if 'child' is longer than 'parent' by at least one character (the separator)
+            if (child.charLength() <= parent.charLength() + 1)
+            {
+                return false;
+            }
+
+            return child.startsWithIgnoreCase(parent) && child.charAt(parent.charLength()) == L'\\';
+        }
+
     private:
         FilenameUtils();
     };
