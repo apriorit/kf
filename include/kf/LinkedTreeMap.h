@@ -16,7 +16,18 @@ namespace kf
     public:
         LinkedTreeMap() noexcept = default;
         LinkedTreeMap(_Inout_ LinkedTreeMap&& another) noexcept = default;
-        LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another) noexcept = default;
+
+        LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another) noexcept
+        {
+            if (this != &another)
+            {
+                m_links.clear();
+                m_table = std::move(another.m_table);
+                m_links = std::move(another.m_links);
+            }
+
+            return *this;
+        }
 
         LinkedTreeMap(const LinkedTreeMap&) = delete;
         LinkedTreeMap& operator=(const LinkedTreeMap&) = delete;
