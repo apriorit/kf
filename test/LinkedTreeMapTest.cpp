@@ -335,6 +335,51 @@ SCENARIO("LinkedTreeMap: all methods")
                 }
             }
         }
+
+        WHEN("non-empty map is moved by operator= into a non-empty destination map")
+        {
+            LinkedIntMap destinationMap;
+            for (int key : kNonExistingKeys)
+            {
+                destinationMap.put(key, keyToValue(key));
+            }
+
+            destinationMap = std::move(map);
+
+            THEN("destination map contains only the moved-in elements")
+            {
+                REQUIRE(!destinationMap.isEmpty());
+                REQUIRE(destinationMap.size() == static_cast<int>(kKeys.size()));
+
+                for (int key : kNonExistingKeys)
+                {
+                    REQUIRE(!destinationMap.containsKey(key));
+                }
+            }
+
+            THEN("original map is empty")
+            {
+                REQUIRE(map.isEmpty());
+                REQUIRE(map.size() == 0);
+            }
+
+            THEN("moved elements are accessible and iteration order is intact")
+            {
+                for (int index = 0; index < static_cast<int>(kKeys.size()); ++index)
+                {
+                    auto value = destinationMap.getByIndex(index);
+                    REQUIRE(value != nullptr);
+                    REQUIRE(*value == keyToValue(kKeys[index]));
+                }
+
+                for (int key : kKeys)
+                {
+                    auto value = destinationMap.get(key);
+                    REQUIRE(value != nullptr);
+                    REQUIRE(*value == keyToValue(key));
+                }
+            }
+        }
     }
 }
 

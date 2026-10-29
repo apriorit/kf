@@ -155,7 +155,7 @@ namespace kf
         };
 
     private:
-        GenericTableAvl<Node, poolType> m_table;
         DoubleLinkedList<Node, &Node::m_listEntry> m_links;
+        GenericTableAvl<Node, poolType> m_table;
     };
 }
