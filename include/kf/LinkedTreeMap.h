@@ -16,18 +16,7 @@ namespace kf
     public:
         LinkedTreeMap() noexcept = default;
         LinkedTreeMap(_Inout_ LinkedTreeMap&& another) noexcept = default;
-
-        LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another) noexcept
-        {
-            if (this != &another)
-            {
-                m_links.clear();
-                m_table = std::move(another.m_table);
-                m_links = std::move(another.m_links);
-            }
-
-            return *this;
-        }
+        LinkedTreeMap& operator=(_Inout_ LinkedTreeMap&& another) noexcept = default;
 
         LinkedTreeMap(const LinkedTreeMap&) = delete;
         LinkedTreeMap& operator=(const LinkedTreeMap&) = delete;
@@ -166,7 +155,7 @@ namespace kf
         };
 
     private:
-        GenericTableAvl<Node, poolType> m_table;
         DoubleLinkedList<Node, &Node::m_listEntry> m_links;
+        GenericTableAvl<Node, poolType> m_table;
     };
 }
