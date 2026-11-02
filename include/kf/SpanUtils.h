@@ -18,6 +18,7 @@ namespace kf
         return { reinterpret_cast<T*>(data), size * sizeof(U) / sizeof(T) };
     }
 
+    // TODO: rename to asBytes
     inline constexpr std::span<const std::byte> as_bytes(const void* p, size_t size) noexcept
     {
         return { static_cast<const std::byte*>(p), size };

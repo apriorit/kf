@@ -112,5 +112,13 @@ namespace kf
         typedef GUARD_TYPE(::HANDLE, nullptr, &::ZwClose)                                               Handle;
         typedef GUARD_TYPE(::PACCESS_TOKEN, nullptr, &::ObfDereferenceObject)                           AccessToken;
         typedef GUARD_TYPE(::PVOID, nullptr, &::ObfDereferenceObject)                                   Object;
+
+#ifdef FwpsInjectionHandleDestroy
+        typedef GUARD_TYPE(::HANDLE, nullptr, &::FwpsInjectionHandleDestroy)                            FwpsInjectionHandle;
+#endif
+
+#ifdef NET_BUFFER_LIST_POOL_PARAMETERS_REVISION_1
+        typedef GUARD_TYPE(::NDIS_HANDLE, nullptr, &::NdisFreeNetBufferListPool)                        NetBufferListPoolHandle;
+#endif
     }
 }
