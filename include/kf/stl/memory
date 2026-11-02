@@ -7,7 +7,7 @@
 namespace kf
 {
     template<typename T, POOL_TYPE PoolType, typename... TArgs>
-    inline std::unique_ptr<T> make_unique(TArgs&&... Args) noexcept requires !std::is_array_v<T>
+    inline std::unique_ptr<T> make_unique(TArgs&&... Args) noexcept requires (!std::is_array_v<T>)
     {
         return std::unique_ptr<T>(new(PoolType) T(std::forward<TArgs>(Args)...));
     }
@@ -19,7 +19,7 @@ namespace kf
     }
 
     template<class T, POOL_TYPE poolType, typename... TArgs>
-    inline std::shared_ptr<T> make_shared(TArgs&&... Args) noexcept requires !std::is_array_v<T>
+    inline std::shared_ptr<T> make_shared(TArgs&&... Args) noexcept requires (!std::is_array_v<T>)
     {
         kf::EarlyAllocator allocator;
 
