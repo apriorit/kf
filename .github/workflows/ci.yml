@@ -19,41 +19,48 @@ permissions:
   contents: read
   packages: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || format('{0}-{1}', github.run_id, github.run_attempt) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     strategy:
       fail-fast: true
       matrix:
-        os: [windows-2022]
+        os: [windows-2022, windows-2025]
         config: [Debug, Release]
         platform: [x64, Win32]
+        include:
+          - os: windows-2022
+            generator: Visual Studio 17 2022
+          - os: windows-2025
+            generator: Visual Studio 18 2026
 
     runs-on: ${{ matrix.os }}
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v3
+      uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
 
-    - name: Cache WDK NuGet package (Win32)
-      if: matrix.platform == 'Win32'
+    - name: Cache WDK NuGet package
       id: cache-wdk
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ github.workspace }}\packages\Internal.Microsoft.Windows.WDK
         key: wdk-nuget-${{ hashFiles('.github/workflows/ci.yml') }}
 
-    - name: Install WDK NuGet package (Win32)
-      if: matrix.platform == 'Win32' && steps.cache-wdk.outputs.cache-hit != 'true'
+    - name: Install WDK NuGet package
+      if: steps.cache-wdk.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
         nuget sources add -Name github -Source https://nuget.pkg.github.com/apriorit/index.json -Username ${{ github.repository_owner }} -Password ${{ secrets.GITHUB_TOKEN }} -StorePasswordInClearText
         nuget install Internal.Microsoft.Windows.WDK -Source github -OutputDirectory ${{ github.workspace }}\packages -ExcludeVersion
 
-    - name: Set WDKContentRoot (Win32)
-      if: matrix.platform == 'Win32'
+    - name: Set WDKContentRoot
       shell: pwsh
       run: |
         $wdkContentRoot = Resolve-Path "${{ github.workspace }}\packages\Internal.Microsoft.Windows.WDK\c"
@@ -61,14 +68,14 @@ jobs:
 
     - name: Configure CMake
       run: |
-        cmake -B build -A ${{ matrix.platform }} -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+        cmake -Wno-author -B build -G "${{ matrix.generator }}" -A ${{ matrix.platform }} -DCMAKE_BUILD_TYPE=${{ matrix.config }}
 
     - name: Build
       run: |
         cmake --build build --config ${{ matrix.config }} --parallel
 
     - name: Validate Vista SP2 compatibility
-      uses: sergiusthebest/pecompatcheck-action@0ac779e953508f7ef968af9ec1c4d99ce59202d7 # v1
+      uses: sergiusthebest/pecompatcheck-action@29c8d19e341f8977e306c5079b75347218d58f74 # v1.0.2
       with:
         binary: build/test/${{ matrix.config }}/kf-test.sys
         windows-version: vista-sp2
