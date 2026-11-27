@@ -27,9 +27,13 @@ cmake --build build
 to the linked element; const lists yield const references. The existing
 `iterator()` and `descendingIterator()` APIs remain available.
 
-Insertion does not invalidate iterators to existing elements. Removing an
-element invalidates iterators to that element; clearing or destroying the list
-invalidates iterators to its elements. As with other intrusive containers,
+For forward iterators, insertion does not invalidate iterators to existing
+elements. Removing an element invalidates forward iterators to that element;
+clearing or destroying the list invalidates forward iterators to its elements.
+Reverse iterators depend on the validity of their base iterator, which points
+one position past the element they dereference. Removing that base element
+invalidates the reverse iterator; adjacent insertion or removal can also change
+which element a valid reverse iterator dereferences. As with other intrusive containers,
 elements must outlive their membership in the list. Algorithms that rearrange
 values require suitable element assignment or swapping; iteration itself does
 not move or copy elements.
