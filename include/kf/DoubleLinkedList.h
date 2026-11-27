@@ -3,6 +3,7 @@
 #include "DoubleLinkedListIterator.h"
 #include "DoubleLinkedListDescendingIterator.h"
 #include "DoubleLinkedListConstIterator.h"
+#include "DoubleLinkedListStdIterator.h"
 
 namespace kf
 {
@@ -16,6 +17,10 @@ namespace kf
         typedef DoubleLinkedListIterator<TElemType, TListEntryMember> Iterator;
         typedef DoubleLinkedListConstIterator<TElemType, TListEntryMember> ConstIterator;
         typedef DoubleLinkedListDescendingIterator<TElemType, TListEntryMember> DescendingIterator;
+        using iterator_type = DoubleLinkedListStdIterator<TElemType, TListEntryMember, false>;
+        using const_iterator = DoubleLinkedListStdIterator<TElemType, TListEntryMember, true>;
+        using reverse_iterator = std::reverse_iterator<iterator_type>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     public:
         DoubleLinkedList()
@@ -175,6 +180,19 @@ namespace kf
                 it.remove();
             }
         }
+
+        iterator_type begin() { return iterator_type(m_head.Flink); }
+        iterator_type end() { return iterator_type(&m_head); }
+        const_iterator begin() const { return const_iterator(m_head.Flink); }
+        const_iterator end() const { return const_iterator(&m_head); }
+        const_iterator cbegin() const { return begin(); }
+        const_iterator cend() const { return end(); }
+        reverse_iterator rbegin() { return reverse_iterator(end()); }
+        reverse_iterator rend() { return reverse_iterator(begin()); }
+        const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+        const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
+        const_reverse_iterator crbegin() const { return rbegin(); }
+        const_reverse_iterator crend() const { return rend(); }
 
         Iterator iterator()
         {
