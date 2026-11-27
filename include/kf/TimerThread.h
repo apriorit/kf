@@ -43,7 +43,7 @@ namespace kf
                 {
                     {
                         unique_ptr<Context> context{ static_cast<Context*>(rawContext) };
-                        context->first->threadRoutine<routine>(context->second);
+                        context->first->template threadRoutine<routine>(context->second);
                     }
 
                     PsTerminateSystemThread(STATUS_SUCCESS);
