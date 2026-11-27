@@ -46,23 +46,21 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
 
-    - name: Cache WDK NuGet package (Win32)
-      if: matrix.platform == 'Win32'
+    - name: Cache WDK NuGet package
       id: cache-wdk
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ github.workspace }}\packages\Internal.Microsoft.Windows.WDK
         key: wdk-nuget-${{ hashFiles('.github/workflows/ci.yml') }}
 
-    - name: Install WDK NuGet package (Win32)
-      if: matrix.platform == 'Win32' && steps.cache-wdk.outputs.cache-hit != 'true'
+    - name: Install WDK NuGet package
+      if: steps.cache-wdk.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
         nuget sources add -Name github -Source https://nuget.pkg.github.com/apriorit/index.json -Username ${{ github.repository_owner }} -Password ${{ secrets.GITHUB_TOKEN }} -StorePasswordInClearText
         nuget install Internal.Microsoft.Windows.WDK -Source github -OutputDirectory ${{ github.workspace }}\packages -ExcludeVersion
 
-    - name: Set WDKContentRoot (Win32)
-      if: matrix.platform == 'Win32'
+    - name: Set WDKContentRoot
       shell: pwsh
       run: |
         $wdkContentRoot = Resolve-Path "${{ github.workspace }}\packages\Internal.Microsoft.Windows.WDK\c"
