@@ -17,6 +17,156 @@ using List = DoubleLinkedList<TestNode, &TestNode::entry>;
 using Iterator = DoubleLinkedListIterator<TestNode, &TestNode::entry>;
 using ConstIterator = DoubleLinkedListConstIterator<TestNode, &TestNode::entry>;
 
+static_assert(std::bidirectional_iterator<List::iterator_type>);
+static_assert(std::bidirectional_iterator<List::const_iterator>);
+static_assert(std::ranges::bidirectional_range<List>);
+static_assert(std::ranges::bidirectional_range<const List>);
+static_assert(std::convertible_to<List::iterator_type, List::const_iterator>);
+static_assert(!std::convertible_to<List::const_iterator, List::iterator_type>);
+static_assert(std::same_as<std::ranges::range_reference_t<List>, TestNode&>);
+static_assert(std::same_as<std::ranges::range_reference_t<const List>, const TestNode&>);
+
+SCENARIO("DoubleLinkedList standard iterators")
+{
+    GIVEN("an empty list")
+    {
+        List list;
+        const List& constList = list;
+
+        WHEN("its ranges are inspected")
+        {
+            THEN("forward and reverse ranges are empty")
+            {
+                REQUIRE(list.begin() == list.end());
+                REQUIRE(constList.begin() == constList.end());
+                REQUIRE(list.rbegin() == list.rend());
+                REQUIRE(constList.crbegin() == constList.crend());
+                REQUIRE(std::ranges::distance(list) == 0);
+            }
+        }
+    }
+
+    GIVEN("a list with one element")
+    {
+        TestNode node1{ 1 };
+        TestNode node2{ 2 };
+        TestNode node3{ 3 };
+        List list;
+        list.addLast(node1);
+
+        WHEN("its range is inspected")
+        {
+            THEN("it contains exactly that element")
+            {
+                REQUIRE(&*list.begin() == &node1);
+                REQUIRE(&*--list.end() == &node1);
+                REQUIRE(++list.begin() == list.end());
+            }
+        }
+
+        WHEN("other elements are inserted")
+        {
+            auto first = list.begin();
+            list.addLast(node2);
+            list.addLast(node3);
+
+            THEN("the existing iterator remains valid")
+            {
+                REQUIRE(&*first == &node1);
+            }
+        }
+    }
+
+    GIVEN("a list with three elements")
+    {
+        TestNode node1{ 1 };
+        TestNode node2{ 2 };
+        TestNode node3{ 3 };
+        List list;
+        list.addLast(node1);
+        list.addLast(node2);
+        list.addLast(node3);
+        const List& constList = list;
+
+        WHEN("an iterator is converted to a const iterator")
+        {
+            auto it = list.begin();
+            List::const_iterator constIt = it;
+
+            THEN("the iterators compare equal in both directions")
+            {
+                REQUIRE(it == constIt);
+                REQUIRE(constIt == it);
+            }
+        }
+
+        WHEN("an iterator is advanced and decremented")
+        {
+            auto it = list.begin();
+
+            THEN("it traverses the list in both directions")
+            {
+                REQUIRE(&*it++ == &node1);
+                REQUIRE(it->value == 2);
+                REQUIRE(&*it-- == &node2);
+                REQUIRE(&*it == &node1);
+                it = list.end();
+                REQUIRE(&*--it == &node3);
+                REQUIRE(&*it-- == &node3);
+                REQUIRE(&*it == &node2);
+            }
+        }
+
+        WHEN("elements are modified using a range-based loop")
+        {
+            for (auto& node : list)
+            {
+                node.value *= 2;
+            }
+
+            THEN("standard algorithms and views see the modified values")
+            {
+                const int expected[] = { 2, 4, 6 };
+                const int reverseExpected[] = { 6, 4, 2 };
+                REQUIRE(std::ranges::equal(constList | std::views::transform([](const TestNode& node) { return node.value; }), expected));
+                REQUIRE(std::find_if(list.begin(), list.end(), [](const TestNode& node) { return node.value == 4; }) == ++list.begin());
+                REQUIRE(std::ranges::distance(list) == 3);
+                REQUIRE(std::ranges::equal(constList | std::views::reverse | std::views::transform([](const TestNode& node) { return node.value; }), reverseExpected));
+                REQUIRE(&*list.rbegin() == &node3);
+                REQUIRE(&*constList.crbegin() == &node3);
+                REQUIRE(constList.crend().base() == constList.cbegin());
+            }
+        }
+
+        WHEN("the middle element is removed")
+        {
+            auto first = list.begin();
+            auto last = --list.end();
+            list.remove(node2);
+
+            THEN("iterators to the remaining elements stay valid")
+            {
+                REQUIRE(&*first == &node1);
+                REQUIRE(&*last == &node3);
+                REQUIRE(++first == last);
+            }
+        }
+
+        WHEN("the list is cleared and an element is reinserted")
+        {
+            list.clear();
+            list.addLast(node2);
+
+            THEN("the range contains only the reinserted element")
+            {
+                REQUIRE(&*list.begin() == &node2);
+                REQUIRE(&*--list.end() == &node2);
+                REQUIRE(++list.begin() == list.end());
+            }
+        }
+    }
+}
+
 SCENARIO("DoubleLinkedList: all methods")
 {
     TestNode node1{ 1 };

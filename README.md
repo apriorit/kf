@@ -20,15 +20,35 @@ Then open in Visual Studio `<project root>\build\kf.sln` and build it or run CMa
 cmake --build build
 ```
 
-## Roadmap 
-- [ ] Document
-- [ ] Add tests
-- [ ] Add automated builds
-- [ ] Rework `UString`, `USimpleString`, `ASimpleString` in favour of `std::string_view`, `std::wstring_view` as they have no 32k limit
-- [ ] Think how to make `GenericTableAvl` safe for concurrent reading (maybe replace it?)
-- [x] Get rid of `FltResourceExclusiveLock`/`FltResourceSharedLock`/`EResourceExclusiveLock`/`EResourceSharedLock` and make `FltResource`/`EResource` lockable with `std::shared_lock`/`std::unique_lock`
-- [ ] Replace `scoped_buffer` with `vector` (and an appropriate allocator)
-- [ ] Update `ConditionVariable` to use `std::unique_lock<Mutex>` where `Mutex` is a template parameter
+## DoubleLinkedList iteration
+
+`DoubleLinkedList` supports C++20 bidirectional ranges through `begin`/`end`,
+`cbegin`/`cend`, and their reverse counterparts. Dereferencing yields a reference
+to the linked element; const lists yield const references. The existing
+`iterator()` and `descendingIterator()` APIs remain available.
+
+For forward iterators, insertion does not invalidate iterators to existing
+elements. Removing an element invalidates forward iterators to that element;
+clearing or destroying the list invalidates forward iterators to its elements.
+Reverse iterators depend on the validity of their base iterator, which points
+one position past the element they dereference. Removing that base element
+invalidates the reverse iterator; adjacent insertion or removal can also change
+which element a valid reverse iterator dereferences. As with other intrusive containers,
+elements must outlive their membership in the list. Algorithms that rearrange
+values require suitable element assignment or swapping; iteration itself does
+not move or copy elements.
+
+## Roadmap
+- [ ] Expand documentation and test coverage.
+- [x] Add automated Windows builds (Debug and Release, x64 and Win32).
+- [ ] Run kernel tests automatically in CI; the current workflow builds the test driver but does not run it.
+- [ ] Rework `UString`, `USimpleString`, and `ASimpleString` in favour of string views where appropriate, avoiding the NT string length limit.
+- [ ] Investigate safe concurrent reading for `GenericTableAvl`, including replacement if necessary.
+- [x] Make `FltResource` and `EResource` usable with standard lock wrappers.
+- [ ] Remove the deprecated `FltResourceExclusiveLock`, `FltResourceSharedLock`, `EResourceExclusiveLock`, and `EResourceSharedLock` wrappers.
+- [x] Replace the `scoped_buffer` implementation and usages with `kf::vector` and its allocator; a deprecated forward declaration remains.
+- [ ] Update `ConditionVariable` to use `std::unique_lock<Mutex>` where `Mutex` is a template parameter.
+- [x] Support C++20 bidirectional ranges and algorithms in `DoubleLinkedList`.
 
 ## About Apriorit
 
